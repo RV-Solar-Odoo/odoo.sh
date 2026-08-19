@@ -127,9 +127,7 @@ class ShippoRateWizard(models.TransientModel):
             "int_shippo_label_url": label_url,
             "int_shippo_tracking_url": tracking_url,
             "int_shippo_box_id": self.box_id.id,
-            "int_shippo_carrier_name": " — ".join(
-                part for part in (self.selected_line_id.carrier, self.selected_line_id.service) if part
-            ),
+            "int_shippo_carrier_name": self.selected_line_id.carrier or False,
             "carrier_tracking_ref": tracking,
             "carrier_price": self.selected_line_id.amount,
         }
