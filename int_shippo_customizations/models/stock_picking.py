@@ -84,7 +84,7 @@ class StockPicking(models.Model):
             "state": partner.state_id.code or "",
             "zip": partner.zip,
             "country": partner.country_id.code,
-            "phone": partner.phone or partner.mobile or "",
+            "phone": partner.phone or (partner.mobile if "mobile" in partner._fields else "") or "",
             "email": partner.email or "",
         }
 
