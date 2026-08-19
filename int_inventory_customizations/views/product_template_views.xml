@@ -86,7 +86,7 @@
             <xpath expr="//field[@name='responsible_id']" position="after">
                 <field name="x_studio_weight_lbs"/>
             </xpath>
-            <xpath expr="//field[@name='weight']" position="after">
+            <xpath expr="//group[@name='group_lots_and_weight']" position="inside">
                 <field name="x_studio_qty_per_pallet"/>
             </xpath>
         </field>
