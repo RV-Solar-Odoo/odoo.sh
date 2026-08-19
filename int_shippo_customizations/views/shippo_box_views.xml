@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_int_shippo_box_list" model="ir.ui.view">
+        <field name="name">int.shippo.box.list</field>
+        <field name="model">int.shippo.box</field>
+        <field name="arch" type="xml">
+            <list string="Shippo Boxes">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="length_in"/>
+                <field name="width_in"/>
+                <field name="height_in"/>
+                <field name="empty_lb"/>
+                <field name="max_lb"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_int_shippo_box_form" model="ir.ui.view">
+        <field name="name">int.shippo.box.form</field>
+        <field name="model">int.shippo.box</field>
+        <field name="arch" type="xml">
+            <form string="Shippo Box">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sequence"/>
+                        <field name="active"/>
+                    </group>
+                    <group string="Size">
+                        <field name="length_in"/>
+                        <field name="width_in"/>
+                        <field name="height_in"/>
+                    </group>
+                    <group string="Weight">
+                        <field name="empty_lb"/>
+                        <field name="max_lb"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_int_shippo_box" model="ir.actions.act_window">
+        <field name="name">Shippo Boxes</field>
+        <field name="res_model">int.shippo.box</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

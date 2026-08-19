@@ -8,7 +8,7 @@
                 <group>
                     <group>
                         <field name="picking_id" readonly="1"/>
-                        <field name="package_type_id"/>
+                        <field name="box_id"/>
                         <field name="weight_lb"/>
                     </group>
                     <group>
@@ -18,7 +18,7 @@
                     </group>
                 </group>
                 <field name="selected_line_id" invisible="1"/>
-                <field name="line_ids" nolabel="1">
+                <field name="line_ids" nolabel="1" widget="int_shippo_rate_lines">
                     <list create="false" delete="false" decoration-success="selected">
                         <field name="selected" column_invisible="1"/>
                         <button name="action_select" type="object" string="Select" class="btn-link"

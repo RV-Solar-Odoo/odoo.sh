@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_int_shippo_box_user,int.shippo.box.user,model_int_shippo_box,stock.group_stock_user,1,0,0,0
+access_int_shippo_box_manager,int.shippo.box.manager,model_int_shippo_box,stock.group_stock_manager,1,1,1,1
 access_int_shippo_rate_wizard_user,int.shippo.rate.wizard.user,model_int_shippo_rate_wizard,stock.group_stock_user,1,1,1,1
 access_int_shippo_rate_line_user,int.shippo.rate.line.user,model_int_shippo_rate_line,stock.group_stock_user,1,1,1,1

@@ -10,7 +10,7 @@ class ShippoRateWizard(models.TransientModel):
     _description = "Shippo rate picker"
 
     picking_id = fields.Many2one("stock.picking", required=True, ondelete="cascade")
-    package_type_id = fields.Many2one("stock.package.type", string="Box")
+    box_id = fields.Many2one("int.shippo.box", string="Box")
     weight_lb = fields.Float(string="Weight (lb)", digits=(16, 2))
     length_in = fields.Float(string="Length (in)", digits=(16, 2))
     width_in = fields.Float(string="Width (in)", digits=(16, 2))
@@ -19,27 +19,24 @@ class ShippoRateWizard(models.TransientModel):
     line_ids = fields.One2many("int.shippo.rate.line", "wizard_id", string="Rates")
     selected_line_id = fields.Many2one("int.shippo.rate.line", string="Selected Rate")
 
-    @api.onchange("package_type_id")
-    def _onchange_package_type_id(self):
-        if self.package_type_id and self.picking_id:
-            self.length_in, self.width_in, self.height_in = self.picking_id._int_shippo_package_dims_in(
-                self.package_type_id
-            )
-            self.weight_lb = (
-                self.picking_id._int_shippo_content_weight_lb()
-                + self.picking_id._int_shippo_package_empty_lb(self.package_type_id)
-            )
+    @api.onchange("box_id")
+    def _onchange_box_id(self):
+        if self.box_id and self.picking_id:
+            self.length_in = self.box_id.length_in
+            self.width_in = self.box_id.width_in
+            self.height_in = self.box_id.height_in
+            self.weight_lb = self.picking_id._int_shippo_content_weight_lb() + (self.box_id.empty_lb or 0.0)
 
     def action_refresh_dims(self):
         self.ensure_one()
         picking = self.picking_id
-        if not self.package_type_id:
-            self.package_type_id = picking._int_shippo_suggest_package_type()
-        if self.package_type_id:
-            self.length_in, self.width_in, self.height_in = picking._int_shippo_package_dims_in(self.package_type_id)
-            self.weight_lb = picking._int_shippo_content_weight_lb() + picking._int_shippo_package_empty_lb(
-                self.package_type_id
-            )
+        if not self.box_id:
+            self.box_id = picking._int_shippo_suggest_box()
+        if self.box_id:
+            self.length_in = self.box_id.length_in
+            self.width_in = self.box_id.width_in
+            self.height_in = self.box_id.height_in
+            self.weight_lb = picking._int_shippo_content_weight_lb() + (self.box_id.empty_lb or 0.0)
         else:
             self.weight_lb = picking._int_shippo_content_weight_lb() or 0.1
             self.length_in = self.width_in = self.height_in = 10.0
@@ -48,9 +45,9 @@ class ShippoRateWizard(models.TransientModel):
     def action_get_rates(self):
         self.ensure_one()
         picking = self.picking_id
-        picking.int_shippo_package_type_id = self.package_type_id
+        picking.int_shippo_box_id = self.box_id
         parcels = picking._int_shippo_parcels(
-            package_type=self.package_type_id,
+            box=self.box_id,
             weight_lb=self.weight_lb,
             length_in=self.length_in,
             width_in=self.width_in,
@@ -129,7 +126,7 @@ class ShippoRateWizard(models.TransientModel):
             "int_shippo_transaction_id": transaction.get("object_id"),
             "int_shippo_label_url": label_url,
             "int_shippo_tracking_url": tracking_url,
-            "int_shippo_package_type_id": self.package_type_id.id,
+            "int_shippo_box_id": self.box_id.id,
             "carrier_tracking_ref": tracking,
             "carrier_price": self.selected_line_id.amount,
         }

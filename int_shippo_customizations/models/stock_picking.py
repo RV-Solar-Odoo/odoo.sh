@@ -33,19 +33,19 @@ class StockPicking(models.Model):
     int_shippo_transaction_id = fields.Char(string="Shippo Transaction ID", copy=False)
     int_shippo_label_url = fields.Char(string="Shippo Label URL", copy=False)
     int_shippo_tracking_url = fields.Char(string="Shippo Tracking URL", copy=False)
-    int_shippo_package_type_id = fields.Many2one(
-        "stock.package.type",
+    int_shippo_box_id = fields.Many2one(
+        "int.shippo.box",
         string="Shippo Box",
-        help="Standard carton used for this shipment. Suggested from product dimensions; warehouse can change it.",
+        help="Carton sent to Shippo for rates. Suggested from product dimensions; warehouse can change it.",
     )
 
     def action_open_shippo_rates(self):
         self.ensure_one()
-        if not self.int_shippo_package_type_id:
-            self.int_shippo_package_type_id = self._int_shippo_suggest_package_type()
+        if not self.int_shippo_box_id:
+            self.int_shippo_box_id = self._int_shippo_suggest_box()
         wizard = self.env["int.shippo.rate.wizard"].create({
             "picking_id": self.id,
-            "package_type_id": self.int_shippo_package_type_id.id,
+            "box_id": self.int_shippo_box_id.id,
         })
         wizard.action_refresh_dims()
         return {
@@ -124,27 +124,15 @@ class StockPicking(models.Model):
             for move in self._int_shippo_move_lines()
         )
 
-    def _int_shippo_package_dims_in(self, package_type):
-        uom = package_type.length_uom_name
-        return (
-            _length_to_inches(package_type.packaging_length or 0.0, uom),
-            _length_to_inches(package_type.width or 0.0, uom),
-            _length_to_inches(package_type.height or 0.0, uom),
-        )
-
-    def _int_shippo_package_empty_lb(self, package_type):
-        return _weight_to_lb(package_type.base_weight or 0.0, package_type.weight_uom_name)
-
-    def _int_shippo_suggest_package_type(self):
+    def _int_shippo_suggest_box(self):
         self.ensure_one()
-        types = self.env["stock.package.type"].search([
-            ("package_use", "=", "disposable"),
-            ("packaging_length", ">", 0),
-            ("width", ">", 0),
-            ("height", ">", 0),
+        boxes = self.env["int.shippo.box"].search([
+            ("length_in", ">", 0),
+            ("width_in", ">", 0),
+            ("height_in", ">", 0),
         ])
-        if not types:
-            return self.env["stock.package.type"]
+        if not boxes:
+            return self.env["int.shippo.box"]
         max_l = max_w = max_h = 0.0
         volume = 0.0
         for move in self._int_shippo_move_lines():
@@ -156,34 +144,33 @@ class StockPicking(models.Model):
             volume += length * width * height * move.product_uom_qty
         weight_lb = self._int_shippo_content_weight_lb()
         fits = []
-        for package in types:
-            length, width, height = self._int_shippo_package_dims_in(package)
-            box = sorted((length, width, height), reverse=True)
-            max_lb = _weight_to_lb(package.max_weight or 0.0, package.weight_uom_name)
-            if max_l and (box[0] + 1e-6 < max_l or box[1] + 1e-6 < max_w or box[2] + 1e-6 < max_h):
+        for box in boxes:
+            length, width, height = box.length_in, box.width_in, box.height_in
+            outer = sorted((length, width, height), reverse=True)
+            if max_l and (outer[0] + 1e-6 < max_l or outer[1] + 1e-6 < max_w or outer[2] + 1e-6 < max_h):
                 continue
             if volume and length * width * height + 1e-6 < volume:
                 continue
-            if max_lb and weight_lb + self._int_shippo_package_empty_lb(package) > max_lb + 1e-6:
+            if box.max_lb and weight_lb + (box.empty_lb or 0.0) > box.max_lb + 1e-6:
                 continue
-            fits.append((length * width * height, package))
+            fits.append((length * width * height, box))
         if not fits:
-            return types.sorted(lambda p: p.packaging_length * p.width * p.height)[:1]
+            return boxes.sorted(lambda b: b.length_in * b.width_in * b.height_in)[:1]
         fits.sort(key=lambda item: item[0])
         return fits[0][1]
 
-    def _int_shippo_parcels(self, package_type=None, weight_lb=None, length_in=None, width_in=None, height_in=None):
+    def _int_shippo_parcels(self, box=None, weight_lb=None, length_in=None, width_in=None, height_in=None):
         self.ensure_one()
-        package_type = package_type or self.int_shippo_package_type_id or self._int_shippo_suggest_package_type()
+        box = box or self.int_shippo_box_id or self._int_shippo_suggest_box()
         if length_in is None or width_in is None or height_in is None:
-            if package_type:
-                length_in, width_in, height_in = self._int_shippo_package_dims_in(package_type)
+            if box:
+                length_in, width_in, height_in = box.length_in, box.width_in, box.height_in
             else:
                 length_in = width_in = height_in = 10.0
         if weight_lb is None:
             weight_lb = self._int_shippo_content_weight_lb()
-            if package_type:
-                weight_lb += self._int_shippo_package_empty_lb(package_type)
+            if box:
+                weight_lb += box.empty_lb or 0.0
         weight_lb = max(weight_lb or 0.1, 0.1)
         return [{
             "length": f"{max(length_in or 1.0, 0.1):.2f}",

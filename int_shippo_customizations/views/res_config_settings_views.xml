@@ -13,6 +13,10 @@
                     <setting string="Test mode" help="Reminder only. Shippo decides test vs live from the token, not this checkbox.">
                         <field name="int_shippo_test_mode"/>
                     </setting>
+                    <setting string="Boxes" help="Carton sizes sent to Shippo. These are not Inventory Packages.">
+                        <button name="%(int_shippo_customizations.action_int_shippo_box)d" type="action"
+                                string="Shippo Boxes" class="btn-link"/>
+                    </setting>
                 </block>
             </xpath>
         </field>

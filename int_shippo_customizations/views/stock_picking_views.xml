@@ -13,7 +13,7 @@
             <xpath expr="//sheet" position="inside">
                 <group string="Shippo" name="int_shippo" invisible="picking_type_code != 'outgoing'">
                     <group>
-                        <field name="int_shippo_package_type_id"/>
+                        <field name="int_shippo_box_id"/>
                         <field name="int_shippo_label_url" widget="url" invisible="not int_shippo_label_url"/>
                         <field name="int_shippo_tracking_url" widget="url" invisible="not int_shippo_tracking_url"/>
                     </group>
