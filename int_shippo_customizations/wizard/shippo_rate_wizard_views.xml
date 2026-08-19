@@ -17,8 +17,14 @@
                         <field name="height_in"/>
                     </group>
                 </group>
+                <field name="selected_line_id" invisible="1"/>
                 <field name="line_ids" nolabel="1">
-                    <list create="false" delete="false" editable="bottom">
+                    <list create="false" delete="false" decoration-success="selected">
+                        <field name="selected" column_invisible="1"/>
+                        <button name="action_select" type="object" string="Select" class="btn-link"
+                                invisible="selected"/>
+                        <button name="action_select" type="object" string="Selected" class="btn-link text-success"
+                                invisible="not selected"/>
                         <field name="carrier"/>
                         <field name="service"/>
                         <field name="amount"/>
@@ -27,13 +33,10 @@
                         <field name="rate_object_id" column_invisible="True"/>
                     </list>
                 </field>
-                <group>
-                    <field name="selected_line_id" domain="[('wizard_id', '=', id)]"/>
-                </group>
                 <footer>
                     <button name="action_get_rates" type="object" string="Get Rates" class="btn-primary"/>
                     <button name="action_buy_label" type="object" string="Buy Label" class="btn-primary"
-                            invisible="not line_ids"/>
+                            invisible="not selected_line_id"/>
                     <button string="Close" special="cancel"/>
                 </footer>
             </form>

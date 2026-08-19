@@ -85,9 +85,11 @@ class ShippoRateWizard(models.TransientModel):
                 "currency": rate.get("currency"),
                 "days": rate.get("estimated_days") or 0,
             })
-        self.env["int.shippo.rate.line"].create(lines)
-        cheapest = self.line_ids.sorted("amount")[:1]
-        self.selected_line_id = cheapest
+        created = self.env["int.shippo.rate.line"].create(lines)
+        first = created.sorted(lambda line: (line.amount, line.id))[:1]
+        if first:
+            first.selected = True
+            self.selected_line_id = first
         return {
             "type": "ir.actions.act_window",
             "res_model": self._name,
@@ -178,3 +180,45 @@ class ShippoRateLine(models.TransientModel):
     amount = fields.Float(digits=(16, 2))
     currency = fields.Char()
     days = fields.Integer(string="Est. days")
+    selected = fields.Boolean(string="Selected")
+
+    @api.depends("carrier", "service", "amount", "currency", "days")
+    def _compute_display_name(self):
+        for line in self:
+            name = " ".join(part for part in (line.carrier, line.service) if part) or self.env._("Shippo rate")
+            price = f"{line.amount:.2f}"
+            if line.currency:
+                price = f"{price} {line.currency}"
+            if line.days:
+                line.display_name = f"{name} — {price} ({line.days}d)"
+            else:
+                line.display_name = f"{name} — {price}"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        for line in lines.filtered("selected"):
+            line.wizard_id.selected_line_id = line
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.get("selected"):
+            for line in self:
+                others = (line.wizard_id.line_ids - line).filtered("selected")
+                if others:
+                    super(ShippoRateLine, others).write({"selected": False})
+                line.wizard_id.selected_line_id = line
+        return res
+
+    def action_select(self):
+        self.ensure_one()
+        self.selected = True
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Shippo Rates"),
+            "res_model": self.wizard_id._name,
+            "res_id": self.wizard_id.id,
+            "view_mode": "form",
+            "target": "new",
+        }
