@@ -1,0 +1,42 @@
+---
+description: Naming and layout for Internal (int_) custom Odoo modules
+alwaysApply: true
+---
+
+# Internal custom modules
+
+These are background extensions of existing Odoo apps. They never create a new app.
+
+## Technical names
+
+`int_<app>_customizations`
+
+```
+int_inventory_customizations
+int_helpdesk_customizations
+int_contacts_customizations
+```
+
+Do not use `int_base`, `rvsb_`, or an unprefixed name. Never set `application: True`.
+
+## Manifest
+
+- `name`: `Internal <App> Customizations`
+- `author`: `Internal`
+- `application`: `False`
+- `version`: `19.0.x.y.z`
+- `license`: `LGPL-3`
+- `depends`: only the upstream Odoo apps being extended (e.g. `stock`, `helpdesk`)
+
+## Layout
+
+```
+int_<app>_customizations/
+  __init__.py
+  __manifest__.py
+  models/
+  views/
+  data/
+```
+
+One existing app per module. Do not dump Studio exports as `studio_customization`.

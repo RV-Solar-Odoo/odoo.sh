@@ -1,12 +1,10 @@
 # Odoo.sh custom modules
 
-Every custom module is prefixed with `int_` and authored `Internal`.
-Search Apps for `int_` to see only ours.
+Background modules that extend existing apps. They are not new apps.
+Prefix `int_`, author `Internal`. Search Apps for `int_` to list them.
 
-| Module | Role |
+| Module | Extends |
 | --- | --- |
-| `int_base` | Umbrella app — install this |
-| `int_inventory_customizations` | Product fields, form, and categories from the 19.2 Studio export |
+| `int_inventory_customizations` | Inventory (product fields, form, categories) |
 
-`int_inventory_customizations` auto-installs with `int_base` when Inventory / Purchase are already present.
-New app customizations go in `int_<app>_customizations` (for example `int_helpdesk_customizations`) and depend on `int_base`.
+Later modules follow `int_<app>_customizations` and set `application: False`.
