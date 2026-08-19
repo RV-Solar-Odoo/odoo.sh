@@ -14,10 +14,13 @@ export class ShippoRateX2ManyField extends X2ManyField {
         if (!record.resId) {
             return;
         }
-        const action = await this.orm.call(record.resModel, "action_select", [record.resId]);
-        if (action) {
-            await this.action.doAction(action);
-        }
+        await this.orm.call(record.resModel, "action_select", [[record.resId]]);
+        await Promise.all(
+            this.list.records.map((line) =>
+                line.update({ selected: line.resId === record.resId })
+            )
+        );
+        await this.props.record.update({ selected_line_id: record.resId });
     }
 }
 

@@ -127,6 +127,9 @@ class ShippoRateWizard(models.TransientModel):
             "int_shippo_label_url": label_url,
             "int_shippo_tracking_url": tracking_url,
             "int_shippo_box_id": self.box_id.id,
+            "int_shippo_carrier_name": " — ".join(
+                part for part in (self.selected_line_id.carrier, self.selected_line_id.service) if part
+            ),
             "carrier_tracking_ref": tracking,
             "carrier_price": self.selected_line_id.amount,
         }
@@ -143,6 +146,12 @@ class ShippoRateWizard(models.TransientModel):
             currency=self.selected_line_id.currency or "",
             tracking=tracking or self.env._("pending"),
         ))
+        if label_url:
+            return {
+                "type": "ir.actions.act_url",
+                "url": label_url,
+                "target": "new",
+            }
         return {"type": "ir.actions.act_window_close"}
 
     def _attach_label(self, picking, label_url, tracking):
@@ -151,7 +160,7 @@ class ShippoRateWizard(models.TransientModel):
                 pdf = resp.read()
         except Exception as exc:  # noqa: BLE001 — still keep the purchased label URL
             picking.message_post(body=self.env._(
-                "Label purchased but the PDF could not be downloaded (%s). Open the Shippo label URL on the delivery.",
+                "Label purchased but the PDF could not be downloaded (%s). Use the Shipping Label button on the delivery.",
                 exc,
             ))
             return
@@ -217,5 +226,6 @@ class ShippoRateLine(models.TransientModel):
             "res_model": self.wizard_id._name,
             "res_id": self.wizard_id.id,
             "view_mode": "form",
+            "views": [[False, "form"]],
             "target": "new",
         }

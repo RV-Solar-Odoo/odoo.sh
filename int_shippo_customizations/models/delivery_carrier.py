@@ -73,4 +73,5 @@ class DeliveryCarrier(models.Model):
             "int_shippo_transaction_id": False,
             "int_shippo_label_url": False,
             "int_shippo_tracking_url": False,
+            "int_shippo_carrier_name": False,
         })

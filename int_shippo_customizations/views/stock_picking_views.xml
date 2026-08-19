@@ -4,18 +4,33 @@
         <field name="name">stock.picking.form.int.shippo</field>
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="priority">50</field>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <button name="action_open_shippo_rates" type="object" string="Get Shippo Rates"
                         class="btn-primary"
                         invisible="picking_type_code != 'outgoing' or state in ('done', 'cancel')"/>
             </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_shippo_label" type="object" class="oe_stat_button" icon="fa-file-pdf-o"
+                        invisible="not int_shippo_label_url">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Shipping Label</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='carrier_id']" position="attributes">
+                <attribute name="invisible">int_shippo_carrier_name</attribute>
+            </xpath>
+            <xpath expr="//field[@name='carrier_id']" position="after">
+                <field name="int_shippo_carrier_name" invisible="not int_shippo_carrier_name"/>
+            </xpath>
             <xpath expr="//sheet" position="inside">
                 <group string="Shippo" name="int_shippo" invisible="picking_type_code != 'outgoing'">
                     <group>
                         <field name="int_shippo_box_id"/>
-                        <field name="int_shippo_label_url" widget="url" invisible="not int_shippo_label_url"/>
-                        <field name="int_shippo_tracking_url" widget="url" invisible="not int_shippo_tracking_url"/>
+                        <field name="int_shippo_label_url" invisible="1"/>
+                        <field name="int_shippo_tracking_url" invisible="1"/>
                     </group>
                 </group>
             </xpath>
