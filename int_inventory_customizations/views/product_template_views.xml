@@ -15,17 +15,17 @@
                     <page string="Product Info" name="studio_page_4if">
                         <group name="studio_group_4if">
                             <group name="studio_group_4if_left">
-                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(int_inventory.product_category_accessories_hardware)d]"/>
+                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(int_inventory_customizations.product_category_accessories_hardware)d]"/>
                                 <field name="x_studio_certifications" widget="radio"/>
-                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(int_inventory.product_category_solar_chargers)d]"/>
-                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(int_inventory.product_category_dc_dc_chargers)d, %(int_inventory.product_category_inverter_chargers)d, %(int_inventory.product_category_solar_chargers)d, %(int_inventory.product_category_batteries)d]"/>
-                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(int_inventory.product_category_batteries)d]"/>
-                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d, %(int_inventory.product_category_dc_dc_chargers)d]"/>
-                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(int_inventory.product_category_dc_dc_chargers)d, %(int_inventory.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_solar_chargers)d]"/>
+                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_solar_chargers)d, %(int_inventory_customizations.product_category_batteries)d]"/>
+                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_batteries)d]"/>
+                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_dc_dc_chargers)d]"/>
+                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d]"/>
                             </group>
                             <group name="studio_group_4if_right">
                                 <field name="x_studio_approved_for_boats"/>
