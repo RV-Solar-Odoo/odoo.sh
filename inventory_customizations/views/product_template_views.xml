@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_customizations" model="ir.ui.view">
+        <field name="name">product.template.form.product.customizations</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="priority">160</field>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='internal_notes']" position="after">
+                <group name="studio_group_231_1jnv9maf4">
+                    <group name="studio_group_231_left"/>
+                    <group name="studio_group_231_right"/>
+                </group>
+                <notebook name="studio_notebook_4if_1jnv9ne6p">
+                    <page string="Product Info" name="studio_page_4if">
+                        <group name="studio_group_4if">
+                            <group name="studio_group_4if_left">
+                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(inventory_customizations.product_category_accessories_hardware)d]"/>
+                                <field name="x_studio_certifications" widget="radio"/>
+                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(inventory_customizations.product_category_solar_chargers)d]"/>
+                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(inventory_customizations.product_category_dc_dc_chargers)d, %(inventory_customizations.product_category_inverter_chargers)d, %(inventory_customizations.product_category_solar_chargers)d, %(inventory_customizations.product_category_batteries)d]"/>
+                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(inventory_customizations.product_category_batteries)d]"/>
+                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d, %(inventory_customizations.product_category_dc_dc_chargers)d]"/>
+                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(inventory_customizations.product_category_dc_dc_chargers)d, %(inventory_customizations.product_category_inverter_chargers)d]"/>
+                            </group>
+                            <group name="studio_group_4if_right">
+                                <field name="x_studio_approved_for_boats"/>
+                                <field name="x_studio_approved_for_rvs"/>
+                                <field name="x_studio_approved_for_off_grid"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="Vendor Information" name="studio_page_68u_1jnv9ucav">
+                        <group name="studio_group_68u">
+                            <group name="studio_group_68u_left">
+                                <field name="x_studio_hts_code"/>
+                                <field name="x_studio_manufacturer"/>
+                                <field name="x_studio_country_of_origin"/>
+                            </group>
+                            <group name="studio_group_68u_right">
+                                <field name="x_studio_tariff_cost" help="If zero, included in cost"/>
+                                <field name="x_studio_inbound_shipping_cost" help="If zero, included in cost"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="Data Sheet" name="studio_page_6c4_1jpp3adom">
+                        <group name="studio_group_1mo_1jpp3n231">
+                            <group name="studio_group_1mo_left">
+                                <field name="x_studio_product_data_sheet" filename="x_studio_product_data_sheet_filename" widget="pdf_viewer"/>
+                            </group>
+                            <group name="studio_group_1mo_right"/>
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+            <xpath expr="//field[@name='default_code']" position="after">
+                <field name="x_studio_gtin"/>
+            </xpath>
+            <xpath expr="//field[@name='default_code']" position="attributes">
+                <attribute name="string">Internal SKU</attribute>
+            </xpath>
+            <xpath expr="//div[@name='taxes_div']" position="after">
+                <field name="x_studio_map_price"/>
+            </xpath>
+            <xpath expr="//group[@name='internal_notes']" position="attributes">
+                <attribute name="string">Description</attribute>
+            </xpath>
+            <xpath expr="//field[@name='seller_ids']" position="inside">
+                <list string="Vendor Information" multi_edit="1" editable="bottom">
+                    <field name="sequence" widget="handle"/>
+                    <field name="partner_id"/>
+                    <field name="product_id" optional="hide" column_invisible="context.get('product_template_invisible_variant', False)" groups="product.group_product_variant" domain="[('product_tmpl_id', '=', parent.id)]" options="{'no_create': True, 'no_open': True}"/>
+                    <field name="product_tmpl_id" string="Product" readonly="1" column_invisible="context.get('visible_product_tmpl_id', True)"/>
+                    <field name="product_name" optional="hide"/>
+                    <field name="product_code" optional="hide"/>
+                    <field name="date_start" optional="hide"/>
+                    <field name="date_end" optional="hide"/>
+                    <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                    <field name="min_qty" optional="show"/>
+                    <field name="uom_id" groups="uom.group_uom" optional="show" options="{'no_quick_create': True, 'no_open': True}" context="{'product_id': product_id}" widget="many2one_uom"/>
+                    <field name="price" widget="monetary"/>
+                    <field name="discount" optional="hide"/>
+                    <field name="currency_id" groups="base.group_multi_currency" optional="hide"/>
+                    <field name="delay" optional="show"/>
+                </list>
+            </xpath>
+            <xpath expr="//group[@name='inventory']" position="after">
+                <group name="studio_group_2mb_1jpov6kcd">
+                    <group name="studio_group_2mb_left" string="Dimensions (mm)">
+                        <field name="x_studio_length_mm"/>
+                        <field name="x_studio_width_mm"/>
+                        <field name="x_studio_height_mm"/>
+                    </group>
+                    <group name="studio_group_2mb_right" string="Dimensions (inches)">
+                        <field name="x_studio_length_in"/>
+                        <field name="x_studio_width_in"/>
+                        <field name="x_studio_height_in"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='responsible_id']" position="after">
+                <field name="x_studio_weight_lbs"/>
+            </xpath>
+            <xpath expr="//field[@name='weight']" position="after">
+                <field name="x_studio_qty_per_pallet"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

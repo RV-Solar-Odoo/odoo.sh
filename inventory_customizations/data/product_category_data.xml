@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="product_category_inverter_chargers" model="product.category">
+        <field name="name">Inverter/Chargers</field>
+    </record>
+    <record id="product_category_solar_chargers" model="product.category">
+        <field name="name">Solar Chargers</field>
+    </record>
+    <record id="product_category_dc_dc_chargers" model="product.category">
+        <field name="name">DC-DC Chargers</field>
+    </record>
+    <record id="product_category_solar_panels" model="product.category">
+        <field name="name">Solar Panels</field>
+    </record>
+    <record id="product_category_batteries" model="product.category">
+        <field name="name">Batteries</field>
+    </record>
+    <record id="product_category_distribution_wiring" model="product.category">
+        <field name="name">Distribution &amp; Wiring</field>
+    </record>
+    <record id="product_category_display_monitoring" model="product.category">
+        <field name="name">Display &amp; Monitoring</field>
+    </record>
+    <record id="product_category_accessories_hardware" model="product.category">
+        <field name="name">Accessories &amp; Hardware</field>
+    </record>
+    <record id="product_category_system_builder" model="product.category">
+        <field name="name">System Builder</field>
+    </record>
+</odoo>
