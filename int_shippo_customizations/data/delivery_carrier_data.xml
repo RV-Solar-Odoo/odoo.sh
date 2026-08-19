@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="product_product_delivery_shippo" model="product.product">
+        <field name="name">Shippo Shipping</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo" model="delivery.carrier">
+        <field name="name">Shippo</field>
+        <field name="delivery_type">shippo</field>
+        <field name="integration_level">rate</field>
+        <field name="product_id" ref="product_product_delivery_shippo"/>
+    </record>
+</odoo>

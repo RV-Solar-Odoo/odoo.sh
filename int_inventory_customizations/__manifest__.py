@@ -1,6 +1,6 @@
 {
-    "name": "Internal Inventory Customizations",
-    "version": "19.0.1.0.1",
+    "name": "Inventory Customizations",
+    "version": "19.0.1.0.2",
     "category": "Inventory/Inventory",
     "summary": "Adds RVSB product fields and form layout to Inventory",
     "author": "Internal",

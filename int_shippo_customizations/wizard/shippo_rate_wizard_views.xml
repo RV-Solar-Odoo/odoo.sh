@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_int_shippo_rate_wizard_form" model="ir.ui.view">
+        <field name="name">int.shippo.rate.wizard.form</field>
+        <field name="model">int.shippo.rate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Shippo Rates">
+                <group>
+                    <group>
+                        <field name="picking_id" readonly="1"/>
+                        <field name="package_type_id"/>
+                        <field name="weight_lb"/>
+                    </group>
+                    <group>
+                        <field name="length_in"/>
+                        <field name="width_in"/>
+                        <field name="height_in"/>
+                    </group>
+                </group>
+                <field name="line_ids" nolabel="1">
+                    <list create="false" delete="false" editable="bottom">
+                        <field name="carrier"/>
+                        <field name="service"/>
+                        <field name="amount"/>
+                        <field name="currency"/>
+                        <field name="days"/>
+                        <field name="rate_object_id" column_invisible="True"/>
+                    </list>
+                </field>
+                <group>
+                    <field name="selected_line_id" domain="[('wizard_id', '=', id)]"/>
+                </group>
+                <footer>
+                    <button name="action_get_rates" type="object" string="Get Rates" class="btn-primary"/>
+                    <button name="action_buy_label" type="object" string="Buy Label" class="btn-primary"
+                            invisible="not line_ids"/>
+                    <button string="Close" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

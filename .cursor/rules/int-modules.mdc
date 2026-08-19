@@ -1,9 +1,9 @@
 ---
-description: Naming and layout for Internal (int_) custom Odoo modules
+description: Naming and layout for int_ custom Odoo modules
 alwaysApply: true
 ---
 
-# Internal custom modules
+# Custom modules
 
 These are background extensions of existing Odoo apps. They never create a new app.
 
@@ -13,6 +13,7 @@ These are background extensions of existing Odoo apps. They never create a new a
 
 ```
 int_inventory_customizations
+int_shippo_customizations
 int_helpdesk_customizations
 int_contacts_customizations
 ```
@@ -21,7 +22,7 @@ Do not use `int_base`, `rvsb_`, or an unprefixed name. Never set `application: T
 
 ## Manifest
 
-- `name`: `Internal <App> Customizations`
+- `name`: `<App> Customizations` (no "Internal" in the display name)
 - `author`: `Internal`
 - `application`: `False`
 - `version`: `19.0.x.y.z`
