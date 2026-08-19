@@ -5,7 +5,7 @@
     "summary": "Adds RVSB product fields and form layout to Inventory",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["product", "stock", "purchase"],
+    "depends": ["product", "stock", "purchase", "stock_delivery"],
     "application": False,
     "data": [
         "data/product_category_data.xml",

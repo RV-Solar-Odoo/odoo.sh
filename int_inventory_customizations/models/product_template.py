@@ -124,14 +124,6 @@ class ProductTemplate(models.Model):
         ],
         string="Approved for Off Grid",
     )
-    country_of_origin = fields.Selection(
-        [
-            ("India", "India"),
-            ("Malaysia", "Malaysia"),
-            ("China", "China"),
-        ],
-        string="Country of Origin",
-    )
     tariff = fields.Monetary(string="Tariff", currency_field="currency_id")
     tariff_cost = fields.Monetary(string="Tariff Cost", currency_field="currency_id")
     inbound_shipping_cost = fields.Monetary(

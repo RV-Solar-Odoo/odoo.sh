@@ -3,6 +3,8 @@
 from odoo.tools.sql import column_exists
 
 # old Studio name -> new Python field name
+# Do not map x_studio_country_of_origin here: stock_delivery already owns
+# country_of_origin as a Many2one (integer) to res.country.
 FIELD_RENAMES = [
     ("x_studio_hts_code", "hts_code"),
     ("x_studio_vendor", "vendor_name"),
@@ -32,7 +34,6 @@ FIELD_RENAMES = [
     ("x_studio_approved_for_boats", "approved_for_boats"),
     ("x_studio_approved_for_rvs", "approved_for_rvs"),
     ("x_studio_approved_for_off_grid", "approved_for_off_grid"),
-    ("x_studio_country_of_origin", "country_of_origin"),
     ("x_studio_tariff", "tariff"),
     ("x_studio_tariff_cost", "tariff_cost"),
     ("x_studio_inbound_shipping_cost", "inbound_shipping_cost"),
@@ -42,45 +43,96 @@ FIELD_RENAMES = [
     ("x_studio_certifications", "certifications"),
 ]
 
+STUDIO_COUNTRY_CODES = {
+    "India": "IN",
+    "Malaysia": "MY",
+    "China": "CN",
+}
+
+
+def _column_type(cr, table, column):
+    cr.execute(
+        """
+        SELECT format_type(a.atttypid, a.atttypmod)
+          FROM pg_attribute a
+          JOIN pg_class c ON c.oid = a.attrelid
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+         WHERE n.nspname = 'public'
+           AND c.relname = %s
+           AND a.attname = %s
+           AND NOT a.attisdropped
+        """,
+        (table, column),
+    )
+    row = cr.fetchone()
+    return row[0] if row else None
+
+
+def _rename_field_metadata(cr, old, new):
+    cr.execute(
+        """
+        UPDATE ir_model_fields
+           SET name = %s
+         WHERE name = %s
+           AND model IN ('product.template', 'product.product')
+        """,
+        (new, old),
+    )
+    cr.execute(
+        """
+        UPDATE ir_attachment
+           SET res_field = %s
+         WHERE res_field = %s
+           AND res_model IN ('product.template', 'product.product')
+        """,
+        (new, old),
+    )
+    for model_xml in ("product_template", "product_product"):
+        cr.execute(
+            """
+            UPDATE ir_model_data
+               SET name = %s
+             WHERE module = 'int_inventory_customizations'
+               AND model = 'ir.model.fields'
+               AND name = %s
+            """,
+            (f"field_{model_xml}__{new}", f"field_{model_xml}__{old}"),
+        )
+
+
+def _migrate_studio_country(cr):
+    if not column_exists(cr, "product_template", "x_studio_country_of_origin"):
+        return
+    if not column_exists(cr, "product_template", "country_of_origin"):
+        return
+    for label, code in STUDIO_COUNTRY_CODES.items():
+        cr.execute(
+            """
+            UPDATE product_template pt
+               SET country_of_origin = rc.id
+              FROM res_country rc
+             WHERE pt.country_of_origin IS NULL
+               AND pt.x_studio_country_of_origin = %s
+               AND rc.code = %s
+            """,
+            (label, code),
+        )
+
 
 def migrate(cr, version):
     if not version:
         return
+    _migrate_studio_country(cr)
     for old, new in FIELD_RENAMES:
         old_col = column_exists(cr, "product_template", old)
         new_col = column_exists(cr, "product_template", new)
         if old_col and not new_col:
             cr.execute(f'ALTER TABLE product_template RENAME COLUMN "{old}" TO "{new}"')
-        elif old_col and new_col:
+            _rename_field_metadata(cr, old, new)
+        elif old_col and new_col and _column_type(cr, "product_template", old) == _column_type(
+            cr, "product_template", new
+        ):
             cr.execute(
                 f'UPDATE product_template SET "{new}" = "{old}" WHERE "{new}" IS NULL AND "{old}" IS NOT NULL'
             )
-        cr.execute(
-            """
-            UPDATE ir_model_fields
-               SET name = %s
-             WHERE name = %s
-               AND model IN ('product.template', 'product.product')
-            """,
-            (new, old),
-        )
-        cr.execute(
-            """
-            UPDATE ir_attachment
-               SET res_field = %s
-             WHERE res_field = %s
-               AND res_model IN ('product.template', 'product.product')
-            """,
-            (new, old),
-        )
-        for model_xml in ("product_template", "product_product"):
-            cr.execute(
-                """
-                UPDATE ir_model_data
-                   SET name = %s
-                 WHERE module = 'int_inventory_customizations'
-                   AND model = 'ir.model.fields'
-                   AND name = %s
-                """,
-                (f"field_{model_xml}__{new}", f"field_{model_xml}__{old}"),
-            )
+            _rename_field_metadata(cr, old, new)
