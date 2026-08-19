@@ -1,6 +1,6 @@
 {
     "name": "Shippo Customizations",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Inventory/Delivery",
     "summary": "Buy Shippo labels from warehouse deliveries using product weight, dimensions, and package types",
     "author": "Internal",
@@ -10,6 +10,7 @@
     "data": [
         "security/ir.model.access.csv",
         "data/delivery_carrier_data.xml",
+        "data/package_type_data.xml",
         "views/res_config_settings_views.xml",
         "views/delivery_carrier_views.xml",
         "views/stock_picking_views.xml",
