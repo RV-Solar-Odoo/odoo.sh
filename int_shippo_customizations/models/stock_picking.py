@@ -94,15 +94,21 @@ class StockPicking(models.Model):
 
     def _int_shippo_product_weight_lb(self, product, qty):
         tmpl = product.product_tmpl_id
-        if "x_studio_weight_lbs" in tmpl._fields and tmpl.x_studio_weight_lbs:
-            return tmpl.x_studio_weight_lbs * qty
+        weight_lbs = tmpl.weight_lbs if "weight_lbs" in tmpl._fields else 0.0
+        if not weight_lbs and "x_studio_weight_lbs" in tmpl._fields:
+            weight_lbs = tmpl.x_studio_weight_lbs
+        if weight_lbs:
+            return weight_lbs * qty
         uom = tmpl._get_weight_uom_name_from_ir_config_parameter()
         return _weight_to_lb(tmpl.weight or 0.0, uom) * qty
 
     def _int_shippo_product_dims_in(self, product):
         tmpl = product.product_tmpl_id
-        if all(name in tmpl._fields for name in ("x_studio_length_in", "x_studio_width_in", "x_studio_height_in")):
-            length, width, height = tmpl.x_studio_length_in, tmpl.x_studio_width_in, tmpl.x_studio_height_in
+        dim_names = ("length_in", "width_in", "height_in")
+        if not all(name in tmpl._fields for name in dim_names):
+            dim_names = ("x_studio_length_in", "x_studio_width_in", "x_studio_height_in")
+        if all(name in tmpl._fields for name in dim_names):
+            length, width, height = (tmpl[name] for name in dim_names)
             if length or width or height:
                 return length or 0.0, width or 0.0, height or 0.0
         return 0.0, 0.0, 0.0

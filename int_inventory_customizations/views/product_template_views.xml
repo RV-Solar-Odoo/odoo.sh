@@ -15,42 +15,42 @@
                     <page string="Product Info" name="studio_page_4if">
                         <group name="studio_group_4if">
                             <group name="studio_group_4if_left">
-                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(int_inventory_customizations.product_category_accessories_hardware)d]"/>
-                                <field name="x_studio_certifications" widget="radio"/>
-                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_solar_chargers)d]"/>
-                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_solar_chargers)d, %(int_inventory_customizations.product_category_batteries)d]"/>
-                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_batteries)d]"/>
-                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_dc_dc_chargers)d]"/>
-                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="battery_compatibility" invisible="categ_id in [%(int_inventory_customizations.product_category_accessories_hardware)d]"/>
+                                <field name="certifications" widget="radio"/>
+                                <field name="inverter_battery_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="ac_input_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="ac_voltage_inverting" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="ac_frequency" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="mppt_max_voltage" invisible="categ_id not in [%(int_inventory_customizations.product_category_solar_chargers)d]"/>
+                                <field name="max_charge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_solar_chargers)d, %(int_inventory_customizations.product_category_batteries)d]"/>
+                                <field name="max_discharge_amps" invisible="categ_id not in [%(int_inventory_customizations.product_category_batteries)d]"/>
+                                <field name="max_continuous_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_inverter_chargers)d, %(int_inventory_customizations.product_category_dc_dc_chargers)d]"/>
+                                <field name="max_peak_watts" invisible="categ_id not in [%(int_inventory_customizations.product_category_dc_dc_chargers)d, %(int_inventory_customizations.product_category_inverter_chargers)d]"/>
                             </group>
                             <group name="studio_group_4if_right">
-                                <field name="x_studio_approved_for_boats"/>
-                                <field name="x_studio_approved_for_rvs"/>
-                                <field name="x_studio_approved_for_off_grid"/>
+                                <field name="approved_for_boats"/>
+                                <field name="approved_for_rvs"/>
+                                <field name="approved_for_off_grid"/>
                             </group>
                         </group>
                     </page>
                     <page string="Vendor Information" name="studio_page_68u_1jnv9ucav">
                         <group name="studio_group_68u">
                             <group name="studio_group_68u_left">
-                                <field name="x_studio_hts_code"/>
-                                <field name="x_studio_manufacturer"/>
-                                <field name="x_studio_country_of_origin"/>
+                                <field name="hts_code"/>
+                                <field name="manufacturer"/>
+                                <field name="country_of_origin"/>
                             </group>
                             <group name="studio_group_68u_right">
-                                <field name="x_studio_tariff_cost" help="If zero, included in cost"/>
-                                <field name="x_studio_inbound_shipping_cost" help="If zero, included in cost"/>
+                                <field name="tariff_cost" help="If zero, included in cost"/>
+                                <field name="inbound_shipping_cost" help="If zero, included in cost"/>
                             </group>
                         </group>
                     </page>
                     <page string="Data Sheet" name="studio_page_6c4_1jpp3adom">
                         <group name="studio_group_1mo_1jpp3n231">
                             <group name="studio_group_1mo_left">
-                                <field name="x_studio_product_data_sheet" filename="x_studio_product_data_sheet_filename" widget="pdf_viewer"/>
+                                <field name="product_data_sheet" filename="product_data_sheet_filename" widget="pdf_viewer"/>
                             </group>
                             <group name="studio_group_1mo_right"/>
                         </group>
@@ -58,13 +58,13 @@
                 </notebook>
             </xpath>
             <xpath expr="//field[@name='default_code']" position="after">
-                <field name="x_studio_gtin"/>
+                <field name="gtin"/>
             </xpath>
             <xpath expr="//field[@name='default_code']" position="attributes">
                 <attribute name="string">Internal SKU</attribute>
             </xpath>
             <xpath expr="//div[@name='taxes_div']" position="after">
-                <field name="x_studio_map_price"/>
+                <field name="map_price"/>
             </xpath>
             <xpath expr="//group[@name='internal_notes']" position="attributes">
                 <attribute name="string">Description</attribute>
@@ -72,22 +72,22 @@
             <xpath expr="//group[@name='inventory']" position="after">
                 <group name="studio_group_2mb_1jpov6kcd">
                     <group name="studio_group_2mb_left" string="Dimensions (mm)">
-                        <field name="x_studio_length_mm"/>
-                        <field name="x_studio_width_mm"/>
-                        <field name="x_studio_height_mm"/>
+                        <field name="length_mm"/>
+                        <field name="width_mm"/>
+                        <field name="height_mm"/>
                     </group>
                     <group name="studio_group_2mb_right" string="Dimensions (inches)">
-                        <field name="x_studio_length_in"/>
-                        <field name="x_studio_width_in"/>
-                        <field name="x_studio_height_in"/>
+                        <field name="length_in"/>
+                        <field name="width_in"/>
+                        <field name="height_in"/>
                     </group>
                 </group>
             </xpath>
             <xpath expr="//field[@name='responsible_id']" position="after">
-                <field name="x_studio_weight_lbs"/>
+                <field name="weight_lbs"/>
             </xpath>
             <xpath expr="//group[@name='group_lots_and_weight']" position="inside">
-                <field name="x_studio_qty_per_pallet"/>
+                <field name="qty_per_pallet"/>
             </xpath>
         </field>
     </record>

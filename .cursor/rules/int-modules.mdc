@@ -41,3 +41,11 @@ int_<app>_customizations/
 ```
 
 One existing app per module. Do not dump Studio exports as `studio_customization`.
+
+## Fields
+
+Define fields in Python with clean names (`hts_code`, `weight_lbs`). Do not keep `x_studio_` prefixes.
+
+If a field name changes after data exists, bump the module version and add
+`migrations/<new_version>/pre-migrate.py` that renames the Postgres column (and
+`ir.attachment.res_field` for binaries) before the ORM creates an empty field.
