@@ -15,17 +15,17 @@
                     <page string="Product Info" name="studio_page_4if">
                         <group name="studio_group_4if">
                             <group name="studio_group_4if_left">
-                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(inventory_customizations.product_category_accessories_hardware)d]"/>
+                                <field name="x_studio_battery_compatibility" invisible="categ_id in [%(int_inventory.product_category_accessories_hardware)d]"/>
                                 <field name="x_studio_certifications" widget="radio"/>
-                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d]"/>
-                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(inventory_customizations.product_category_solar_chargers)d]"/>
-                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(inventory_customizations.product_category_dc_dc_chargers)d, %(inventory_customizations.product_category_inverter_chargers)d, %(inventory_customizations.product_category_solar_chargers)d, %(inventory_customizations.product_category_batteries)d]"/>
-                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(inventory_customizations.product_category_batteries)d]"/>
-                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(inventory_customizations.product_category_inverter_chargers)d, %(inventory_customizations.product_category_dc_dc_chargers)d]"/>
-                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(inventory_customizations.product_category_dc_dc_chargers)d, %(inventory_customizations.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_voltage" string="Inverter Battery Voltage" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_input_voltage" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_voltage_inverting" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_ac_frequency" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d]"/>
+                                <field name="x_studio_mppt_max_voltage" invisible="categ_id not in [%(int_inventory.product_category_solar_chargers)d]"/>
+                                <field name="x_studio_max_charge_amps" invisible="categ_id not in [%(int_inventory.product_category_dc_dc_chargers)d, %(int_inventory.product_category_inverter_chargers)d, %(int_inventory.product_category_solar_chargers)d, %(int_inventory.product_category_batteries)d]"/>
+                                <field name="x_studio_max_discharge_amps" invisible="categ_id not in [%(int_inventory.product_category_batteries)d]"/>
+                                <field name="x_studio_max_continuous_watts" invisible="categ_id not in [%(int_inventory.product_category_inverter_chargers)d, %(int_inventory.product_category_dc_dc_chargers)d]"/>
+                                <field name="x_studio_max_peak_watts" invisible="categ_id not in [%(int_inventory.product_category_dc_dc_chargers)d, %(int_inventory.product_category_inverter_chargers)d]"/>
                             </group>
                             <group name="studio_group_4if_right">
                                 <field name="x_studio_approved_for_boats"/>
@@ -68,25 +68,6 @@
             </xpath>
             <xpath expr="//group[@name='internal_notes']" position="attributes">
                 <attribute name="string">Description</attribute>
-            </xpath>
-            <xpath expr="//field[@name='seller_ids']" position="inside">
-                <list string="Vendor Information" multi_edit="1" editable="bottom">
-                    <field name="sequence" widget="handle"/>
-                    <field name="partner_id"/>
-                    <field name="product_id" optional="hide" column_invisible="context.get('product_template_invisible_variant', False)" groups="product.group_product_variant" domain="[('product_tmpl_id', '=', parent.id)]" options="{'no_create': True, 'no_open': True}"/>
-                    <field name="product_tmpl_id" string="Product" readonly="1" column_invisible="context.get('visible_product_tmpl_id', True)"/>
-                    <field name="product_name" optional="hide"/>
-                    <field name="product_code" optional="hide"/>
-                    <field name="date_start" optional="hide"/>
-                    <field name="date_end" optional="hide"/>
-                    <field name="company_id" groups="base.group_multi_company" optional="hide"/>
-                    <field name="min_qty" optional="show"/>
-                    <field name="uom_id" groups="uom.group_uom" optional="show" options="{'no_quick_create': True, 'no_open': True}" context="{'product_id': product_id}" widget="many2one_uom"/>
-                    <field name="price" widget="monetary"/>
-                    <field name="discount" optional="hide"/>
-                    <field name="currency_id" groups="base.group_multi_currency" optional="hide"/>
-                    <field name="delay" optional="show"/>
-                </list>
             </xpath>
             <xpath expr="//group[@name='inventory']" position="after">
                 <group name="studio_group_2mb_1jpov6kcd">

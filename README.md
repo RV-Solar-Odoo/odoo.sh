@@ -1,10 +1,12 @@
-# RVSB Odoo.sh
+# Odoo.sh custom modules
 
-Custom modules for the Odoo 19.0 rebuild. Each app’s customizations live in their own module.
+Every custom module is prefixed with `int_` and authored `Internal`.
+Search Apps for `int_` to see only ours.
 
-| Module | Status |
+| Module | Role |
 | --- | --- |
-| `inventory_customizations` | Ported from the 19.2 Studio export + RPC audit |
-| Contacts / Helpdesk / others | No Studio customizations on the 19.2 database |
+| `int_base` | Umbrella app — install this |
+| `int_inventory` | Product fields, form, and categories from the 19.2 Studio export |
 
-Activate `inventory_customizations` on the 19.0 database after pushing this branch to Odoo.sh.
+`int_inventory` auto-installs with `int_base` when Inventory / Purchase are already present.
+New app customizations go in `int_<app>` (for example `int_helpdesk`) and depend on `int_base`.
