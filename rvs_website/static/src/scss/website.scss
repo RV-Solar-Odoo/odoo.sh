@@ -72,6 +72,7 @@
 /* ── FEATURED PRODUCT SECTION ── */
 
 /* Image contain fix */
+
 .o_wsale_products_opt_thumb_cover .oe_product_image_img {
     background-size: contain !important;
     background-repeat: no-repeat !important;
@@ -81,43 +82,32 @@
 
 .o_wsale_products_opt_thumb_cover .oe_product_image {
     overflow: visible !important;
-    background-color: #ffffff !important;
+    background-color: #ffffff;
+}
+/* Show 2 cards instead of 4 */
+.s_dynamic_snippet_products .carousel {
+    --o-carousel-chunk-size: 2 !important;
 }
 
-/* Show 2 cards — override inline style */
-#s_dynamic_snippet_1 {
-    --o-carousel-item-width-percentage: 50% !important;
+/* Dark info panel */
+.s_dynamic_snippet_products .o_wsale_product_information {
+    background: #1e1d1d !important;
+    padding: 18px 18px 14px 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
 }
 
-#s_dynamic_snippet_1 .carousel-inner {
-    --o-carousel-item-width-percentage: 50% !important;
-}
-
-/* Card */
-
-/* Product name — centered white */
+/* Product name white */
 .s_dynamic_snippet_products .o_wsale_products_item_title a {
     color: #ffffff !important;
     font-size: 16px !important;
     font-weight: 500 !important;
     text-decoration: none !important;
     line-height: 1.3 !important;
-    text-align: center !important;
-}
-
-/* Price wrapper — centered */
-.s_dynamic_snippet_products .o_wsale_product_sub {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
 }
 
 /* Price — brand blue */
-.s_dynamic_snippet_products .product_price {
-    text-align: center !important;
-}
-
 .s_dynamic_snippet_products .product_price .fw-bold {
     color: #3a4efd !important;
     font-size: 14px !important;
@@ -130,29 +120,30 @@
     font-size: 12px !important;
 }
 
-/* Add to cart — centered below price */
-.s_dynamic_snippet_products .o_wsale_product_btn {
-    width: 100% !important;
-    text-align: center !important;
-}
-
+/* Add to cart button — properly spaced */
 .s_dynamic_snippet_products .o_wsale_product_btn_primary {
     background: transparent !important;
     border: none !important;
     color: rgba(255, 255, 255, 0.6) !important;
-    font-size: 14px !important;
-    padding: 4px 0 0 0 !important;
+    font-size: 12px !important;
+    padding: 6px 0 0 0 !important;
+    margin-top: 4px !important;
     display: block !important;
-    width: 100% !important;
-    text-align: center !important;
 }
 
 .s_dynamic_snippet_products .o_wsale_product_btn_primary:hover {
     color: #ffffff !important;
 }
 
+/* Card border and rounding */
+.s_dynamic_snippet_products .oe_product_cart {
+    border: 2px solid #E8E8E8 !important;
+    border-radius: 2px !important;
+    overflow: hidden !important;
+}
+
 /* Fix image cropping on shop page */
-.ee_website_sale .oe_product_image_img {
+.oe_website_sale .oe_product_image_img {
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
@@ -162,44 +153,4 @@
 .oe_website_sale .oe_product_image {
     overflow: visible !important;
     background-color: #ffffff !important;
-}
-
-/* Constrain image area height, not the whole card */
-.s_dynamic_snippet_products .oe_product_image {
-    max-height: 70vh !important;
-    flex: 1 !important;
-    width: 100% !important;
-}
-
-/* Remove any max-height from the card itself */
-.s_dynamic_snippet_products .oe_product_cart {
-    max-height: none !important;
-    border: 2px solid #E8E8E8 !important;
-    border-radius: 2px !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Dark info panel */
-.s_dynamic_snippet_products .o_wsale_product_information {
-    background: #1e1d1d !important;
-    padding: 16px 18px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 6px !important;
-    margin: 0 !important;
-    width: 100% !important;
-}
-
-/* Total card height */
-.s_dynamic_snippet_products .oe_product_cart {
-    min-height: 80vh !important;
-    height: auto !important;
-}
-
-.s_dynamic_snippet_products .oe_product_image_img {
-    background-size: 70% !important;
 }
