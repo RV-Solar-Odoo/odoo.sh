@@ -85,14 +85,18 @@
     background-color: #ffffff;
 }
 /* Show 2 cards instead of 4 */
-.s_dynamic_snippet_products .carousel {
-    --o-carousel-chunk-size: 2 !important;
+#s_dynamic_snippet_1 {
+    --o-carousel-item-width-percentage: 50% !important;
+}
+
+#s_dynamic_snippet_1 .carousel-inner {
+    --o-carousel-item-width-percentage: 50% !important;
 }
 
 /* Dark info panel */
 .s_dynamic_snippet_products .o_wsale_product_information {
     background: #1e1d1d !important;
-    padding: 18px 18px 14px 18px !important;
+    padding: 10px 18px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
@@ -172,4 +176,122 @@
 
 .s_mega_menu_multi_menus .nav-link:hover {
     color: #ffffff !important;
+}
+
+/* SIDEBAR IN PRODUCTS */
+
+/* Sidebar wrapper — light, clean */
+.o_wsale_products_grid_before_rail {
+    background: #ffffff !important;
+    padding: 24px 16px !important;
+    border-right: 1px solid #e8e8e8 !important;
+}
+
+/* Section headers — Categories, Tags, Price Range */
+.o_wsale_products_grid_before_rail .accordion-button {
+    color: #111111 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 12px 0 !important;
+}
+
+/* Accordion arrow — dark, visible */
+.o_wsale_products_grid_before_rail .accordion-button::after {
+    filter: invert(0) !important;
+    opacity: 0.5 !important;
+}
+
+/* Accordion dividers */
+.o_wsale_products_grid_before_rail .accordion-item {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #e8e8e8 !important;
+}
+
+/* All Products link */
+.o_wsale_products_grid_before_rail .text-decoration-underline {
+    color: #555555 !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    transition: color 0.15s ease !important;
+}
+
+.o_wsale_products_grid_before_rail .text-decoration-underline:hover {
+    color: #111111 !important;
+}
+
+/* Parent category links */
+.o_wsale_products_grid_before_rail .accordion-header > div > a,
+.o_wsale_products_grid_before_rail .accordion-header a {
+    color: #111111 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+}
+
+.o_wsale_products_grid_before_rail .accordion-header > div > a:hover {
+    color: #3a4efd !important;
+}
+
+/* Dropdown arrow on category toggle button */
+.o_wsale_products_grid_before_rail .o_categories_recursive_button {
+    opacity: 0.4 !important;
+    transition: opacity 0.15s ease, transform 0.2s ease !important;
+}
+
+.o_wsale_products_grid_before_rail .o_categories_recursive_button:not(.collapsed) {
+    opacity: 0.8 !important;
+}
+
+/* Subcategory links */
+.o_wsale_products_grid_before_rail .accordion-collapse a {
+    color: #666666 !important;
+    font-size: 12px !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+}
+
+.o_wsale_products_grid_before_rail .accordion-collapse a:hover {
+    color: #3a4efd !important;
+}
+
+/* Tags checkboxes */
+.o_wsale_products_grid_before_rail .form-check-label {
+    color: #555555 !important;
+    font-size: 12px !important;
+}
+
+.o_wsale_products_grid_before_rail .form-check-input {
+    border-color: #cccccc !important;
+}
+
+.o_wsale_products_grid_before_rail .form-check-input:checked {
+    background-color: #3a4efd !important;
+    border-color: #3a4efd !important;
+}
+
+/* Price range labels */
+.o_wsale_products_grid_before_rail .multirange-min,
+.o_wsale_products_grid_before_rail .multirange-max {
+    color: #666666 !important;
+    font-size: 11px !important;
+}
+
+/* Price range slider accent */
+.o_wsale_products_grid_before_rail .form-range::-webkit-slider-thumb {
+    background-color: #3a4efd !important;
+}
+
+/* PRODUCT PAGE */
+
+#product_documents strong {
+    display: block !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 8px !important;
+    border-bottom: 1px solid #e8e8e8 !important;
 }
