@@ -154,3 +154,22 @@
     overflow: visible !important;
     background-color: #ffffff !important;
 }
+
+/* MEGA MENU */
+.s_mega_menu_multi_menus h6 {
+    margin-bottom: 10px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.s_mega_menu_multi_menus .nav-link {
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 12px !important;
+    padding: 3px 0 !important;
+    text-align: center !important;
+    transition: color 0.15s ease !important;
+}
+
+.s_mega_menu_multi_menus .nav-link:hover {
+    color: #ffffff !important;
+}

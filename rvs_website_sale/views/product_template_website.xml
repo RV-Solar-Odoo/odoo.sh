@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_data_sheet_button" inherit_id="website_sale.product" name="Product Data Sheet Download Button">
+        <xpath expr="//t[@t-call='website_sale.product_add_to_cart']" position="after">
+            <div class="o_rvs_data_sheet_wrap mt-2" t-if="product.product_data_sheet">
+                <a t-attf-href="/web/content?model=product.template&amp;id=#{product.id}&amp;field=product_data_sheet&amp;download=true"
+                   class="btn o_rvs_datasheet_btn"
+                   target="_blank">
+                    <i class="fa fa-download me-2"/>Download Data Sheet
+                </a>
+            </div>
+        </xpath>
+    </template>
+</odoo>
