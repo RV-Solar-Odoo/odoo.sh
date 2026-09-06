@@ -51,9 +51,18 @@ class SaleOrder(models.Model):
 
     def _int_shippo_fetch_rates(self):
         self.ensure_one()
-        cached = getattr(self, "_int_shippo_cached_rates", None)
-        if cached is not None:
-            return cached
+        cache = getattr(self.env.cr, "_int_shippo_rates", None)
+        if cache is None:
+            cache = {}
+            self.env.cr._int_shippo_rates = cache
+        cache_key = (
+            self.id,
+            self.partner_shipping_id.id or 0,
+            self.warehouse_id.id or 0,
+            tuple((line.product_id.id, line.product_uom_qty) for line in self._int_shippo_order_lines()),
+        )
+        if cache_key in cache:
+            return cache[cache_key]
         from_partner = self.warehouse_id.partner_id or self.company_id.partner_id
         to_partner = self.partner_shipping_id or self.partner_id
         picking = self.env["stock.picking"]
@@ -64,5 +73,5 @@ class SaleOrder(models.Model):
             "async": False,
         })
         rates = shipment.get("rates") or []
-        self._int_shippo_cached_rates = rates
+        cache[cache_key] = rates
         return rates

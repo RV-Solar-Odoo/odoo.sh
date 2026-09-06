@@ -1,6 +1,6 @@
 {
     "name": "Shippo Customizations",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.5.1",
     "category": "Inventory/Delivery",
     "summary": "Buy Shippo labels from warehouse deliveries and quote UPS, USPS, and FedEx on the website",
     "author": "Internal",
