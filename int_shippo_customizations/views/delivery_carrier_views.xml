@@ -6,8 +6,9 @@
         <field name="inherit_id" ref="delivery.view_delivery_carrier_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='delivery_type']" position="after">
+                <field name="int_shippo_provider" invisible="delivery_type != 'shippo'"/>
                 <div invisible="delivery_type != 'shippo'" colspan="2">
-                    <p>Rates and labels come from Inventory → Settings → Shippo. On a delivery, use Get Shippo Rates, pick a box, then buy the label.</p>
+                    <p>Website checkout quotes live Shippo rates for this carrier. Warehouse still buys the label from the delivery with Get Shippo Rates.</p>
                 </div>
             </xpath>
         </field>

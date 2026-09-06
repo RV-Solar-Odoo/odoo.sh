@@ -16,6 +16,7 @@ int_inventory_customizations
 int_shippo_customizations
 int_helpdesk_customizations
 int_contacts_customizations
+int_website_customizations
 ```
 
 Do not use `int_base`, `rvsb_`, or an unprefixed name. Never set `application: True`.

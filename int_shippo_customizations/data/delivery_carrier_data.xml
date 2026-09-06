@@ -13,4 +13,28 @@
         <field name="integration_level">rate</field>
         <field name="product_id" ref="product_product_delivery_shippo"/>
     </record>
+    <record id="delivery_carrier_shippo_ups" model="delivery.carrier">
+        <field name="name">UPS</field>
+        <field name="delivery_type">shippo</field>
+        <field name="integration_level">rate</field>
+        <field name="int_shippo_provider">UPS</field>
+        <field name="product_id" ref="product_product_delivery_shippo"/>
+        <field name="is_published" eval="True"/>
+    </record>
+    <record id="delivery_carrier_shippo_usps" model="delivery.carrier">
+        <field name="name">USPS</field>
+        <field name="delivery_type">shippo</field>
+        <field name="integration_level">rate</field>
+        <field name="int_shippo_provider">USPS</field>
+        <field name="product_id" ref="product_product_delivery_shippo"/>
+        <field name="is_published" eval="True"/>
+    </record>
+    <record id="delivery_carrier_shippo_fedex" model="delivery.carrier">
+        <field name="name">FedEx</field>
+        <field name="delivery_type">shippo</field>
+        <field name="integration_level">rate</field>
+        <field name="int_shippo_provider">FedEx</field>
+        <field name="product_id" ref="product_product_delivery_shippo"/>
+        <field name="is_published" eval="True"/>
+    </record>
 </odoo>

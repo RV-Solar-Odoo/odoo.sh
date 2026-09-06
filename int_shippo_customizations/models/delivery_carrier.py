@@ -9,30 +9,30 @@ class DeliveryCarrier(models.Model):
         selection_add=[("shippo", "Shippo")],
         ondelete={"shippo": "set default"},
     )
+    int_shippo_provider = fields.Char(
+        string="Shippo carrier",
+        help="If set, checkout uses the cheapest Shippo rate from this provider (UPS, USPS, FedEx).",
+    )
 
     def shippo_rate_shipment(self, order):
         self.ensure_one()
-        picking = order.picking_ids.filtered(lambda p: p.picking_type_code == "outgoing")[:1]
         try:
-            parcels = (picking._int_shippo_parcels() if picking
-                       else order._int_shippo_parcels() if hasattr(order, "_int_shippo_parcels")
-                       else [])
-            if not parcels:
-                parcels = [self.env["stock.picking"]._int_shippo_fallback_parcel(order)]
-            shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
-                "address_from": self.env["stock.picking"]._int_shippo_address(order.warehouse_id.partner_id or order.company_id.partner_id),
-                "address_to": self.env["stock.picking"]._int_shippo_address(order.partner_shipping_id or order.partner_id),
-                "parcels": parcels,
-                "async": False,
-            })
-            amounts = [float(rate["amount"]) for rate in shipment.get("rates") or [] if rate.get("amount")]
+            if order._name == "sale.order":
+                rates = order._int_shippo_fetch_rates()
+            else:
+                rates = self._int_shippo_rates_from_picking(order)
+            if self.int_shippo_provider:
+                provider = self.int_shippo_provider.casefold()
+                rates = [
+                    rate for rate in rates
+                    if (rate.get("provider") or "").casefold() == provider
+                ]
+            amounts = [float(rate["amount"]) for rate in rates if rate.get("amount")]
             if not amounts:
-                messages = shipment.get("messages") or []
-                text = "; ".join(m.get("text", "") for m in messages if m.get("text"))
                 return {
                     "success": False,
                     "price": 0.0,
-                    "error_message": text or self.env._("Shippo returned no rates."),
+                    "error_message": self.env._("Shippo returned no rates for this address and parcel."),
                     "warning_message": False,
                 }
             return {
@@ -43,6 +43,27 @@ class DeliveryCarrier(models.Model):
             }
         except UserError as exc:
             return {"success": False, "price": 0.0, "error_message": exc.args[0], "warning_message": False}
+
+    def _int_shippo_rates_from_picking(self, picking):
+        if picking._name != "stock.picking":
+            picking = picking.picking_ids.filtered(lambda p: p.picking_type_code == "outgoing")[:1]
+            if picking:
+                parcels = picking._int_shippo_parcels()
+                shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
+                    "address_from": picking._int_shippo_address(picking._int_shippo_from_partner()),
+                    "address_to": picking._int_shippo_address(picking.partner_id),
+                    "parcels": parcels,
+                    "async": False,
+                })
+                return shipment.get("rates") or []
+            return []
+        shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
+            "address_from": picking._int_shippo_address(picking._int_shippo_from_partner()),
+            "address_to": picking._int_shippo_address(picking.partner_id),
+            "parcels": picking._int_shippo_parcels(),
+            "async": False,
+        })
+        return shipment.get("rates") or []
 
     def shippo_send_shipping(self, pickings):
         result = []

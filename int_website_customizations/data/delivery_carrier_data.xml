@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="product_product_delivery_free" model="product.product">
+        <field name="name">Free Shipping</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+    </record>
+    <record id="delivery_carrier_free_250" model="delivery.carrier">
+        <field name="name">Free Shipping</field>
+        <field name="delivery_type">fixed</field>
+        <field name="fixed_price">0.0</field>
+        <field name="free_over" eval="True"/>
+        <field name="amount">250</field>
+        <field name="int_min_order_amount">250</field>
+        <field name="product_id" ref="product_product_delivery_free"/>
+        <field name="is_published" eval="True"/>
+    </record>
+</odoo>

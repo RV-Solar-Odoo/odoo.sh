@@ -137,38 +137,11 @@ class StockPicking(models.Model):
 
     def _int_shippo_suggest_box(self):
         self.ensure_one()
-        boxes = self.env["int.shippo.box"].search([
-            ("length_in", ">", 0),
-            ("width_in", ">", 0),
-            ("height_in", ">", 0),
-        ])
-        if not boxes:
-            return self.env["int.shippo.box"]
-        max_l = max_w = max_h = 0.0
-        volume = 0.0
-        for move in self._int_shippo_move_lines():
-            length, width, height = self._int_shippo_product_dims_in(move.product_id)
-            dims = sorted((length, width, height), reverse=True)
-            max_l = max(max_l, dims[0])
-            max_w = max(max_w, dims[1])
-            max_h = max(max_h, dims[2])
-            volume += length * width * height * move.product_uom_qty
-        weight_lb = self._int_shippo_content_weight_lb()
-        fits = []
-        for box in boxes:
-            length, width, height = box.length_in, box.width_in, box.height_in
-            outer = sorted((length, width, height), reverse=True)
-            if max_l and (outer[0] + 1e-6 < max_l or outer[1] + 1e-6 < max_w or outer[2] + 1e-6 < max_h):
-                continue
-            if volume and length * width * height + 1e-6 < volume:
-                continue
-            if box.max_lb and weight_lb + (box.empty_lb or 0.0) > box.max_lb + 1e-6:
-                continue
-            fits.append((length * width * height, box))
-        if not fits:
-            return boxes.sorted(lambda b: b.length_in * b.width_in * b.height_in)[:1]
-        fits.sort(key=lambda item: item[0])
-        return fits[0][1]
+        items = [
+            (*self._int_shippo_product_dims_in(move.product_id), move.product_uom_qty)
+            for move in self._int_shippo_move_lines()
+        ]
+        return self.env["int.shippo.box"].suggest_for_items(items, self._int_shippo_content_weight_lb())
 
     def _int_shippo_parcels(self, box=None, weight_lb=None, length_in=None, width_in=None, height_in=None):
         self.ensure_one()
