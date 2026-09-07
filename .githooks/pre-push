@@ -1,0 +1,34 @@
+#!/bin/sh
+# Refuse to push a commit Odoo could not load. Odoo.sh builds whatever lands on the
+# branch, so a manifest pointing at a missing file means an internal server error.
+#
+# Checks the commit being pushed, not the files on disk, because a partial commit can
+# be broken while the working tree looks fine.
+#
+# Override for a deliberate exception: git push --no-verify
+
+repo_root=$(git rev-parse --show-toplevel)
+checker="$repo_root/tools/check_modules.py"
+
+[ -f "$checker" ] || exit 0
+
+status=0
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+    # All-zero sha means the branch is being deleted; nothing to validate.
+    case "$local_sha" in
+        *[!0]*) ;;
+        *) continue ;;
+    esac
+
+    if ! python3 "$checker" --rev "$local_sha"; then
+        status=1
+    fi
+done
+
+if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "pre-push blocked: the commit above would break the Odoo.sh build."
+    echo "Fix the module(s), or bypass deliberately with: git push --no-verify"
+fi
+
+exit "$status"

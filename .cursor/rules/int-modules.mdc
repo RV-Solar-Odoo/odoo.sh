@@ -21,6 +21,10 @@ int_website_customizations
 
 Do not use `int_base`, `rvsb_`, or an unprefixed name. Never set `application: True`.
 
+A vendor integration that is not an extension of one Odoo app keeps the `int_`
+prefix but drops the `_customizations` suffix, e.g. `int_victron_stock`. Do not
+rename these to match the pattern above.
+
 ## Manifest
 
 - `name`: `<App> Customizations` (no "Internal" in the display name)
@@ -50,3 +54,18 @@ Define fields in Python with clean names (`hts_code`, `weight_lbs`). Do not keep
 If a field name changes after data exists, bump the module version and add
 `migrations/<new_version>/pre-migrate.py` that renames the Postgres column (and
 `ir.attachment.res_field` for binaries) before the ORM creates an empty field.
+
+## Pushing
+
+Odoo.sh builds every commit that lands on `main`, and a manifest that lists a
+missing file takes the database down with an internal server error. So every
+commit must stand on its own — never split a file move across two commits, and
+never commit a partial staged subset of a refactor.
+
+`tools/check_modules.py --rev HEAD` validates manifests, dependencies, init
+hooks, Python syntax and XML for a commit. A `pre-push` hook runs it
+automatically; enable it once per clone with:
+
+```
+git config core.hooksPath .githooks
+```
