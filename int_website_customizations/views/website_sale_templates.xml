@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_shipping_badge" inherit_id="website_sale.product" name="Shipping Availability">
+        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_cta')]" position="after">
+            <t t-set="int_badge" t-value="product._int_shipping_badge()"/>
+            <div t-if="int_badge" class="o_int_shipping_badge mb-4">
+                <span t-attf-class="badge #{int_badge['css']}">
+                    <i t-attf-class="fa #{int_badge['icon']} me-1" role="presentation"/>
+                    <t t-out="int_badge['label']"/>
+                </span>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="products_item_shipping_badge" inherit_id="website_sale.products_item"
+              name="Shipping Availability (grid)" active="True">
+        <xpath expr="//div[hasclass('o_wsale_product_information_text')]" position="inside">
+            <t t-set="int_badge" t-value="product._int_shipping_badge()"/>
+            <small t-if="int_badge" t-attf-class="o_int_shipping_badge d-block mt-1 #{'text-success' if int_badge['status'] == 'immediate' else 'text-muted'}"
+                   t-out="int_badge['label']"/>
+        </xpath>
+    </template>
+</odoo>

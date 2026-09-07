@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_victron" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.int.victron</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='stock']" position="inside">
+                <block title="Victron E-Order" name="int_victron_settings">
+                    <setting string="Credentials" help="Dealer login used to read Victron stock levels. E-Order uses HTTP Basic authentication.">
+                        <field name="int_victron_username"/>
+                        <field name="int_victron_password" password="True"/>
+                    </setting>
+                    <setting string="Feed" help="Adjust only if Victron changes the endpoint or the field names in their response.">
+                        <field name="int_victron_endpoint"/>
+                        <field name="int_victron_sku_field"/>
+                        <field name="int_victron_qty_field"/>
+                    </setting>
+                    <setting string="Webshop lead time" help="Shown when we are out of stock but Victron has the item.">
+                        <field name="int_victron_lead_time_label"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
