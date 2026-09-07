@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_victron" model="ir.ui.view">
+        <field name="name">product.template.form.int.victron</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='group_general']" position="after">
+                <group name="int_victron_group" string="Victron E-Order">
+                    <field name="victron_sku" placeholder="Defaults to the Internal SKU"/>
+                    <field name="victron_qty"/>
+                    <field name="victron_last_sync"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

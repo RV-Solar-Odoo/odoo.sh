@@ -45,11 +45,6 @@
                                 <field name="tariff_cost" help="If zero, included in cost"/>
                                 <field name="inbound_shipping_cost" help="If zero, included in cost"/>
                             </group>
-                            <group name="int_victron_group" string="Victron E-Order">
-                                <field name="victron_sku" placeholder="Defaults to the Internal SKU"/>
-                                <field name="victron_qty"/>
-                                <field name="victron_last_sync"/>
-                            </group>
                         </group>
                     </page>
                     <page string="Data Sheet" name="studio_page_6c4_1jpp3adom">
