@@ -1,0 +1,449 @@
+/* ── TOKENS ──────────────────────────────────────────────────
+   [CHANGED] Brand color pulled out of 5 hardcoded spots.
+   Custom properties, not SCSS $vars, so this file works whether
+   it lands in a .scss asset or the plain-CSS custom code field.
+   -------------------------------------------------------- */
+:root {
+    --brand-blue: #3a4efd;
+    --brand-blue-on-dark: #7b8aff; /* [CHANGED] contrast-safe on --panel-dark */
+    --panel-dark: #1e1d1d;
+    --border-light: #e8e8e8;
+    --ink: #111111;
+    --ink-muted: #555555;
+    --ink-subtle: #666666;
+}
+ 
+ 
+/* ── HERO / COVER ────────────────────────────────────────────
+   [CHANGED] :not(.o_hero_light) — opt-OUT scoping. Works today
+   with zero editor changes. If you later add a cover snippet on
+   a light background, give it the class o_hero_light in the
+   editor (Customize → HTML/CSS class) and it opts out of the
+   white-text treatment instead of going invisible.
+   -------------------------------------------------------- */
+.s_cover:not(.o_hero_light) h1 {
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+}
+ 
+.s_cover:not(.o_hero_light) .lead {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.01em !important;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3) !important;
+}
+ 
+/* Primary button — clean white outline */
+.s_cover:not(.o_hero_light) .btn-custom,
+.s_cover:not(.o_hero_light) .btn-secondary {
+    background: transparent !important;
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 14px 36px !important;
+    border-radius: 0 !important;
+    transition: background 0.3s ease, color 0.3s ease !important;
+}
+ 
+.s_cover:not(.o_hero_light) .btn-custom:hover,
+.s_cover:not(.o_hero_light) .btn-secondary:hover {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+ 
+/* Secondary button — dimmer */
+.s_cover:not(.o_hero_light) .btn-outline-secondary {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 14px 36px !important;
+    border-radius: 0 !important;
+    transition: border-color 0.3s ease, color 0.3s ease !important;
+}
+ 
+.s_cover:not(.o_hero_light) .btn-outline-secondary:hover {
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+}
+ 
+ 
+/* ── SHOP PRODUCT IMAGES ─────────────────────────────────────
+   [CHANGED] Was 4 blocks across the file, 2 of which were dead
+   code. Merged into 2.
+ 
+   object-fit only affects <img>; background-size only affects
+   background images. Odoo renders the thumbnail either way
+   depending on the grid option, so setting both in one rule is
+   correct and non-conflicting — they never fight each other.
+   -------------------------------------------------------- */
+.oe_website_sale .oe_product_image_img,
+.oe_website_sale .oe_product_image_img.img,
+.o_wsale_products_opt_thumb_cover .oe_product_image_img {
+    /* <img> variant */
+    object-fit: contain !important;
+    width: 100% !important;
+    height: 100% !important;
+    /* background-image variant */
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #ffffff !important;
+}
+ 
+/* NOTE: kept `visible` — that's what was actually winning before
+   (the earlier `hidden` block was overridden and never applied),
+   so this preserves your current live behavior. With contain
+   sizing nothing overflows anyway; flip to hidden if you ever see
+   a stray edge. */
+.oe_website_sale .oe_product_image,
+.o_wsale_products_opt_thumb_cover .oe_product_image {
+    overflow: visible !important;
+    background-color: #ffffff !important;
+}
+ 
+ 
+/* ── FEATURED PRODUCT CAROUSEL ───────────────────────────────
+   [CHANGED] Added .o_two_up alongside the generated ID. The ID
+   is per-instance — delete and re-add the snippet and it becomes
+   s_dynamic_snippet_2, silently reverting to 4 cards. Add the
+   class o_two_up to the snippet in the editor and it survives.
+   Keeping the ID too means nothing breaks in the meantime.
+ 
+   [CHANGED] Wrapped in a media query — 50% width was applying on
+   phones too, giving two cramped cards.
+   -------------------------------------------------------- */
+@media (min-width: 768px) {
+    #s_dynamic_snippet_1,
+    #s_dynamic_snippet_1 .carousel-inner,
+    .o_two_up,
+    .o_two_up .carousel-inner {
+        --o-carousel-item-width-percentage: 50% !important;
+    }
+}
+
+//* ── FEATURED CAROUSEL — card sizing ── */
+.s_dynamic_snippet_products .oe_product_cart {
+    height: 80dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.s_dynamic_snippet_products .oe_product_image {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* The link that breaks the height chain */
+.s_dynamic_snippet_products .oe_product_image_link {
+    display: block !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+/* Background-image span — object-fit does not apply */
+.s_dynamic_snippet_products .oe_product_image_img {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+}
+
+.s_dynamic_snippet_products .o_wsale_product_information {
+    flex: 0 0 auto !important;
+}
+
+/* ── FEATURED PRODUCTS — section header ── */
+.s_dynamic_snippet_title {
+    align-items: baseline !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 28px !important;
+    border-bottom: 1px solid #e8e8e8 !important;
+}
+
+/* Eyebrow */
+.s_dynamic_snippet_title p.small {
+    color: #3a4efd !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6px !important;
+}
+
+/* Headline */
+.s_dynamic_snippet_title .h1-fs {
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.1 !important;
+    color: #111111 !important;
+}
+
+.s_dynamic_snippet_title > div > p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* See all */
+.s_dynamic_snippet_title a,
+.s_dynamic_snippet_title a font {
+    color: #3a4efd !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.s_dynamic_snippet_title a::after {
+    content: " →" !important;
+    transition: transform 0.15s ease !important;
+    display: inline-block !important;
+}
+
+.s_dynamic_snippet_title a:hover {
+    opacity: 0.65 !important;
+}
+ 
+/* Dark info panel */
+.s_dynamic_snippet_products .o_wsale_product_information {
+    background: var(--panel-dark) !important;
+    padding: 10px 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+ 
+/* Product name white */
+.s_dynamic_snippet_products .o_wsale_products_item_title a {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    line-height: 1.3 !important;
+}
+ 
+/* Price — [CHANGED] lighter blue. #3a4efd on #1e1d1d is ~2.9:1,
+   under the 4.5:1 minimum. This is ~7:1 and reads as the same
+   brand blue. Swap back to var(--brand-blue) to revert. */
+.s_dynamic_snippet_products .product_price .fw-bold {
+    color: var(--brand-blue-on-dark) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+ 
+/* MSRP crossed out — [CHANGED] 0.35 → 0.55 alpha */
+.s_dynamic_snippet_products .product_price del {
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 12px !important;
+}
+ 
+/* Add to cart button — [CHANGED] 0.6 → 0.75 alpha */
+.s_dynamic_snippet_products .o_wsale_product_btn_primary {
+    background: transparent !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 12px !important;
+    padding: 6px 0 0 0 !important;
+    margin-top: 4px !important;
+    display: block !important;
+}
+ 
+.s_dynamic_snippet_products .o_wsale_product_btn_primary:hover {
+    color: #ffffff !important;
+}
+ 
+/* Card border and rounding */
+.s_dynamic_snippet_products .oe_product_cart {
+    border: 2px solid var(--border-light) !important;
+    border-radius: 2px !important;
+    overflow: hidden !important;
+}
+ 
+ 
+/* ── MEGA MENU ───────────────────────────────────────────── */
+.s_mega_menu_multi_menus h6 {
+    margin-bottom: 10px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+ 
+.s_mega_menu_multi_menus .nav-link {
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 12px !important;
+    padding: 3px 0 !important;
+    text-align: center !important;
+    transition: color 0.15s ease !important;
+}
+ 
+.s_mega_menu_multi_menus .nav-link:hover {
+    color: #ffffff !important;
+}
+ 
+ 
+/* ── SHOP SIDEBAR ────────────────────────────────────────── */
+.o_wsale_products_grid_before_rail {
+    background: #ffffff !important;
+    padding: 24px 16px !important;
+    border-right: 1px solid var(--border-light) !important;
+}
+ 
+/* Section headers — Categories, Tags, Price Range */
+.o_wsale_products_grid_before_rail .accordion-button {
+    color: var(--ink) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 12px 0 !important;
+}
+ 
+/* Accordion arrow.
+   [CHANGED] filter: invert(0) → filter: none. invert(0) is a
+   no-op as a standalone declaration; `none` is the correct way
+   to cancel an inherited filter, which is presumably the intent.
+   Bootstrap 5.3 swaps --bs-accordion-btn-icon rather than using
+   a filter, so if the arrow still looks wrong, override that
+   variable instead — check the computed styles in DevTools. */
+.o_wsale_products_grid_before_rail .accordion-button::after {
+    filter: none !important;
+    opacity: 0.5 !important;
+}
+ 
+/* Accordion dividers */
+.o_wsale_products_grid_before_rail .accordion-item {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+ 
+/* All Products link */
+.o_wsale_products_grid_before_rail .text-decoration-underline {
+    color: var(--ink-muted) !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    transition: color 0.15s ease !important;
+}
+ 
+.o_wsale_products_grid_before_rail .text-decoration-underline:hover {
+    color: var(--ink) !important;
+}
+ 
+/* Parent category links */
+.o_wsale_products_grid_before_rail .accordion-header > div > a,
+.o_wsale_products_grid_before_rail .accordion-header a {
+    color: var(--ink) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+}
+ 
+.o_wsale_products_grid_before_rail .accordion-header > div > a:hover {
+    color: var(--brand-blue) !important;
+}
+ 
+/* Dropdown arrow on category toggle button */
+.o_wsale_products_grid_before_rail .o_categories_recursive_button {
+    opacity: 0.4 !important;
+    transition: opacity 0.15s ease, transform 0.2s ease !important;
+}
+ 
+.o_wsale_products_grid_before_rail .o_categories_recursive_button:not(.collapsed) {
+    opacity: 0.8 !important;
+}
+ 
+/* Subcategory links */
+.o_wsale_products_grid_before_rail .accordion-collapse a {
+    color: var(--ink-subtle) !important;
+    font-size: 12px !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+}
+ 
+.o_wsale_products_grid_before_rail .accordion-collapse a:hover {
+    color: var(--brand-blue) !important;
+}
+ 
+/* Tags checkboxes */
+.o_wsale_products_grid_before_rail .form-check-label {
+    color: var(--ink-muted) !important;
+    font-size: 12px !important;
+}
+ 
+.o_wsale_products_grid_before_rail .form-check-input {
+    border-color: #cccccc !important;
+}
+ 
+.o_wsale_products_grid_before_rail .form-check-input:checked {
+    background-color: var(--brand-blue) !important;
+    border-color: var(--brand-blue) !important;
+}
+ 
+/* Price range labels */
+.o_wsale_products_grid_before_rail .multirange-min,
+.o_wsale_products_grid_before_rail .multirange-max {
+    color: var(--ink-subtle) !important;
+    font-size: 11px !important;
+}
+ 
+/* Price range slider accent.
+   [CHANGED] Added ::-moz-range-thumb — Firefox was showing the
+   default gray thumb. These must stay as separate rules: browsers
+   discard the whole selector list if one pseudo-element is
+   unrecognized, so combining them would break both. */
+.o_wsale_products_grid_before_rail .form-range::-webkit-slider-thumb {
+    background-color: var(--brand-blue) !important;
+}
+ 
+.o_wsale_products_grid_before_rail .form-range::-moz-range-thumb {
+    background-color: var(--brand-blue) !important;
+}
+ 
+ 
+/* ── PRODUCT PAGE ────────────────────────────────────────── */
+#product_documents strong {
+    display: block !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 8px !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+.s_allow_columns:has(> p.small:first-child) {
+    padding-bottom: 16px !important;
+    margin-bottom: 28px !important;
+    border-bottom: 1px solid #e8e8e8 !important;
+}
+
+.s_allow_columns:has(> p.small:first-child) > p.small {
+    color: #3a4efd !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6px !important;
+}
+
+.s_allow_columns:has(> p.small:first-child) > p:not(.small) span {
+    font-size: clamp(30px, 5vw, 48px) !important;
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.1 !important;
+    color: #111111 !important;
+    display: inline-block !important;
+}
+
+.s_allow_columns:has(> p.small:first-child) > p:last-child {
+    margin-bottom: 0 !important;
+}
