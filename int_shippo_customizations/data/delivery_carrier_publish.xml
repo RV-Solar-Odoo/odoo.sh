@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="delivery_carrier_shippo" model="delivery.carrier">
+        <field name="is_published" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo_ups" model="delivery.carrier">
+        <field name="is_published" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo_usps" model="delivery.carrier">
+        <field name="is_published" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo_fedex" model="delivery.carrier">
+        <field name="is_published" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo_ups_ground" model="delivery.carrier">
+        <field name="is_published" eval="True"/>
+        <field name="int_free_over_amount">250</field>
+    </record>
+    <record id="delivery_carrier_shippo_ups_ground_saver" model="delivery.carrier">
+        <field name="is_published" eval="False"/>
+    </record>
+    <record id="delivery_carrier_shippo_ups_2day" model="delivery.carrier">
+        <field name="is_published" eval="True"/>
+    </record>
+    <record id="delivery_carrier_shippo_ups_overnight" model="delivery.carrier">
+        <field name="is_published" eval="True"/>
+    </record>
+</odoo>

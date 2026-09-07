@@ -7,8 +7,11 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='delivery_type']" position="after">
                 <field name="int_shippo_provider" invisible="delivery_type != 'shippo'"/>
+                <field name="int_shippo_service_include" invisible="delivery_type != 'shippo'"/>
+                <field name="int_shippo_service_exclude" invisible="delivery_type != 'shippo'"/>
+                <field name="int_free_over_amount" invisible="delivery_type != 'shippo'"/>
                 <div invisible="delivery_type != 'shippo'" colspan="2">
-                    <p>Website checkout quotes live Shippo rates for this carrier. Warehouse still buys the label from the delivery with Get Shippo Rates.</p>
+                    <p>Website checkout quotes the matching live Shippo rate. Methods with no rate stay hidden. Warehouse still buys the label from the delivery with Get Shippo Rates.</p>
                 </div>
             </xpath>
         </field>

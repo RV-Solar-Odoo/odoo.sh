@@ -15,6 +15,6 @@
         <field name="amount">250</field>
         <field name="int_min_order_amount">250</field>
         <field name="product_id" ref="product_product_delivery_free"/>
-        <field name="is_published" eval="True"/>
+        <field name="is_published" eval="False"/>
     </record>
 </odoo>

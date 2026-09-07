@@ -11,8 +11,77 @@ class DeliveryCarrier(models.Model):
     )
     int_shippo_provider = fields.Char(
         string="Shippo carrier",
-        help="If set, checkout uses the cheapest Shippo rate from this provider (UPS, USPS, FedEx).",
+        help="If set, checkout uses rates from this Shippo provider (e.g. UPS).",
     )
+    int_shippo_service_include = fields.Char(
+        string="Shippo service includes",
+        help="Comma-separated tokens that must appear in the Shippo service name or token "
+             "(e.g. ground, 2nd day, next day).",
+    )
+    int_shippo_service_exclude = fields.Char(
+        string="Shippo service excludes",
+        help="Comma-separated tokens that exclude an otherwise matching Shippo service "
+             "(e.g. saver, so Ground does not also match Ground Saver).",
+    )
+    int_free_over_amount = fields.Float(
+        string="Free over",
+        help="If the order total without shipping is at least this amount, checkout quotes $0 "
+             "for this method. Faster methods are unchanged.",
+    )
+
+    def _is_available_for_order(self, order):
+        if not super()._is_available_for_order(order):
+            return False
+        if self.delivery_type != "shippo":
+            return True
+        if not self.int_shippo_provider and not self.int_shippo_service_include:
+            return True
+        return bool(self.rate_shipment(order).get("success"))
+
+    def _int_shippo_service_tokens(self, value):
+        return [token.strip().casefold() for token in (value or "").split(",") if token.strip()]
+
+    def _int_shippo_service_text(self, rate):
+        sl = rate.get("servicelevel") or {}
+        parts = [rate.get("provider"), rate.get("servicelevel_name")]
+        if isinstance(sl, dict):
+            parts.extend([sl.get("name"), sl.get("token"), sl.get("terms")])
+        else:
+            parts.append(sl)
+        return " ".join(str(part) for part in parts if part).replace("_", " ").casefold()
+
+    def _int_shippo_rate_matches(self, rate):
+        provider = (rate.get("provider") or "")
+        if self.int_shippo_provider and provider.casefold() != self.int_shippo_provider.casefold():
+            return False
+        text = self._int_shippo_service_text(rate)
+        includes = self._int_shippo_service_tokens(self.int_shippo_service_include)
+        excludes = self._int_shippo_service_tokens(self.int_shippo_service_exclude)
+        if includes and not any(token in text for token in includes):
+            return False
+        if excludes and any(token in text for token in excludes):
+            return False
+        return True
+
+    def _int_shippo_matching_rates(self, rates):
+        return [rate for rate in rates if self._int_shippo_rate_matches(rate)]
+
+    def _int_order_amount_without_delivery(self, order):
+        if order._name != "sale.order":
+            return 0.0
+        if hasattr(order, "_compute_amount_total_without_delivery"):
+            return order._compute_amount_total_without_delivery()
+        delivery_total = sum(order.order_line.filtered("is_delivery").mapped("price_total"))
+        return order.amount_total - delivery_total
+
+    def _int_shippo_checkout_price(self, order, price):
+        if (
+            order._name == "sale.order"
+            and self.int_free_over_amount
+            and self._int_order_amount_without_delivery(order) + 1e-6 >= self.int_free_over_amount
+        ):
+            return 0.0
+        return price
 
     def shippo_rate_shipment(self, order):
         self.ensure_one()
@@ -21,12 +90,7 @@ class DeliveryCarrier(models.Model):
                 rates = order._int_shippo_fetch_rates()
             else:
                 rates = self._int_shippo_rates_from_picking(order)
-            if self.int_shippo_provider:
-                provider = self.int_shippo_provider.casefold()
-                rates = [
-                    rate for rate in rates
-                    if (rate.get("provider") or "").casefold() == provider
-                ]
+            rates = self._int_shippo_matching_rates(rates)
             amounts = [float(rate["amount"]) for rate in rates if rate.get("amount")]
             if not amounts:
                 return {
@@ -37,7 +101,7 @@ class DeliveryCarrier(models.Model):
                 }
             return {
                 "success": True,
-                "price": min(amounts),
+                "price": self._int_shippo_checkout_price(order, min(amounts)),
                 "error_message": False,
                 "warning_message": False,
             }
