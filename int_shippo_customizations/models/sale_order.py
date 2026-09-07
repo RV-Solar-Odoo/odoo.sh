@@ -13,6 +13,31 @@ class SaleOrder(models.Model):
             and not line.is_delivery
         )
 
+    def _int_order_product_categories(self):
+        self.ensure_one()
+        return self._int_shippo_order_lines().product_id.categ_id
+
+    def _int_ancestor_categories(self, categories):
+        seen = self.env["product.category"]
+        for category in categories:
+            current = category
+            while current and current not in seen:
+                seen |= current
+                current = current.parent_id
+        return seen
+
+    def _int_requires_ground_shipping(self):
+        self.ensure_one()
+        categories = self._int_ancestor_categories(self._int_order_product_categories())
+        return any(getattr(category, "ground_shipping_only", False) for category in categories)
+
+    def _int_shipping_upcharge(self):
+        self.ensure_one()
+        categories = self._int_ancestor_categories(self._int_order_product_categories())
+        if not categories:
+            return 0.0
+        return max(getattr(category, "shipping_upcharge", 0.0) or 0.0 for category in categories)
+
     def _int_shippo_content_weight_lb(self):
         self.ensure_one()
         picking = self.env["stock.picking"]

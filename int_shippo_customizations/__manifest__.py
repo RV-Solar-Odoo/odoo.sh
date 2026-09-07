@@ -1,6 +1,6 @@
 {
     "name": "Shippo Customizations",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.8.0",
     "category": "Inventory/Delivery",
     "summary": "Buy Shippo labels from warehouse deliveries and quote UPS Ground, 2 Day, and Overnight on the website",
     "author": "Internal",

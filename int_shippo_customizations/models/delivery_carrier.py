@@ -29,8 +29,18 @@ class DeliveryCarrier(models.Model):
              "for this method. Faster methods are unchanged.",
     )
 
+    def _int_is_ground_method(self):
+        includes = self._int_shippo_service_tokens(self.int_shippo_service_include)
+        return "ground" in includes and "saver" not in " ".join(includes)
+
     def _is_available_for_order(self, order):
         if not super()._is_available_for_order(order):
+            return False
+        if (
+            order._name == "sale.order"
+            and order._int_requires_ground_shipping()
+            and not self._int_is_ground_method()
+        ):
             return False
         if self.delivery_type != "shippo":
             return True
@@ -80,7 +90,9 @@ class DeliveryCarrier(models.Model):
             and self.int_free_over_amount
             and self._int_order_amount_without_delivery(order) + 1e-6 >= self.int_free_over_amount
         ):
-            return 0.0
+            price = 0.0
+        if order._name == "sale.order":
+            price += order._int_shipping_upcharge()
         return price
 
     def shippo_rate_shipment(self, order):
