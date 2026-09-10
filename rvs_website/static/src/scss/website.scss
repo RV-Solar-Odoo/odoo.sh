@@ -447,3 +447,123 @@
 .s_allow_columns:has(> p.small:first-child) > p:last-child {
     margin-bottom: 0 !important;
 }
+
+/* ── CATEGORIES SHOWCASE ── */
+
+/* Equal tiles with a subtle expand on hover */
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_block {
+    flex: 1 1 0 !important;
+    position: relative !important;
+    min-height: 60dvh !important;
+    overflow: hidden !important;
+    transition: flex-grow 0.3s ease !important;
+}
+
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_block:hover {
+    flex-grow: 1.35 !important;
+}
+
+/* Consistent overlay on all four tiles */
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_block::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.15) 0%,
+        rgba(0, 0, 0, 0.65) 100%
+    ) !important;
+    opacity: 1 !important;
+    transition: opacity 0.3s ease !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_block:hover::after {
+    opacity: 0.55 !important;
+}
+
+/* Content above the overlay, lifts slightly on hover */
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_row {
+    position: relative !important;
+    z-index: 2 !important;
+    transition: transform 0.3s ease !important;
+}
+
+.s_ecomm_categories_showcase .s_ecomm_categories_showcase_block:hover .s_ecomm_categories_showcase_row {
+    transform: translateY(-14px) !important;
+}
+
+/* Respect OS-level reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .s_ecomm_categories_showcase .s_ecomm_categories_showcase_block,
+    .s_ecomm_categories_showcase .s_ecomm_categories_showcase_row,
+    .s_ecomm_categories_showcase .s_ecomm_categories_showcase_block::after {
+        transition: none !important;
+    }
+}
+
+/* ── DEALER CTA ── */
+
+.s_faq_list.bg-black {
+    background-color: #0d0d0d !important;
+}
+
+/* Headline */
+.s_faq_list .o_grid_item p span[style*="26px"] {
+    font-size: clamp(26px, 3.5vw, 38px) !important;
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.15 !important;
+    color: #ffffff !important;
+    display: inline-block !important;
+}
+
+/* Benefit list */
+.s_faq_list .o_grid_item p.small {
+    color: rgba(255, 255, 255, 0.7) !important;
+    line-height: 1.6 !important;
+    padding-bottom: 14px !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.s_faq_list .o_grid_item p.small:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+}
+
+.s_faq_list .o_grid_item p.small span {
+    font-size: 15px !important;
+}
+
+.s_faq_list .o_grid_item p.small strong {
+    display: block !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 4px !important;
+}
+
+/* Apply button */
+.s_faq_list .btn-fill-custom {
+    background-color: #3a4efd !important;
+    border: 1px solid #3a4efd !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 14px 36px !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.s_faq_list .btn-fill-custom:hover {
+    background-color: #2d3ec9 !important;
+    border-color: #2d3ec9 !important;
+    color: #ffffff !important;
+}
