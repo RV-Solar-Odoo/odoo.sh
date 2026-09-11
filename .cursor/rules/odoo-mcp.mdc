@@ -1,0 +1,21 @@
+---
+description: Conventions when reading or changing live Odoo data through the odoo MCP server
+alwaysApply: false
+---
+
+# Odoo MCP
+
+The `odoo` MCP server talks to the **production** Odoo.sh database (instance
+`odoosh`). Treat every call as touching live customer data.
+
+- Before guessing a schema, call `get_model_fields` (use `relevance="top"` on
+  wide models) or `inspect_model_relationships`.
+- Prefer `search_records` with an explicit `fields` list; use
+  `aggregate_records` for counts and sums instead of reading rows.
+- Never call `create`/`write`/`unlink` through `execute_method`. Writes go
+  through `preview_write` → `validate_write` → `execute_approved_write`, and
+  only when the user has asked for the change in this conversation.
+- On a permission error, pass the error text to `diagnose_access` as
+  `observed_error` instead of retrying.
+- If more than one instance is configured, run `list_instances` and pass
+  `instance` explicitly on every call.

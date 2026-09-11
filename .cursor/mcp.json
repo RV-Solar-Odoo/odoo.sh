@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "odoo": {
+      "command": "/opt/homebrew/bin/uvx",
+      "args": ["odoo-mcp"],
+      "env": {
+        "ODOO_CONFIG_FILE": "/Users/grantneubek/.config/odoo/config.json"
+      }
+    }
+  }
+}
