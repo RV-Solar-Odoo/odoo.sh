@@ -10,8 +10,9 @@ class DeliveryCarrier(models.Model):
         ondelete={"shippo": "set default"},
     )
     int_shippo_provider = fields.Char(
-        string="Shippo carrier",
-        help="If set, checkout uses rates from this Shippo provider (e.g. UPS).",
+        string="Shippo carriers",
+        help="Comma-separated Shippo providers this method may quote from (e.g. UPS,FedEx). "
+             "Checkout uses the cheapest matching rate across them. Empty means any provider.",
     )
     int_shippo_service_include = fields.Char(
         string="Shippo service includes",
@@ -61,8 +62,8 @@ class DeliveryCarrier(models.Model):
         return " ".join(str(part) for part in parts if part).replace("_", " ").casefold()
 
     def _int_shippo_rate_matches(self, rate):
-        provider = (rate.get("provider") or "")
-        if self.int_shippo_provider and provider.casefold() != self.int_shippo_provider.casefold():
+        providers = self._int_shippo_service_tokens(self.int_shippo_provider)
+        if providers and (rate.get("provider") or "").casefold() not in providers:
             return False
         text = self._int_shippo_service_text(rate)
         includes = self._int_shippo_service_tokens(self.int_shippo_service_include)

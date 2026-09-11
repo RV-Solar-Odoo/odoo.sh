@@ -12,7 +12,13 @@
     <record id="delivery_carrier_shippo_fedex" model="delivery.carrier">
         <field name="is_published" eval="False"/>
     </record>
+    <!-- Checkout tiers quote the cheapest matching UPS or FedEx rate; the
+         carrier is chosen when the label is bought on the delivery. -->
     <record id="delivery_carrier_shippo_ups_ground" model="delivery.carrier">
+        <field name="name">Ground Shipping</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
+        <field name="int_shippo_service_include">ground,home delivery</field>
+        <field name="int_shippo_service_exclude">saver,surepost,smart post,smartpost,economy</field>
         <field name="is_published" eval="True"/>
         <field name="int_free_over_amount">250</field>
     </record>
@@ -20,9 +26,15 @@
         <field name="is_published" eval="False"/>
     </record>
     <record id="delivery_carrier_shippo_ups_2day" model="delivery.carrier">
+        <field name="name">2 Day Shipping</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
+        <field name="int_shippo_service_include">2nd day,2 day,second day</field>
         <field name="is_published" eval="True"/>
     </record>
     <record id="delivery_carrier_shippo_ups_overnight" model="delivery.carrier">
+        <field name="name">Overnight Shipping</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
+        <field name="int_shippo_service_include">next day,overnight</field>
         <field name="is_published" eval="True"/>
     </record>
 </odoo>

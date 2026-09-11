@@ -38,12 +38,12 @@
         <field name="is_published" eval="False"/>
     </record>
     <record id="delivery_carrier_shippo_ups_ground" model="delivery.carrier">
-        <field name="name">UPS Ground</field>
+        <field name="name">Ground Shipping</field>
         <field name="delivery_type">shippo</field>
         <field name="integration_level">rate</field>
-        <field name="int_shippo_provider">UPS</field>
-        <field name="int_shippo_service_include">ground</field>
-        <field name="int_shippo_service_exclude">saver,surepost</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
+        <field name="int_shippo_service_include">ground,home delivery</field>
+        <field name="int_shippo_service_exclude">saver,surepost,smart post,smartpost,economy</field>
         <field name="int_free_over_amount">250</field>
         <field name="product_id" ref="product_product_delivery_shippo"/>
         <field name="sequence">21</field>
@@ -60,20 +60,20 @@
         <field name="is_published" eval="False"/>
     </record>
     <record id="delivery_carrier_shippo_ups_2day" model="delivery.carrier">
-        <field name="name">UPS 2 Day</field>
+        <field name="name">2 Day Shipping</field>
         <field name="delivery_type">shippo</field>
         <field name="integration_level">rate</field>
-        <field name="int_shippo_provider">UPS</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
         <field name="int_shippo_service_include">2nd day,2 day,second day</field>
         <field name="product_id" ref="product_product_delivery_shippo"/>
         <field name="sequence">23</field>
         <field name="is_published" eval="True"/>
     </record>
     <record id="delivery_carrier_shippo_ups_overnight" model="delivery.carrier">
-        <field name="name">UPS Overnight</field>
+        <field name="name">Overnight Shipping</field>
         <field name="delivery_type">shippo</field>
         <field name="integration_level">rate</field>
-        <field name="int_shippo_provider">UPS</field>
+        <field name="int_shippo_provider">UPS,FedEx</field>
         <field name="int_shippo_service_include">next day,overnight</field>
         <field name="product_id" ref="product_product_delivery_shippo"/>
         <field name="sequence">24</field>
