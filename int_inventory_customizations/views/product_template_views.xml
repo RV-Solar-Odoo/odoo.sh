@@ -71,16 +71,12 @@
             </xpath>
             <xpath expr="//group[@name='inventory']" position="after">
                 <group name="studio_group_2mb_1jpov6kcd">
-                    <group name="studio_group_2mb_left" string="Dimensions (mm)">
-                        <field name="length_mm"/>
-                        <field name="width_mm"/>
-                        <field name="height_mm"/>
-                    </group>
-                    <group name="studio_group_2mb_right" string="Dimensions (inches)">
+                    <group name="studio_group_2mb_left" string="Dimensions (inches)">
                         <field name="length_in"/>
                         <field name="width_in"/>
                         <field name="height_in"/>
                     </group>
+                    <group name="studio_group_2mb_right"/>
                 </group>
             </xpath>
             <xpath expr="//field[@name='responsible_id']" position="after">
