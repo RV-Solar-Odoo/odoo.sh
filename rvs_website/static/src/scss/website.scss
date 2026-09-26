@@ -622,3 +622,9 @@
     > :nth-child(3) { order: 3 !important; }
   }
 }
+
+@media (min-width: 992px) {
+  #o_wsale_categories_filmstrip {
+    display: none !important;
+  }
+}
