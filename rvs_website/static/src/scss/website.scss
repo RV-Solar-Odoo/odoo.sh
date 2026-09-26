@@ -567,3 +567,58 @@
     border-color: #2d3ec9 !important;
     color: #ffffff !important;
 }
+
+// Categories showcase — stack below desktop
+@media (max-width: 991.98px) {
+  .s_ecomm_categories_showcase {
+    .s_ecomm_categories_showcase_wrapper {
+      flex-wrap: wrap !important;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+    .s_ecomm_categories_showcase_block {
+      flex: 1 1 calc(50% - 0.75rem) !important;  // half, minus half the 1.5rem gap
+      min-height: 0 !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+    }
+  }
+}
+
+.s_cover .h5-fs {
+  font-size: clamp(0.95rem, calc(0.72rem + 1.2vw), 1.25rem) !important;
+}
+
+@media (max-width: 991.98px) {
+
+  .s_cover .s_parallax_bg {
+    background-position: 20% 75% !important;
+  }
+
+  .s_ecomm_categories_showcase {
+    .s_ecomm_categories_showcase_wrapper {
+      flex-wrap: wrap !important;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+    .s_ecomm_categories_showcase_block {
+      flex: 1 1 calc(50% - 0.75rem) !important;
+      min-height: 0 !important;
+      height: auto !important;
+      aspect-ratio: 1 !important;
+    }
+    .s_ecomm_categories_showcase_row {
+      padding: 0.75rem !important;
+    }
+    .s_ecomm_categories_showcase_block span {
+      font-size: clamp(0.75rem, calc(0.45rem + 1.2vw), 1.25rem) !important;
+      overflow-wrap: anywhere !important;
+    }
+  }
+
+  .s_faq_list .row {
+    > :nth-child(1) { order: 2 !important; }
+    > :nth-child(2) { order: 1 !important; }
+    > :nth-child(3) { order: 3 !important; }
+  }
+}
