@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.zoom.smart.embed</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Zoom Phone" string="Zoom Phone" name="sbr_zoom_phone_smart_embed"
+                     logo="/sbr_zoom_phone_smart_embed/static/description/phone_icon.png">
+                    <block title="Call Settings">
+                        <setting help="Make Zoom Phone available only when this company is active.">
+                            <field name="zoom_phone_enabled"/>
+                        </setting>
+                        <setting string="Zoom Smart Embed URL"
+                                 help="Use the Zoom-provided Smart Embed URL for this company. Do not enter a client secret or password.">
+                            <field name="zoom_phone_embed_url"/>
+                        </setting>
+                        <setting>
+                            <field name="zoom_smart_embed_auto_dial"/>
+                            <div class="content-group" id="info_zoom_smart_embed_auto_dial">
+                                <div class="row mt16 o_text_muted">
+                                    When this option is enabled, clicking the call icon will immediately start the call
+                                    in Zoom.
+                                    If it is not enabled, Zoom will only fill in the phone number and open the dialer,
+                                    allowing the user to review the number and place the call manually if they choose.
+                                </div>
+                            </div>
+                        </setting>
+                        <setting>
+                            <field name="is_call_notification_enabled"/>
+                            <div class="row mt16 o_text_muted">
+                                When this option is enabled, Odoo will show in-system notifications for call events
+                                directly within the Odoo interface.
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

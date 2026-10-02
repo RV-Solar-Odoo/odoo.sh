@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zoom.ZoomPhoneBubble">
+        <div t-if="state.enabled" class="o-zoom-phone-root" t-att-style="'left: ' + state.position.x + 'px; top: ' + state.position.y + 'px;'">
+            <button
+                    type="button"
+                    class="o-zoom-phone-bubble"
+                    t-att-class="state.open ? 'o-zoom-phone-bubble-hidden' : ''"
+                    t-on-click="toggle"
+                    t-on-mousedown="startDrag"
+                    title="Zoom Phone"
+                    aria-label="Open Zoom Phone"
+            >
+                <img src="/sbr_zoom_phone_smart_embed/static/src/images/zoom_phone.png" alt=""/>
+            </button>
+            <div class="o-zoom-phone-panel" t-ref="phone-panel" t-att-class="state.open ? 'o-zoom-phone-panel-open' : 'o-zoom-phone-panel-closed'">
+                <div class="o-zoom-phone-header" t-on-mousedown="startPanelDrag">
+                    <span class="o-zoom-phone-title">Zoom Phone</span>
+                    <button type="button" class="o-zoom-phone-close" t-on-click="close" title="Close Zoom Phone" aria-label="Close Zoom Phone">
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+                <iframe
+                    t-att-src="state.embedUrl"
+                    id="zoom-embeddable-phone-iframe"
+                    class="o-zoom-phone-iframe"
+                    t-ref="zoom-iframe"
+                    t-on-load="onIframeLoad"
+                    title="Zoom Phone"
+                    allow="clipboard-read; clipboard-write https://applications.zoom.us"
+                    scrolling="no"
+                    frameborder="0"
+                />
+            </div>
+        </div>
+    </t>
+
+</templates>

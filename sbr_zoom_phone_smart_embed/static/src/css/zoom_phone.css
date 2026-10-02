@@ -1,0 +1,156 @@
+.o-zoom-phone-root {
+    position: fixed;
+    z-index: 1050;
+    /* left and top will be controlled by inline styles from JS */
+}
+
+.o-zoom-phone-bubble {
+    width: 50px;
+    height: 50px;
+    background: var(--o-brand-primary);
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: move;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.3s;
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    visibility: visible;
+}
+
+.o-zoom-phone-bubble img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.o-zoom-phone-bubble:focus-visible,
+.o-zoom-phone-close:focus-visible {
+    outline: 3px solid var(--o-brand-primary);
+    outline-offset: 3px;
+}
+
+.o-zoom-phone-bubble:hover {
+    transform: scale(1.05) rotate(0deg);
+}
+
+.o-zoom-phone-bubble:active {
+    opacity: 0.9;
+    transform: scale(0.98) rotate(0deg);
+}
+
+.o-zoom-phone-bubble-hidden {
+    opacity: 0;
+    transform: scale(0.5) rotate(90deg);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.o-zoom-phone-bubble i {
+    font-size: 22px;
+    pointer-events: none;
+}
+
+.o-zoom-phone-panel {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: min(350px, calc(100vw - 16px));
+    height: min(680px, calc(100vh - 16px));
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    pointer-events: auto;
+    transform-origin: bottom right;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.o-zoom-phone-panel-open {
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+}
+
+.o-zoom-phone-panel-closed {
+    opacity: 0;
+    transform: scale(0.8);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.o-zoom-phone-header {
+    background: linear-gradient(135deg, #2d8cff 0%, #0066cc 100%);
+    color: white;
+    padding: 4px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.o-zoom-phone-header:active {
+    cursor: grabbing;
+}
+
+.o-zoom-phone-title {
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+}
+
+.o-zoom-phone-close {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.o-zoom-phone-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.o-zoom-phone-close:active {
+    transform: scale(0.95);
+}
+
+.o-zoom-phone-close i {
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.o-zoom-phone-iframe {
+    width: 100%;
+    flex: 1;
+    border: none;
+    overflow: hidden;
+    display: block;
+}
+
+@media (max-width: 576px) {
+    .o-zoom-phone-panel {
+        border-radius: 8px;
+    }
+}
