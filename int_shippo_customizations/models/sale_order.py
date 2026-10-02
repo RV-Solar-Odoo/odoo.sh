@@ -127,6 +127,21 @@ class SaleOrder(models.Model):
         age = fields.Datetime.now() - self.int_shippo_rate_date
         return age.total_seconds() < RATE_CACHE_MINUTES * 60
 
+    def _int_shippo_checkout_providers(self):
+        """Shippo providers the published checkout methods quote from, casefolded."""
+        carriers = self.env["delivery.carrier"].sudo().search([
+            ("delivery_type", "=", "shippo"),
+            ("is_published", "=", True),
+        ])
+        return {
+            token
+            for carrier in carriers
+            for token in carrier._int_shippo_service_tokens(carrier.int_shippo_provider)
+        }
+
+    def _int_shippo_rate_providers(self, rates):
+        return {(rate.get("provider") or "").casefold() for rate in rates or []}
+
     def _int_shippo_request_rates(self):
         self.ensure_one()
         from_partner = self.warehouse_id.partner_id or self.company_id.partner_id
@@ -145,7 +160,21 @@ class SaleOrder(models.Model):
             timeout=20,
             retries=1,
         )
-        return shipment.get("rates") or []
+        rates = shipment.get("rates") or []
+        # Shippo answers SUCCESS even when a carrier refused to quote (throttled,
+        # out of service area, bad account); the reason is only in `messages`.
+        # A carrier that is simply not connected sends no message at all.
+        missing = self._int_shippo_checkout_providers() - self._int_shippo_rate_providers(rates)
+        refused = set()
+        for message in shipment.get("messages") or []:
+            source = (message.get("source") or "").casefold()
+            if source in missing:
+                refused.add(source)
+                _logger.warning(
+                    "Shippo returned no %s rates for %s: %s",
+                    message.get("source"), self.name, message.get("text"),
+                )
+        return rates, refused
 
     def _int_shippo_fetch_rates(self):
         self.ensure_one()
@@ -166,7 +195,7 @@ class SaleOrder(models.Model):
             return stored
 
         try:
-            rates = self._int_shippo_request_rates()
+            rates, refused = self._int_shippo_request_rates()
         except UserError:
             request_cache[key] = stored if stored is not None else []
             if stored is not None:
@@ -177,13 +206,28 @@ class SaleOrder(models.Model):
                 return stored
             raise
 
+        # A carrier dropping out of one answer would hide every method tied to it,
+        # so keep the last quote for this cart that still had it.
+        lost = (
+            self._int_shippo_checkout_providers()
+            & self._int_shippo_rate_providers(stored)
+        ) - self._int_shippo_rate_providers(rates)
+        if stored is not None and lost:
+            _logger.warning(
+                "Shippo quote for %s came back without %s; reusing the last quote "
+                "for this cart and address.", self.name, ", ".join(sorted(lost)),
+            )
+            request_cache[key] = stored
+            return stored
+
         # Only a real quote is worth keeping for an hour. An empty answer is still
-        # shared across this render, but the next page load asks Shippo again.
+        # shared across this render, but the next page load asks Shippo again. A
+        # quote a carrier refused is kept as a fallback but never counts as fresh.
         if rates:
             self.sudo().write({
                 "int_shippo_rate_key": key,
                 "int_shippo_rate_json": json.dumps(rates),
-                "int_shippo_rate_date": fields.Datetime.now(),
+                "int_shippo_rate_date": False if refused else fields.Datetime.now(),
             })
         request_cache[key] = rates
         return rates
