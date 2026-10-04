@@ -35,47 +35,64 @@
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3) !important;
 }
  
-/* Primary button — clean white outline */
+/* Primary — solid brand blue */
 .s_cover:not(.o_hero_light) .btn-custom,
 .s_cover:not(.o_hero_light) .btn-secondary {
-    background: transparent !important;
-    border: 1px solid #ffffff !important;
+    background: var(--brand-blue) !important;
+    border: 1px solid var(--brand-blue) !important;
     color: #ffffff !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    padding: 14px 36px !important;
+    padding: 18px 44px !important;
     border-radius: 0 !important;
-    transition: background 0.3s ease, color 0.3s ease !important;
+    text-shadow: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease !important;
 }
- 
+
 .s_cover:not(.o_hero_light) .btn-custom:hover,
 .s_cover:not(.o_hero_light) .btn-secondary:hover {
-    background: #ffffff !important;
-    color: #000000 !important;
+    background: #2d3ec9 !important;
+    border-color: #2d3ec9 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
 }
- 
-/* Secondary button — dimmer */
+
+/* Secondary — frosted, reads on any photo */
 .s_cover:not(.o_hero_light) .btn-outline-secondary {
-    background: transparent !important;
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    color: rgba(255, 255, 255, 0.85) !important;
-    font-size: 13px !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    padding: 14px 36px !important;
+    padding: 18px 44px !important;
     border-radius: 0 !important;
-    transition: border-color 0.3s ease, color 0.3s ease !important;
+    text-shadow: none !important;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease !important;
 }
- 
+
 .s_cover:not(.o_hero_light) .btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
     border-color: #ffffff !important;
-    color: #ffffff !important;
+    color: #111111 !important;
+    transform: translateY(-2px) !important;
 }
- 
- 
+
+.s_cover:not(.o_hero_light) :is(.btn-custom, .btn-secondary, .btn-outline-secondary) { min-width: 240px; }
+
+/* hero logo: bigger floor on mobile, lower cap on desktop */
+.s_cover .s_allow_columns > img.o_we_custom_image {
+    min-width: 160px;
+    max-width: 280px;
+}
+
+
 /* ── SHOP PRODUCT IMAGES ─────────────────────────────────────
    [CHANGED] Was 4 blocks across the file, 2 of which were dead
    code. Merged into 2.
@@ -627,4 +644,97 @@
   #o_wsale_categories_filmstrip {
     display: none !important;
   }
+}
+
+/* NEGATE THE DEFAULT ODOO TAG AT BOTTOM */
+
+.o_brand_promotion { display: none !important; }
+
+/* ── DEALER APPLICATION FORM ────────────────────────────────── */
+#wrapwrap:has(form[data-model_name="crm.lead"]) {
+  --accent: #3a4efd;
+
+  .s_website_form > .container,
+  .s_website_form > .o_container_small {
+    max-width: 600px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(22,27,46,.12);
+    padding: 2.5rem;
+    margin-top: -4rem;
+    position: relative;
+  }
+
+  .s_website_form_field {
+    padding-block: 0 !important;
+    margin-bottom: 1.75rem;
+    transition: opacity .25s;
+    animation: ds-rise .5s cubic-bezier(.2,.7,.2,1) backwards;
+    @for $i from 1 through 12 { &:nth-child(#{$i}) { animation-delay: #{$i * 60}ms; } }
+  }
+  .s_website_form_field > .row { margin-inline: 0; }
+  .s_website_form_field > .row > * { padding-inline: 0; }
+
+  .s_website_form_label {
+    width: 100% !important;
+    padding: 0;
+    margin-bottom: .35rem;
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+
+  .form-control, .form-select {
+    border: 1px solid #d9ddf0;
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    transition: border-color .15s, box-shadow .15s;
+    &:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  }
+  input[type="file"].form-control { border-style: dashed; }
+
+  .s_website_form_multiple .form-check-label {
+    display: block;
+    padding: .45rem .85rem;
+    border: 1px solid #d9ddf0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, background-color .15s, transform .15s;
+    &:hover { border-color: var(--accent); transform: translateX(3px); }
+  }
+  .form-check-input:checked + .form-check-label {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+    background: rgba(58,78,253,.06);
+  }
+
+  /* spotlight: current question bright, others fade back */
+  .s_website_form_rows:has(.s_website_form_field:focus-within) .s_website_form_field:not(:focus-within) { opacity: .45; }
+
+  /* check mark when a required question is answered */
+  .s_website_form_required:has(:is(input, select, textarea):valid) .s_website_form_label::after {
+    content: "\2713"; color: var(--accent); margin-left: .4em; animation: ds-pop .3s both;
+  }
+
+  .s_website_form_send {
+    background: var(--accent); border: 0; border-radius: 999px; padding: .55rem 1.5rem;
+    transition: transform .15s, box-shadow .15s;
+    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(58,78,253,.3); }
+  }
+}
+@keyframes ds-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ds-pop  { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #wrapwrap:has(form[data-model_name="crm.lead"]) * { animation: none !important; transition: none !important; }
+}
+
+/* ── FOOTER ──────────────────────────────────────────────────
+   [NOTE] .o_brand_promotion is already force-hidden everywhere
+   by the global rule above. This footer-scoped hide is redundant
+   for that element but kept so the column it sits in collapses
+   and the copyright line centers correctly — the centering is
+   the part this block actually adds. */
+.o_footer_copyright {
+  .col-md:has(> .o_brand_promotion) { display: none !important; }
+  .col-md:has(.o_footer_copyright_name) { text-align: center !important; align-items: center; }
+  .o_footer_copyright_name { margin-right: 0 !important; }
 }
