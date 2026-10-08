@@ -126,26 +126,7 @@
     overflow: visible !important;
     background-color: #ffffff !important;
 }
- 
- 
-/* ── FEATURED PRODUCT CAROUSEL ───────────────────────────────
-   [CHANGED] Added .o_two_up alongside the generated ID. The ID
-   is per-instance — delete and re-add the snippet and it becomes
-   s_dynamic_snippet_2, silently reverting to 4 cards. Add the
-   class o_two_up to the snippet in the editor and it survives.
-   Keeping the ID too means nothing breaks in the meantime.
- 
-   [CHANGED] Wrapped in a media query — 50% width was applying on
-   phones too, giving two cramped cards.
-   -------------------------------------------------------- */
-@media (min-width: 768px) {
-    #s_dynamic_snippet_1,
-    #s_dynamic_snippet_1 .carousel-inner,
-    .o_two_up,
-    .o_two_up .carousel-inner {
-        --o-carousel-item-width-percentage: 50% !important;
-    }
-}
+
 
 //* ── FEATURED CAROUSEL — card sizing ── */
 .s_dynamic_snippet_products .oe_product_cart {
