@@ -128,37 +128,6 @@
 }
 
 
-//* ── FEATURED CAROUSEL — card sizing ── */
-.s_dynamic_snippet_products .oe_product_cart {
-    height: 80dvh !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-.s_dynamic_snippet_products .oe_product_image {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-}
-
-/* The link that breaks the height chain */
-.s_dynamic_snippet_products .oe_product_image_link {
-    display: block !important;
-    height: 100% !important;
-    width: 100% !important;
-}
-
-/* Background-image span — object-fit does not apply */
-.s_dynamic_snippet_products .oe_product_image_img {
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center center !important;
-}
-
-.s_dynamic_snippet_products .o_wsale_product_information {
-    flex: 0 0 auto !important;
-}
-
 /* ── FEATURED PRODUCTS — section header ── */
 .s_dynamic_snippet_title {
     align-items: baseline !important;
@@ -212,59 +181,117 @@
     opacity: 0.65 !important;
 }
  
-/* Dark info panel */
-.s_dynamic_snippet_products .o_wsale_product_information {
-    background: var(--panel-dark) !important;
-    padding: 10px 18px !important;
+/* featured products carousel: light card, compact details */
+.s_dynamic_snippet_products {
+  /* cards per view: 1 phone, 2 tablet, 3 laptop, 4 desktop */
+  .carousel.o_carousel_multi_items { --o-carousel-item-width-percentage: 100% !important; }
+  @media (min-width: 768px)  { .carousel.o_carousel_multi_items { --o-carousel-item-width-percentage: 50% !important; } }
+  @media (min-width: 992px)  { .carousel.o_carousel_multi_items { --o-carousel-item-width-percentage: 33.3333% !important; } }
+  @media (min-width: 1200px) { .carousel.o_carousel_multi_items { --o-carousel-item-width-percentage: 25% !important; } }
+  .carousel-item { min-height: 0 !important; }
+
+  /* card */
+  .oe_product_cart {
+    height: auto !important;
+    background: #fff !important;
+    border: 1px solid #e6e8ef !important;
+    border-radius: 10px !important;
+    transition: box-shadow .2s, transform .2s;
+    &:hover { box-shadow: 0 10px 28px rgba(22,27,46,.10); transform: translateY(-2px); }
+  }
+  .oe_product_image {
+    flex: 0 0 auto !important;
+    aspect-ratio: 4 / 5;
+    height: auto !important;
+    max-height: calc(100dvh - 330px);
+  }
+  .oe_product_image_link { height: 100% !important; }
+
+  /* details */
+  .o_wsale_product_information {
+    background: #fff !important;
+    height: auto !important;
+    padding: 14px 16px 16px !important;
+    border-top: 1px solid #eef0f5;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
     gap: 6px !important;
-}
- 
-/* Product name white */
-.s_dynamic_snippet_products .o_wsale_products_item_title a {
-    color: #ffffff !important;
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    line-height: 1.3 !important;
-}
- 
-/* Price — [CHANGED] lighter blue. #3a4efd on #1e1d1d is ~2.9:1,
-   under the 4.5:1 minimum. This is ~7:1 and reads as the same
-   brand blue. Swap back to var(--brand-blue) to revert. */
-.s_dynamic_snippet_products .product_price .fw-bold {
-    color: var(--brand-blue-on-dark) !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-}
- 
-/* MSRP crossed out — [CHANGED] 0.35 → 0.55 alpha */
-.s_dynamic_snippet_products .product_price del {
-    color: rgba(255, 255, 255, 0.55) !important;
-    font-size: 12px !important;
-}
- 
-/* Add to cart button — [CHANGED] 0.6 → 0.75 alpha */
-.s_dynamic_snippet_products .o_wsale_product_btn_primary {
-    background: transparent !important;
-    border: none !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-    font-size: 12px !important;
-    padding: 6px 0 0 0 !important;
-    margin-top: 4px !important;
-    display: block !important;
-}
- 
-.s_dynamic_snippet_products .o_wsale_product_btn_primary:hover {
-    color: #ffffff !important;
-}
- 
-/* Card border and rounding */
-.s_dynamic_snippet_products .oe_product_cart {
-    border: 2px solid var(--border-light) !important;
-    border-radius: 2px !important;
-    overflow: hidden !important;
+    text-align: left !important;
+  }
+  .o_wsale_product_information_text {
+    text-align: left !important;
+    min-height: 67px;          /* room for a 2-line title + category bubble */
+  }
+  .o_wsale_products_item_title {
+    margin: 0 !important;
+    min-height: 0 !important;
+    text-align: left !important;
+    a {
+      color: #161b2e !important;
+      font-size: 15px !important;
+      font-weight: 500 !important;
+      line-height: 1.3 !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  /* category bubble */
+  .rvsb_card_category {
+    display: inline-block;
+    max-width: 100%;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 0;
+    background: #E1E4EB;
+    color: #686F86;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* price + cart on one row */
+  .o_wsale_product_sub {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-grow: 0 !important;
+    gap: 8px !important;
+  }
+  .product_price { flex: 1 1 auto !important; width: auto !important; min-width: 0; text-align: left !important; }
+  .product_price .fw-bold { color: #3a4efd !important; font-size: clamp(16px, calc(.55rem + .65vw), 19px) !important; font-weight: 700 !important; }
+  .product_price del { color: #9aa0b4 !important; }
+  .o_wsale_product_btn,
+  .o_wsale_product_action_row { width: auto !important; flex: 0 0 auto !important; margin: 0 !important; }
+  .o_wsale_product_btn .btn {
+    --o-wsale-card-btns-btn-flex-grow: 0;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    background: #3a4efd !important;
+    color: #fff !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: filter .15s;
+    &:hover { filter: brightness(1.1); color: #fff !important; }
+    .o_label { display: none !important; }
+    .fa { font-size: 15px; margin: 0; }
+  }
 }
 
 
@@ -687,6 +714,7 @@
   }
   input[type="file"].form-control { border-style: dashed; }
 
+  .s_website_form_multiple > * { margin-bottom: 8px; }
   .s_website_form_multiple .form-check-label {
     display: block;
     padding: .45rem .85rem;
@@ -701,9 +729,6 @@
     box-shadow: 0 0 0 1px var(--accent);
     background: rgba(58,78,253,.06);
   }
-
-  /* spotlight: current question bright, others fade back */
-  .s_website_form_rows:has(.s_website_form_field:focus-within) .s_website_form_field:not(:focus-within) { opacity: .45; }
 
   /* check mark when a required question is answered */
   .s_website_form_required:has(:is(input, select, textarea):valid) .s_website_form_label::after {
@@ -720,6 +745,46 @@
 @keyframes ds-pop  { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   #wrapwrap:has(form[data-model_name="crm.lead"]) * { animation: none !important; transition: none !important; }
+}
+
+/* dealer page: requirements list with blue checks */
+#wrapwrap:has(form[data-model_name="crm.lead"]) .s_title ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem auto 0;
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    text-align: left !important;
+    font-size: 1.05rem;
+
+    &::before {
+      content: "\2713";
+      flex: 0 0 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(58,78,253,.1);
+      color: #3a4efd;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+    &:has(> br:only-child) { display: none; }
+  }
+
+  /* [CHANGED] scoped to the dealer page — the snippet as tested set
+     this on a bare `span` selector, which would have hit every span
+     on the site. Assuming the intent was the checklist item text. */
+  span {
+    letter-spacing: .025rem;
+  }
 }
 
 /* ── HELPDESK: TEAM PICKER (/helpdesk) ──────────────────────── */
