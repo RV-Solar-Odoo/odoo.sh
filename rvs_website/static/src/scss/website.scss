@@ -193,6 +193,9 @@
   /* card */
   .oe_product_cart {
     height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
     background: #fff !important;
     border: 1px solid #e6e8ef !important;
     border-radius: 10px !important;
@@ -856,7 +859,6 @@
   }
   input[type="file"].form-control { border-style: dashed; }
 
-  .s_website_form_rows:has(.s_website_form_field:focus-within) .s_website_form_field:not(:focus-within) { opacity: .45; }
   .s_website_form_required:has(:is(input, select, textarea)[required]:valid) .s_website_form_label::after {
     content: "\2713"; color: var(--accent); margin-left: .4em;
   }
