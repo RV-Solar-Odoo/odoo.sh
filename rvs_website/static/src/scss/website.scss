@@ -209,6 +209,12 @@
     max-height: calc(100dvh - 330px);
   }
   .oe_product_image_link { height: 100% !important; }
+  .oe_product_image_img {
+    transition: transform .3s ease !important;
+  }
+  .oe_product_cart:hover .oe_product_image_img {
+    transform: scale(1.06) !important;
+  }
 
   /* details */
   .o_wsale_product_information {
