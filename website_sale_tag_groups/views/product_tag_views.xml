@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_tag_form_view_group" model="ir.ui.view">
+        <field name="name">product.tag.form.group</field>
+        <field name="model">product.tag</field>
+        <field name="inherit_id" ref="product.product_tag_form_view"/>
+        <field name="arch" type="xml">
+            <field name="visible_to_customers" position="before">
+                <field name="group_id"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_tag_tree_view_group" model="ir.ui.view">
+        <field name="name">product.tag.list.group</field>
+        <field name="model">product.tag</field>
+        <field name="inherit_id" ref="product.product_tag_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="group_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_tag_search_view_group" model="ir.ui.view">
+        <field name="name">product.tag.search.group</field>
+        <field name="model">product.tag</field>
+        <field name="arch" type="xml">
+            <search string="Product Tags">
+                <field name="name"/>
+                <field name="group_id"/>
+                <group>
+                    <filter name="group_by_group" string="Filter Group" context="{'group_by': 'group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

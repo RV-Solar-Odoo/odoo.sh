@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_tag_group_form_view" model="ir.ui.view">
+        <field name="name">product.tag.group.form</field>
+        <field name="model">product.tag.group</field>
+        <field name="arch" type="xml">
+            <form string="Tag Group">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Group"/>
+                        <h1><field name="name" placeholder="e.g. Battery Voltage"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="display" widget="radio"/>
+                            <field name="collapsed" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Tags" name="tags">
+                            <field name="tag_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="visible_to_customers" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="product_tag_group_list_view" model="ir.ui.view">
+        <field name="name">product.tag.group.list</field>
+        <field name="model">product.tag.group</field>
+        <field name="arch" type="xml">
+            <list string="Tag Groups">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="display"/>
+                <field name="collapsed"/>
+                <field name="tag_count" string="Tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="product_tag_group_action" model="ir.actions.act_window">
+        <field name="name">Tag Groups</field>
+        <field name="res_model">product.tag.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a tag group</p>
+            <p>Each group becomes its own labeled filter section on the shop page
+               (e.g. "Battery Voltage", "Brand", "Use Case").</p>
+        </field>
+    </record>
+</odoo>
