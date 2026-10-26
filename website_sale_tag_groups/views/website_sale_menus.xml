@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_product_tag_groups"
+        name="Tag Groups"
+        parent="website_sale.menu_catalog"
+        action="product_tag_group_action"
+        sequence="16"/>
+</odoo>

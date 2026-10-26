@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Shared renderer: one section per tag group.
+        Expects `all_tags` (visible product.tag recordset from the controller),
+        `tags` (set of selected tag ids) and `isMobile` (bool).
+    -->
+    <template id="tag_group_sections" name="Tag Group Sections">
+        <t t-set="tag_groups" t-value="all_tags.mapped('group_id').sorted(lambda g: (g.sequence, g.id))"/>
+        <t t-set="ungrouped_tags" t-value="all_tags.filtered(lambda t: not t.group_id)"/>
+
+        <t t-foreach="tag_groups" t-as="group">
+            <t t-call="website_sale_tag_groups.tag_group_section">
+                <t t-set="section_id" t-value="'tag_group_%s' % group.id"/>
+                <t t-set="section_name" t-value="group.name"/>
+                <t t-set="section_tags" t-value="all_tags.filtered(lambda t: t.group_id == group)"/>
+                <t t-set="section_display" t-value="group.display"/>
+                <t t-set="section_collapsed" t-value="group.collapsed"/>
+            </t>
+        </t>
+
+        <t t-if="ungrouped_tags">
+            <t t-call="website_sale_tag_groups.tag_group_section">
+                <t t-set="section_id" t-value="'tag_group_other'"/>
+                <t t-set="section_name" t-value="'Tags'"/>
+                <t t-set="section_tags" t-value="ungrouped_tags"/>
+                <t t-set="section_display" t-value="'checkbox'"/>
+                <t t-set="section_collapsed" t-value="False"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- A single collapsible section (desktop accordion item or mobile offcanvas item). -->
+    <template id="tag_group_section" name="Tag Group Section">
+        <t t-set="section_active" t-value="any(t.id in tags for t in section_tags)"/>
+        <!-- Mobile matches stock Odoo: sections start closed unless a tag in them is selected. -->
+        <t t-set="section_open" t-value="section_active or (not isMobile and not section_collapsed)"/>
+
+        <t t-if="isMobile">
+            <div>
+                <h2 class="accordion-header mb-0" t-attf-id="o_wsale_offcanvas_#{section_id}_header">
+                    <button
+                        t-attf-class="o_wsale_offcanvas_title accordion-button border-top rounded-0 {{not section_open and 'collapsed'}}"
+                        type="button"
+                        t-att-data-status="section_active and 'active' or 'inactive'"
+                        data-bs-toggle="collapse"
+                        t-attf-data-bs-target="#o_wsale_offcanvas_#{section_id}"
+                        t-att-aria-expanded="section_open and 'true' or 'false'"
+                        t-attf-aria-controls="o_wsale_offcanvas_#{section_id}"
+                    >
+                        <b t-out="section_name"/>
+                    </button>
+                </h2>
+                <div
+                    t-attf-id="o_wsale_offcanvas_#{section_id}"
+                    t-attf-class="accordion-collapse collapse {{section_open and 'show'}}"
+                    t-attf-aria-labelledby="o_wsale_offcanvas_#{section_id}_header"
+                >
+                    <div class="accordion-body pt-0">
+                        <div class="list-group list-group-flush">
+                            <t t-call="website_sale_tag_groups.tag_group_inputs"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+        <t t-else="">
+            <div class="accordion-item">
+                <div class="accordion-header h6 mb-0">
+                    <button
+                        t-attf-class="accordion-button px-0 bg-transparent shadow-none {{not section_open and 'collapsed'}}"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        t-att-aria-expanded="section_open and 'true' or 'false'"
+                        t-attf-data-bs-target="#o_wsale_#{section_id}_inner"
+                        t-attf-aria-controls="o_wsale_#{section_id}_inner"
+                    >
+                        <b t-out="section_name"/>
+                    </button>
+                </div>
+                <div t-attf-id="o_wsale_#{section_id}_inner"
+                     t-attf-class="accordion-collapse collapse {{section_open and 'show'}}">
+                    <div class="flex-column mb-3">
+                        <t t-call="website_sale_tag_groups.tag_group_inputs"/>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!--
+        The inputs themselves. Both variants use name="tags" so the stock
+        website_sale JS (onChangeAttribute) aggregates them into the `tags`
+        URL parameter with no JS changes on our side.
+    -->
+    <template id="tag_group_inputs" name="Tag Group Inputs">
+        <t t-if="section_display == 'select'">
+            <select class="form-select css_attribute_select" name="tags">
+                <option value="" selected="true">All <t t-out="section_name"/></option>
+                <t t-foreach="section_tags" t-as="tag">
+                    <option
+                        t-att-value="tag.id"
+                        t-out="tag.name"
+                        t-att-selected="tag.id in tags"
+                    />
+                </t>
+            </select>
+        </t>
+        <t t-else="">
+            <t t-foreach="section_tags" t-as="tag">
+                <div class="form-check mb-1">
+                    <input type="checkbox"
+                           name="tags"
+                           class="form-check-input"
+                           t-attf-id="tag_#{tag.id}"
+                           t-att-value="tag.id"
+                           t-att-checked="'checked' if tag.id in tags else None"
+                    />
+                    <label class="form-check-label fw-normal" t-attf-for="tag_#{tag.id}" t-field="tag.name"/>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Desktop sidebar: replace the single "Tags" accordion item with grouped sections. -->
+    <template id="filter_products_tags_grouped"
+              inherit_id="website_sale.filter_products_tags"
+              name="Filter by Tags (grouped)">
+        <xpath expr="//div[hasclass('accordion-item')]" position="replace">
+            <t t-if="all_tags">
+                <t t-call="website_sale_tag_groups.tag_group_sections">
+                    <t t-set="isMobile" t-value="False"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Mobile offcanvas: replace the inline "Tags" block with grouped sections. -->
+    <template id="product_attribute_filters_form_grouped_tags"
+              inherit_id="website_sale.product_attribute_filters_form"
+              name="Attribute filters form (grouped tags)">
+        <xpath expr="//h2[@t-attf-id='o_wsale_offcanvas_tags_header']/.." position="replace">
+            <t t-if="all_tags">
+                <t t-call="website_sale_tag_groups.tag_group_sections">
+                    <t t-set="isMobile" t-value="True"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>
