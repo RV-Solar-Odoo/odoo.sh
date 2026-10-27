@@ -8,7 +8,7 @@ sidebar (desktop and mobile), tags are rendered one section per group, each
 with its own heading, collapse state and display style (checkboxes or
 dropdown). Filtering is AND across groups and OR within a group.
 """,
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.2.0',
     'category': 'Website/Website',
     'author': 'Nomadiq',
     'license': 'LGPL-3',

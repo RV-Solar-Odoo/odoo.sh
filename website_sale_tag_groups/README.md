@@ -9,9 +9,16 @@ sidebar instead of one flat "Tags" list.
   - Collapsed by default (desktop only; mobile matches stock Odoo and opens
     a section only when one of its tags is selected)
   - Sequence (drag to reorder)
-- **Filter Group** field on Product Tags. Tags with no group fall into a
-  generic "Tags" section at the bottom.
+- **Filter Group** field on Product Tags. Tags with no group are *not* shown
+  in the shop filters by default. To get a generic "Tags" section for them,
+  activate the view "Show Ungrouped Tags Section" (Settings > Technical >
+  Views, with developer mode on).
 - Shop sidebar (desktop + mobile offcanvas) renders one section per group.
+- **Category scoping**: only tags carried by products in the current category
+  (or search) are listed, so groups with no matching tags disappear and a
+  category with no tagged products shows no tag filters at all. Selected
+  tags/attributes/price are not applied to this scoping, so sibling tags stay
+  visible once one is picked. (Stock Odoo lists every tag site-wide.)
 - **Filter logic**: AND across groups, OR within a group.
   "12V" + "Marine" returns products that are 12V *and* marine.
   "12V" + "48V" (same group) returns products that are either.
@@ -44,6 +51,7 @@ sidebar instead of one flat "Tags" list.
 - models/product_tag_group.py   new model
 - models/product_tag.py         group_id field on product.tag
 - models/product_template.py    AND/OR filter override
+- controllers/main.py           category/search scoping of the tag list
 - views/templates.xml           shop sidebar (desktop + mobile) overrides
 - views/*_views.xml             backend forms/lists/menu
 - security/ir.model.access.csv

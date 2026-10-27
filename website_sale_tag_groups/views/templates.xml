@@ -20,7 +20,9 @@
             </t>
         </t>
 
-        <t t-if="ungrouped_tags">
+        <!-- Tags with no group are hidden unless the "Ungrouped Tags" view is activated
+             (Settings > Technical > Views > "Show Ungrouped Tags Section"). -->
+        <t t-if="ungrouped_tags and is_view_active('website_sale_tag_groups.show_ungrouped_tags')">
             <t t-call="website_sale_tag_groups.tag_group_section">
                 <t t-set="section_id" t-value="'tag_group_other'"/>
                 <t t-set="section_name" t-value="'Tags'"/>
@@ -29,6 +31,11 @@
                 <t t-set="section_collapsed" t-value="False"/>
             </t>
         </t>
+    </template>
+
+    <!-- Toggle view: activate to show a generic "Tags" section for tags without a group. -->
+    <template id="show_ungrouped_tags" name="Show Ungrouped Tags Section" active="False">
+        <t/>
     </template>
 
     <!-- A single collapsible section (desktop accordion item or mobile offcanvas item). -->
