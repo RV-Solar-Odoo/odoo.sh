@@ -156,4 +156,23 @@
         </xpath>
     </template>
 
+    <!--
+        Shop grid card: show the same colored tag badges used on the product
+        page (stock website_sale.product_tags, reused as-is: it already
+        filters to visible_to_customers and styles each tag with its own
+        color, no extra CSS needed). Gated on the same Customize toggle as
+        the product page so the two stay in sync.
+    -->
+    <template id="products_item_tags"
+              inherit_id="website_sale.products_item"
+              name="Show Tags on Product Card">
+        <xpath expr="//h2[hasclass('o_wsale_products_item_title')]" position="after">
+            <t t-if="is_view_active('website_sale.product_tags')">
+                <t t-call="website_sale.product_tags">
+                    <t t-set="all_product_tags" t-value="variant.all_product_tag_ids"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
 </odoo>

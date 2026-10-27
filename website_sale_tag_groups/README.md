@@ -24,6 +24,11 @@ sidebar instead of one flat "Tags" list.
   "12V" + "48V" (same group) returns products that are either.
   Stock Odoo ORs every tag together; this is overridden in
   `product.template._search_get_detail`.
+- **Tags on the shop grid card**: each product's visible tags are shown as
+  colored badges under the product name on /shop, reusing the same badge
+  template (and the same tag `color`) as the product detail page. Toggling
+  "Product Tags" off in Customize on the product page hides them in both
+  places, since it's the same underlying view.
 
 ## Install
 1. Drop the `website_sale_tag_groups` folder into your Odoo.sh repo's addons
@@ -52,6 +57,7 @@ sidebar instead of one flat "Tags" list.
 - models/product_tag.py         group_id field on product.tag
 - models/product_template.py    AND/OR filter override
 - controllers/main.py           category/search scoping of the tag list
-- views/templates.xml           shop sidebar (desktop + mobile) overrides
+- views/templates.xml           shop sidebar (desktop + mobile) overrides,
+                                 plus tag badges on the shop grid card
 - views/*_views.xml             backend forms/lists/menu
 - security/ir.model.access.csv
