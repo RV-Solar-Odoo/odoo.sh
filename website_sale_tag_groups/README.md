@@ -6,14 +6,17 @@ sidebar instead of one flat "Tags" list.
 ## What it adds
 - **Tag Groups** model (Website > eCommerce > Tag Groups). Each group has:
   - Display: Checkboxes or Dropdown
-  - Collapsed by default (desktop only; mobile matches stock Odoo and opens
-    a section only when one of its tags is selected)
+  - Collapsed by default (otherwise sections start open on desktop and
+    mobile; a section with a selected tag is always open)
   - Sequence (drag to reorder)
 - **Filter Group** field on Product Tags. Tags with no group are *not* shown
   in the shop filters by default. To get a generic "Tags" section for them,
   activate the view "Show Ungrouped Tags Section" (Settings > Technical >
   Views, with developer mode on).
 - Shop sidebar (desktop + mobile offcanvas) renders one section per group.
+- **Auto-clear stale filters**: moving to a category (or search) where a
+  selected tag is not used by any product drops that tag from the URL and
+  redirects, so the shopper never lands on an empty page with no filters.
 - **Category scoping**: only tags carried by products in the current category
   (or search) are listed, so groups with no matching tags disappear and a
   category with no tagged products shows no tag filters at all. Selected
@@ -56,7 +59,7 @@ sidebar instead of one flat "Tags" list.
 - models/product_tag_group.py   new model
 - models/product_tag.py         group_id field on product.tag
 - models/product_template.py    AND/OR filter override
-- controllers/main.py           category/search scoping of the tag list
+- controllers/main.py           category/search scoping + auto-clear stale tags
 - views/templates.xml           shop sidebar (desktop + mobile) overrides,
                                  plus tag badges on the shop grid card
 - views/*_views.xml             backend forms/lists/menu

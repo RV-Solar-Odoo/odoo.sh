@@ -41,8 +41,9 @@
     <!-- A single collapsible section (desktop accordion item or mobile offcanvas item). -->
     <template id="tag_group_section" name="Tag Group Section">
         <t t-set="section_active" t-value="any(t.id in tags for t in section_tags)"/>
-        <!-- Mobile matches stock Odoo: sections start closed unless a tag in them is selected. -->
-        <t t-set="section_open" t-value="section_active or (not isMobile and not section_collapsed)"/>
+        <!-- Sections start open (desktop and mobile) unless the group is marked
+             "Collapsed by default"; a section with a selected tag is always open. -->
+        <t t-set="section_open" t-value="section_active or not section_collapsed"/>
 
         <t t-if="isMobile">
             <div>
