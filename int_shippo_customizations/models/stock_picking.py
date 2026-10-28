@@ -39,6 +39,8 @@ class StockPicking(models.Model):
         string="Shippo Box",
         help="Carton sent to Shippo for rates. Suggested from product dimensions; warehouse can change it.",
     )
+    int_shippo_refund_id = fields.Char(string="Shippo Refund ID", copy=False)
+    int_shippo_refund_status = fields.Char(string="Shippo Refund", copy=False)
     int_shippo_insurance_amount = fields.Monetary(
         string="Insurance",
         currency_field="company_currency_id",
@@ -75,6 +77,42 @@ class StockPicking(models.Model):
             "url": self.int_shippo_label_url,
             "target": "new",
         }
+
+    def action_refund_shippo_label(self):
+        """Ask Shippo to void this label. The carrier confirms it later."""
+        self.ensure_one()
+        if not self.int_shippo_transaction_id:
+            raise UserError(self.env._("This delivery has no Shippo label to refund."))
+        if self.int_shippo_refund_status in ("QUEUED", "PENDING", "SUCCESS"):
+            raise UserError(self.env._(
+                "A refund is already %(status)s for this label.",
+                status=self.int_shippo_refund_status,
+            ))
+        refund = self.env["int.shippo.api"].request("POST", "/refunds/", {
+            "transaction": self.int_shippo_transaction_id,
+            "async": False,
+        })
+        status = (refund.get("status") or "").upper()
+        messages = refund.get("messages") or []
+        detail = "; ".join(
+            message.get("text", str(message)) if isinstance(message, dict) else str(message)
+            for message in messages
+        )
+        if status not in ("QUEUED", "PENDING", "SUCCESS"):
+            raise UserError(detail or self.env._("Shippo did not refund this label."))
+        tracking = self.carrier_tracking_ref
+        self.write({
+            "int_shippo_refund_id": refund.get("object_id"),
+            "int_shippo_refund_status": status,
+            "carrier_tracking_ref": False,
+        })
+        self.message_post(body=self.env._(
+            "Shippo refund %(status)s for %(carrier)s tracking %(tracking)s. Do not use this label.",
+            status=status,
+            carrier=self.int_shippo_carrier_name or self.env._("the carrier"),
+            tracking=tracking or self.int_shippo_transaction_id,
+        ))
+        return True
 
     @api.model
     def _int_shippo_address(self, partner):

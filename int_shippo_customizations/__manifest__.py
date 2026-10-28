@@ -1,6 +1,6 @@
 {
     "name": "Shippo Customizations",
-    "version": "19.0.1.13.0",
+    "version": "19.0.1.14.0",
     "category": "Inventory/Delivery",
     "summary": "Buy Shippo labels from warehouse deliveries and quote Ground, 2 Day, and Overnight (UPS/FedEx) on the website",
     "author": "Internal",
@@ -22,6 +22,8 @@
         "web.assets_backend": [
             "int_shippo_customizations/static/src/shippo_rate_list.js",
             "int_shippo_customizations/static/src/shippo_rate_list.css",
+            "int_shippo_customizations/static/src/refund_label_cog.js",
+            "int_shippo_customizations/static/src/refund_label_cog.xml",
         ],
     },
 }

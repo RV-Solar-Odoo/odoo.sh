@@ -125,7 +125,7 @@ class ShippoRateWizard(models.TransientModel):
         self.picking_id._int_shippo_check_label_phones()
         transaction = self.env["int.shippo.api"].request("POST", "/transactions/", {
             "rate": rate.rate_object_id,
-            "label_file_type": "PDF",
+            "label_file_type": "PDF_4x6",
             "async": False,
         })
         if transaction.get("status") not in ("SUCCESS", "QUEUED"):
@@ -178,6 +178,9 @@ class ShippoRateWizard(models.TransientModel):
                 "type": "ir.actions.act_url",
                 "url": label_url,
                 "target": "new",
+                # Open the 4x6 PDF, then close this dialog. Without close, Odoo
+                # leaves the rate wizard open on top of the delivery.
+                "close": True,
             }
         return {"type": "ir.actions.act_window_close"}
 
