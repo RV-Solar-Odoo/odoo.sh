@@ -12,6 +12,12 @@ class ShippoRateWizard(models.TransientModel):
     picking_id = fields.Many2one("stock.picking", required=True, ondelete="cascade")
     box_id = fields.Many2one("int.shippo.box", string="Box")
     weight_lb = fields.Float(string="Weight (lb)", digits=(16, 2))
+    insurance_amount = fields.Monetary(
+        string="Insurance",
+        currency_field="currency_id",
+        help="Insured value for this delivery. Saved onto the delivery and sent to Shippo with the rate request.",
+    )
+    currency_id = fields.Many2one(related="picking_id.company_currency_id")
     length_in = fields.Float(string="Length (in)", digits=(16, 2))
     width_in = fields.Float(string="Width (in)", digits=(16, 2))
     height_in = fields.Float(string="Height (in)", digits=(16, 2))
@@ -46,6 +52,7 @@ class ShippoRateWizard(models.TransientModel):
         self.ensure_one()
         picking = self.picking_id
         picking.int_shippo_box_id = self.box_id
+        picking.int_shippo_insurance_amount = self.insurance_amount
         parcels = picking._int_shippo_parcels(
             box=self.box_id,
             weight_lb=self.weight_lb,
@@ -53,12 +60,9 @@ class ShippoRateWizard(models.TransientModel):
             width_in=self.width_in,
             height_in=self.height_in,
         )
-        shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
-            "address_from": picking._int_shippo_address(picking._int_shippo_from_partner()),
-            "address_to": picking._int_shippo_address(picking.partner_id),
-            "parcels": parcels,
-            "async": False,
-        })
+        shipment = self.env["int.shippo.api"].request(
+            "POST", "/shipments/", picking._int_shippo_shipment_values(parcels),
+        )
         rates = shipment.get("rates") or []
         if not rates:
             messages = shipment.get("messages") or []

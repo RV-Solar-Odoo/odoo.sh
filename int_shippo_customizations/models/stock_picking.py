@@ -39,6 +39,13 @@ class StockPicking(models.Model):
         string="Shippo Box",
         help="Carton sent to Shippo for rates. Suggested from product dimensions; warehouse can change it.",
     )
+    int_shippo_insurance_amount = fields.Monetary(
+        string="Insurance",
+        currency_field="company_currency_id",
+        copy=False,
+        help="Insured value sent to Shippo with this delivery. Leave at 0 to ship without insurance.",
+    )
+    company_currency_id = fields.Many2one(related="company_id.currency_id")
 
     def action_open_shippo_rates(self):
         self.ensure_one()
@@ -47,6 +54,7 @@ class StockPicking(models.Model):
         wizard = self.env["int.shippo.rate.wizard"].create({
             "picking_id": self.id,
             "box_id": self.int_shippo_box_id.id,
+            "insurance_amount": self.int_shippo_insurance_amount,
         })
         wizard.action_refresh_dims()
         return {
@@ -188,6 +196,25 @@ class StockPicking(models.Model):
             "weight": f"{weight_lb:.2f}",
             "mass_unit": "lb",
         }]
+
+    def _int_shippo_shipment_values(self, parcels):
+        self.ensure_one()
+        values = {
+            "address_from": self._int_shippo_address(self._int_shippo_from_partner()),
+            "address_to": self._int_shippo_address(self.partner_id),
+            "parcels": parcels,
+            "async": False,
+        }
+        amount = self.int_shippo_insurance_amount or 0.0
+        if amount > 0:
+            values["extra"] = {
+                "insurance": {
+                    "amount": f"{amount:.2f}",
+                    "currency": self.company_currency_id.name or "USD",
+                    "content": self.name or "Merchandise",
+                }
+            }
+        return values
 
     @api.model
     def _int_shippo_fallback_parcel(self, order):

@@ -10,6 +10,8 @@
                         <field name="picking_id" readonly="1"/>
                         <field name="box_id"/>
                         <field name="weight_lb"/>
+                        <field name="insurance_amount"/>
+                        <field name="currency_id" invisible="1"/>
                     </group>
                     <group>
                         <field name="length_in"/>

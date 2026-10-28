@@ -29,6 +29,8 @@
                 <group string="Shippo" name="int_shippo" invisible="picking_type_code != 'outgoing'">
                     <group>
                         <field name="int_shippo_box_id"/>
+                        <field name="int_shippo_insurance_amount"/>
+                        <field name="company_currency_id" invisible="1"/>
                         <field name="int_shippo_label_url" invisible="1"/>
                         <field name="int_shippo_tracking_url" invisible="1"/>
                     </group>

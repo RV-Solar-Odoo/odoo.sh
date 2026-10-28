@@ -46,4 +46,11 @@
         <field name="res_model">int.shippo.box</field>
         <field name="view_mode">list,form</field>
     </record>
+
+    <menuitem id="menu_int_shippo_box"
+              name="Shippo Boxes"
+              parent="stock.menu_warehouse_config"
+              action="action_int_shippo_box"
+              groups="stock.group_stock_manager"
+              sequence="20"/>
 </odoo>

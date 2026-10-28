@@ -125,21 +125,14 @@ class DeliveryCarrier(models.Model):
         if picking._name != "stock.picking":
             picking = picking.picking_ids.filtered(lambda p: p.picking_type_code == "outgoing")[:1]
             if picking:
-                parcels = picking._int_shippo_parcels()
-                shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
-                    "address_from": picking._int_shippo_address(picking._int_shippo_from_partner()),
-                    "address_to": picking._int_shippo_address(picking.partner_id),
-                    "parcels": parcels,
-                    "async": False,
-                })
+                shipment = self.env["int.shippo.api"].request(
+                    "POST", "/shipments/", picking._int_shippo_shipment_values(picking._int_shippo_parcels()),
+                )
                 return shipment.get("rates") or []
             return []
-        shipment = self.env["int.shippo.api"].request("POST", "/shipments/", {
-            "address_from": picking._int_shippo_address(picking._int_shippo_from_partner()),
-            "address_to": picking._int_shippo_address(picking.partner_id),
-            "parcels": picking._int_shippo_parcels(),
-            "async": False,
-        })
+        shipment = self.env["int.shippo.api"].request(
+            "POST", "/shipments/", picking._int_shippo_shipment_values(picking._int_shippo_parcels()),
+        )
         return shipment.get("rates") or []
 
     def shippo_send_shipping(self, pickings):
