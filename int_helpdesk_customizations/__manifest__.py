@@ -1,8 +1,8 @@
 {
     "name": "Helpdesk Customizations",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Services/Helpdesk",
-    "summary": "Helpdesk extensions",
+    "summary": "Keep ticket email replies on the ticket",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": ["helpdesk"],
