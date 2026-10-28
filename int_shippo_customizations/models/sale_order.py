@@ -17,6 +17,12 @@ class SaleOrder(models.Model):
     int_shippo_rate_key = fields.Char(copy=False, readonly=True)
     int_shippo_rate_json = fields.Text(copy=False, readonly=True)
     int_shippo_rate_date = fields.Datetime(copy=False, readonly=True)
+    int_chosen_carrier_id = fields.Many2one(
+        "delivery.carrier",
+        copy=False,
+        readonly=True,
+        help="Delivery method the customer clicked at checkout, as opposed to one checkout picked for them.",
+    )
 
     def _int_shippo_order_lines(self):
         self.ensure_one()
@@ -57,12 +63,24 @@ class SaleOrder(models.Model):
         delivery_method = super()._get_preferred_delivery_method(available_delivery_methods)
         if (
             delivery_method.delivery_type == "in_store"
-            and delivery_method != self.carrier_id
+            and delivery_method != self.int_chosen_carrier_id
             and delivery_method != self.partner_shipping_id.property_delivery_carrier_id
         ):
             shipped = available_delivery_methods.filtered(lambda dm: dm.delivery_type != "in_store")
             delivery_method = shipped[:1] or delivery_method
         return delivery_method
+
+    def _int_drop_unchosen_pickup(self):
+        """Clear store pickup that checkout fell back to while nothing else was offered.
+
+        Checkout keeps the current method whenever its price still matches, and free
+        Ground costs the same $0 as pickup, so the fallback would otherwise stick after
+        the customer fixes their address.
+        """
+        self.ensure_one()
+        if self.carrier_id.delivery_type == "in_store" and self.carrier_id != self.int_chosen_carrier_id:
+            self._remove_delivery_line()
+            self.carrier_id = False
 
     def _int_shipping_unavailable_message(self, delivery_methods):
         """Why checkout offers no shipped method for this address, or False if it offers one.

@@ -6,7 +6,9 @@ from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.int_shippo_customizations.controllers.main import IntShippoDelivery
 from odoo.addons.int_shippo_customizations.models.shippo_api import ShippoApi
+from odoo.addons.website_sale.tests.common import MockRequest
 
 
 def _rate(provider, name, token, amount):
@@ -191,22 +193,65 @@ class TestShippoCheckout(TransactionCase):
         self.assertIn("ZIP code", html)
         self.assertIn('href="/contactus"', html)
 
-    def test_new_cart_defaults_to_shipping_not_store_pickup(self):
+    def _pickup(self):
         if "in_store" not in dict(self.env["delivery.carrier"]._fields["delivery_type"].selection):
             self.skipTest("website_sale_collect is not installed")
-        pickup = self.env["delivery.carrier"].create({
+        return self.env["delivery.carrier"].create({
             "name": "Pick up in store",
             "delivery_type": "in_store",
             "product_id": self.ground.product_id.id,
             "sequence": 1,
         })
+
+    def test_new_cart_defaults_to_shipping_not_store_pickup(self):
+        pickup = self._pickup()
         order = self._order(self.cheap)
         available = pickup | self.ground | self.two_day
         self.assertEqual(order._get_preferred_delivery_method(available), self.ground)
-        order.carrier_id = pickup
-        self.assertEqual(order._get_preferred_delivery_method(available), pickup)
-        only_pickup = order._get_preferred_delivery_method(pickup)
-        self.assertEqual(only_pickup, pickup)
+        self.assertEqual(order._get_preferred_delivery_method(pickup), pickup)
+
+    def test_pickup_checkout_fell_back_to_gives_way_to_shipping(self):
+        pickup = self._pickup()
+        order = self._order(self.cheap)
+        order._set_delivery_method(pickup)
+        self.assertEqual(order._get_preferred_delivery_method(pickup | self.ground), self.ground)
+        order._int_drop_unchosen_pickup()
+        self.assertFalse(order.carrier_id)
+
+    def test_pickup_the_customer_chose_is_kept(self):
+        pickup = self._pickup()
+        order = self._order(self.cheap)
+        order._set_delivery_method(pickup)
+        order.int_chosen_carrier_id = pickup
+        self.assertEqual(order._get_preferred_delivery_method(pickup | self.ground), pickup)
+        order._int_drop_unchosen_pickup()
+        self.assertEqual(order.carrier_id, pickup)
+
+    def _set_delivery_method_as_customer(self, order, carrier):
+        website = self.env["website"].search([], limit=1)
+        order.website_id = website
+        with MockRequest(self.env, website=website, sale_order_id=order.id) as request:
+            request.cart = order
+            # Odoo only completes an override's routing when it builds the live routing
+            # map, so call the undecorated method.
+            IntShippoDelivery.shop_set_delivery_method.original_endpoint(
+                IntShippoDelivery(), dm_id=carrier.id,
+            )
+
+    def test_clicking_a_different_method_records_the_choice(self):
+        pickup = self._pickup()
+        order = self._order(self.cheap)
+        order._set_delivery_method(self.ground)
+        self._set_delivery_method_as_customer(order, pickup)
+        self.assertEqual(order.carrier_id, pickup)
+        self.assertEqual(order.int_chosen_carrier_id, pickup)
+
+    def test_page_load_resending_the_current_method_is_not_a_choice(self):
+        pickup = self._pickup()
+        order = self._order(self.cheap)
+        order._set_delivery_method(pickup)
+        self._set_delivery_method_as_customer(order, pickup)
+        self.assertFalse(order.int_chosen_carrier_id)
 
     def test_label_purchase_names_the_contact_missing_a_phone(self):
         no_phone = self.customer.copy({"name": "No Phone Customer", "phone": False})
