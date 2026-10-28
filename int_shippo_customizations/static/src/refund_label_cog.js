@@ -16,11 +16,15 @@ export class RefundShippoLabel extends Component {
 
     setup() {
         this.dialog = useService("dialog");
-        this.orm = useService("orm");
     }
 
     onSelected() {
+        // The gear menu closes as soon as this item is chosen, which destroys
+        // this component. The confirm callback has to use the form's own
+        // services, not ones tied to this component.
+        const orm = this.env.services.orm;
         const root = this.env.model.root;
+        const resId = root.resId;
         this.dialog.add(ConfirmationDialog, {
             title: _t("Refund Shippo Label"),
             body: _t(
@@ -28,7 +32,7 @@ export class RefundShippoLabel extends Component {
             ),
             confirmLabel: _t("Refund"),
             confirm: async () => {
-                await this.orm.call("stock.picking", "action_refund_shippo_label", [[root.resId]]);
+                await orm.call("stock.picking", "action_refund_shippo_label", [[resId]]);
                 await root.load();
             },
             cancel: () => {},
