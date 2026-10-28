@@ -52,6 +52,50 @@ class SaleOrder(models.Model):
             return 0.0
         return max(getattr(category, "shipping_upcharge", 0.0) or 0.0 for category in categories)
 
+    def _get_preferred_delivery_method(self, available_delivery_methods):
+        """Start carts on a shipped method; store pickup stays one click away."""
+        delivery_method = super()._get_preferred_delivery_method(available_delivery_methods)
+        if (
+            delivery_method.delivery_type == "in_store"
+            and delivery_method != self.carrier_id
+            and delivery_method != self.partner_shipping_id.property_delivery_carrier_id
+        ):
+            shipped = available_delivery_methods.filtered(lambda dm: dm.delivery_type != "in_store")
+            delivery_method = shipped[:1] or delivery_method
+        return delivery_method
+
+    def _int_shipping_unavailable_message(self, delivery_methods):
+        """Why checkout offers no shipped method for this address, or False if it offers one.
+
+        Without this the shipped methods just vanish (bad ZIP, foreign address, Shippo
+        down) and the customer is left looking at store pickup with no explanation.
+        """
+        self.ensure_one()
+        if not self._has_deliverable_products():
+            return False
+        if delivery_methods.filtered(lambda dm: dm.delivery_type != "in_store"):
+            return False
+        partner = self.partner_shipping_id
+        if not partner or partner == self.website_id.user_id.partner_id:
+            return False
+        if not self.env["delivery.carrier"].sudo().search_count([
+            ("delivery_type", "!=", "in_store"),
+            ("is_published", "=", True),
+            ("website_id", "in", (False, self.website_id.id)),
+            *self.env["delivery.carrier"]._check_company_domain(self.company_id),
+        ], limit=1):
+            return False
+        home_country = self.warehouse_id.partner_id.country_id or self.company_id.country_id
+        if partner.country_id and home_country and partner.country_id != home_country:
+            return self.env._(
+                "We can't quote shipping to %(country)s online.",
+                country=partner.country_id.name,
+            )
+        return self.env._(
+            "We couldn't get shipping rates for this address. Check the street, city, "
+            "and ZIP code, then try again."
+        )
+
     def _int_shippo_content_weight_lb(self):
         self.ensure_one()
         picking = self.env["stock.picking"]

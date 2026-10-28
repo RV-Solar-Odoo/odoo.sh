@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="delivery_form_shipping_unavailable" inherit_id="website_sale.delivery_form">
+        <xpath expr="//form[@id='o_delivery_form']" position="inside">
+            <t t-set="int_shipping_message" t-value="order._int_shipping_unavailable_message(delivery_methods)"/>
+            <div t-if="int_shipping_message" name="o_int_shipping_unavailable" class="alert alert-warning mt-3 mb-0" role="alert">
+                <span t-out="int_shipping_message"/>
+                <a href="/contactus">Contact us</a> for a shipping quote.
+            </div>
+        </xpath>
+    </template>
+</odoo>
