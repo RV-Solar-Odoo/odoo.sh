@@ -95,9 +95,33 @@ class StockPicking(models.Model):
             "state": partner.state_id.code or "",
             "zip": partner.zip,
             "country": partner.country_id.code,
-            "phone": partner.phone or (partner.mobile if "mobile" in partner._fields else "") or "",
+            "phone": self._int_shippo_phone(partner),
             "email": partner.email or "",
         }
+
+    def _int_shippo_phone(self, partner):
+        return partner.phone or (partner.mobile if "mobile" in partner._fields else "") or ""
+
+    def _int_shippo_check_label_phones(self):
+        """Shippo quotes without a phone, then refuses the label. Say which contact."""
+        self.ensure_one()
+        missing = []
+        for partner, role in (
+            (self._int_shippo_from_partner(), self.env._("ship-from address (warehouse contact)")),
+            (self.partner_id, self.env._("ship-to address (delivery contact)")),
+        ):
+            if partner and not self._int_shippo_phone(partner):
+                missing.append(self.env._(
+                    "%(name)s — %(role)s", name=partner.display_name, role=role,
+                ))
+        if missing:
+            raise UserError(self.env._(
+                "Shippo will not buy a label without a phone number.\n\n"
+                "Add a phone on:\n%(contacts)s\n\n"
+                "Then click Get Rates again. The rate already on screen was quoted "
+                "without that phone, so buying it will fail the same way.",
+                contacts="\n".join(missing),
+            ))
 
     def _int_shippo_from_partner(self):
         self.ensure_one()

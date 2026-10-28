@@ -95,14 +95,32 @@ class ShippoRateWizard(models.TransientModel):
             "target": "new",
         }
 
+    def write(self, vals):
+        # Selecting a row saves the rate lines and the wizard separately. A slow
+        # save can arrive last and clear selected_line_id after the row is already
+        # marked selected, which hides Buy Label. Ignore that clear.
+        if "selected_line_id" in vals and not vals["selected_line_id"]:
+            still_selected = self.filtered(lambda wizard: wizard.line_ids.filtered("selected"))
+            if still_selected:
+                vals = {key: value for key, value in vals.items() if key != "selected_line_id"}
+                if not vals:
+                    return True
+        return super().write(vals)
+
+    def _int_shippo_selected_rate(self):
+        self.ensure_one()
+        return self.selected_line_id or self.line_ids.filtered("selected")[:1]
+
     def action_buy_label(self):
         self.ensure_one()
-        if not self.selected_line_id:
+        rate = self._int_shippo_selected_rate()
+        if not rate:
             raise UserError(self.env._("Select a Shippo rate first."))
-        if not self.selected_line_id.rate_object_id:
+        if not rate.rate_object_id:
             raise UserError(self.env._("This rate is missing a Shippo id. Get rates again."))
+        self.picking_id._int_shippo_check_label_phones()
         transaction = self.env["int.shippo.api"].request("POST", "/transactions/", {
-            "rate": self.selected_line_id.rate_object_id,
+            "rate": rate.rate_object_id,
             "label_file_type": "PDF",
             "async": False,
         })
@@ -112,6 +130,13 @@ class ShippoRateWizard(models.TransientModel):
                 m.get("text", str(m)) if isinstance(m, dict) else str(m)
                 for m in messages
             )
+            if "phone" in text.casefold():
+                text = self.env._(
+                    "Shippo refused the label because a phone number is missing or invalid. "
+                    "Add a phone on the warehouse contact and the delivery contact, click Get Rates, "
+                    "then buy the label again.\n\nShippo said: %s",
+                    text,
+                )
             raise UserError(text or self.env._("Shippo did not purchase the label."))
         picking = self.picking_id
         tracking = transaction.get("tracking_number")
@@ -127,9 +152,9 @@ class ShippoRateWizard(models.TransientModel):
             "int_shippo_label_url": label_url,
             "int_shippo_tracking_url": tracking_url,
             "int_shippo_box_id": self.box_id.id,
-            "int_shippo_carrier_name": self.selected_line_id.carrier or False,
+            "int_shippo_carrier_name": rate.carrier or False,
             "carrier_tracking_ref": tracking,
-            "carrier_price": self.selected_line_id.amount,
+            "carrier_price": rate.amount,
         }
         if shippo_carrier:
             vals["carrier_id"] = shippo_carrier.id
@@ -138,10 +163,10 @@ class ShippoRateWizard(models.TransientModel):
             self._attach_label(picking, label_url, tracking)
         picking.message_post(body=self.env._(
             "Shippo label purchased: %(carrier)s %(service)s — %(amount).2f %(currency)s. Tracking %(tracking)s",
-            carrier=self.selected_line_id.carrier,
-            service=self.selected_line_id.service,
-            amount=self.selected_line_id.amount,
-            currency=self.selected_line_id.currency or "",
+            carrier=rate.carrier,
+            service=rate.service,
+            amount=rate.amount,
+            currency=rate.currency or "",
             tracking=tracking or self.env._("pending"),
         ))
         if label_url:

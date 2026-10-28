@@ -36,7 +36,7 @@
                 <footer>
                     <button name="action_get_rates" type="object" string="Get Rates" class="btn-primary"/>
                     <button name="action_buy_label" type="object" string="Buy Label" class="btn-primary"
-                            invisible="not selected_line_id"/>
+                            invisible="not line_ids"/>
                     <button string="Close" special="cancel"/>
                 </footer>
             </form>
