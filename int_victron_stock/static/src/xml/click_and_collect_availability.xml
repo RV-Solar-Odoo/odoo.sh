@@ -15,7 +15,7 @@
                 </div>
                 <div t-elif="this.supplierLine" class="text-muted">
                     <i class="fa fa-fw fa-circle text-muted"/>
-                    Out of stock in our warehouse
+                    Out of stock in main warehouse
                 </div>
                 <div t-else="" class="text-muted">
                     <i class="fa fa-fw fa-circle text-danger"/>
