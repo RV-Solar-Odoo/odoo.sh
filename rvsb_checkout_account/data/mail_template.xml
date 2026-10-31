@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_account_activation" model="mail.template">
+            <field name="name">Checkout: Activate Your Account</field>
+            <field name="model_id" ref="base.model_res_users"/>
+            <field name="subject">Activate your {{ object.company_id.name }} account</field>
+            <field name="email_from">{{ object.company_id.email_formatted or user.email_formatted }}</field>
+            <field name="email_to">{{ object.email_formatted }}</field>
+            <field name="description">Sent after checkout to guests who asked for an account</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="body_html" type="html">
+<div style="margin: 0; padding: 0; font-size: 14px;">
+    <p>Hi <t t-out="object.partner_id.name or ''">Marc Demo</t>,</p>
+    <p>
+        Thanks for your order<t t-if="ctx.get('rvsb_order_name')"> <t t-out="ctx.get('rvsb_order_name')">S00042</t></t>!
+        You asked us to create an account so you can track your orders.
+    </p>
+    <p>Confirm your email and choose a password to activate it:</p>
+    <div style="margin: 24px 0; text-align: center;">
+        <a t-att-href="object.partner_id._get_signup_url()"
+           t-attf-style="display: inline-block; padding: 12px 24px; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 6px; background-color: {{ object.company_id.email_secondary_color or '#3a4efd' }}; color: {{ object.company_id.email_primary_color or '#FFFFFF' }};">
+            Activate my account
+        </a>
+    </div>
+    <p style="color: #767c96; font-size: 13px;">
+        This link expires in a few days. If it has, use "Reset password" on the login page
+        with this email address.<br/>
+        Didn't ask for an account? You can ignore this email.
+    </p>
+    <p>
+        <t t-out="object.company_id.name or ''">YourCompany</t>
+    </p>
+</div>
+            </field>
+        </record>
+    </data>
+</odoo>

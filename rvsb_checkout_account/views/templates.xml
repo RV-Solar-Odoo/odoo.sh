@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Checkout "Details" form: optional account checkbox for guests. -->
+    <template id="address_create_account" inherit_id="website_sale.address" name="RVSB: create account checkbox">
+        <xpath expr="//form[@name='address_form']/div[hasclass('row')]" position="after">
+            <t t-if="rvsb_offer_account">
+                <input type="hidden" name="rvsb_account_offered" value="1"/>
+                <div class="rvsb_create_account form-check mt-2 mb-3">
+                    <input class="form-check-input" type="checkbox" value="1"
+                           id="rvsb_create_account" name="rvsb_create_account"
+                           t-att-checked="rvsb_create_account or None"/>
+                    <label class="form-check-label" for="rvsb_create_account">
+                        Create an account to track my orders
+                        <small class="d-block text-muted">
+                            After your order we'll email you a link to set your password.
+                        </small>
+                    </label>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Confirmation page: replace Odoo's instant "Sign Up" button (it skips email
+         verification) with the status of the guest's account request. -->
+    <template id="confirmation_account_status" inherit_id="website_sale.confirmation" name="RVSB: account status">
+        <xpath expr="//div[@id='order_name']/following-sibling::t[1]" position="replace">
+            <t t-if="request.website.is_public_user() and order.rvsb_account_status">
+                <div t-if="order.rvsb_account_status == 'invited'" class="alert alert-info mt-3 rvsb_account_alert" role="status">
+                    <strong>Check your inbox to finish setting up your account.</strong>
+                    We sent a link to <span t-out="order.partner_id.email"/> to set your password.
+                </div>
+                <div t-elif="order.rvsb_account_status == 'exists'" class="alert alert-light border mt-3 rvsb_account_alert" role="status">
+                    There's already an account for <span t-out="order.partner_id.email"/>.
+                    <a href="/web/login">Sign in</a> next time to keep your orders in one place.
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>
