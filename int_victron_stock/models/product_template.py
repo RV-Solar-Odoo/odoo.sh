@@ -48,6 +48,16 @@ class ProductTemplate(models.Model):
         A failure here must never take the webshop down, so every error path keeps the
         last known quantities and only logs.
         """
+        try:
+            self._int_victron_sync_feed()
+        except UserError as exc:
+            _logger.warning("Victron sync skipped: %s", exc.args[0])
+        except Exception:
+            _logger.exception("Victron sync failed; keeping last known quantities.")
+
+    @api.model
+    def _int_victron_sync_feed(self):
+        """Read the E-Order catalog and remember it. Never creates warehouse stock."""
         icp = self.env["ir.config_parameter"].sudo()
         if icp.get_param("database.is_neutralized"):
             _logger.info("Victron sync skipped: database is neutralized.")
@@ -57,14 +67,7 @@ class ProductTemplate(models.Model):
         sku_field = icp.get_param("int_victron.sku_field") or "sku"
         qty_field = icp.get_param("int_victron.qty_field") or "stock_quantity"
 
-        try:
-            rows = self.env["int.victron.api"].fetch_all(endpoint)
-        except UserError as exc:
-            _logger.warning("Victron sync skipped: %s", exc.args[0])
-            return
-        except Exception:
-            _logger.exception("Victron sync failed; keeping last known quantities.")
-            return
+        rows = self.env["int.victron.api"].fetch_all(endpoint)
 
         stock_by_sku = {}
         for row in rows:
@@ -106,6 +109,7 @@ class ProductTemplate(models.Model):
             self.browse(ids).write({"victron_qty": qty, "victron_last_sync": now})
 
         icp.set_param("int_victron.last_sync", fields.Datetime.to_string(now))
+        self.env["int.victron.feed"]._replace_from_rows(rows, sku_field, qty_field)
         _logger.info(
             "Victron sync complete: %s API rows, %s products matched, %s quantities changed.",
             len(stock_by_sku),

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="int_victron_feed_view_list" model="ir.ui.view">
+        <field name="name">int.victron.feed.list</field>
+        <field name="model">int.victron.feed</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" default_order="qty desc, sku">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh from Victron"
+                            class="btn-primary" display="always"
+                            groups="stock.group_stock_manager"/>
+                </header>
+                <field name="sku"/>
+                <field name="name"/>
+                <field name="qty"/>
+                <field name="additional_qty" optional="show"/>
+                <field name="product_id"/>
+                <field name="synced_at"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="int_victron_feed_view_form" model="ir.ui.view">
+        <field name="name">int.victron.feed.form</field>
+        <field name="model">int.victron.feed</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="sku"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="qty"/>
+                            <field name="additional_qty"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="synced_at"/>
+                        </group>
+                    </group>
+                    <p class="text-muted">
+                        This is the quantity Victron reported. It is not stock in our warehouse.
+                    </p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="int_victron_feed_view_search" model="ir.ui.view">
+        <field name="name">int.victron.feed.search</field>
+        <field name="model">int.victron.feed</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="sku"/>
+                <field name="name"/>
+                <field name="product_id"/>
+                <filter name="in_stock" string="Victron has stock" domain="[('qty', '&gt;', 0)]"/>
+                <filter name="matched" string="Matched to our product" domain="[('product_id', '!=', False)]"/>
+                <filter name="unmatched" string="Not in our catalog" domain="[('product_id', '=', False)]"/>
+                <group>
+                    <filter name="group_product" string="Our Product" context="{'group_by': 'product_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_int_victron_feed" model="ir.actions.act_window">
+        <field name="name">Victron Stock</field>
+        <field name="res_model">int.victron.feed</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_in_stock': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Victron has not been fetched yet.
+            </p>
+            <p>
+                This list is what Victron reports. It is not added to our warehouse.
+                An inventory manager can use Refresh from Victron, or wait for the scheduled sync.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_int_victron_feed"
+              name="Victron Stock"
+              parent="stock.menu_warehouse_report"
+              action="action_int_victron_feed"
+              sequence="20"/>
+</odoo>

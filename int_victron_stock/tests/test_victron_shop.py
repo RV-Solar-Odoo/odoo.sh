@@ -62,6 +62,38 @@ class TestVictronShop(TransactionCase):
             })],
         })
 
+    def test_victron_feed_is_not_our_stock(self):
+        product = self._product("Feed Only", on_hand=0, victron=0)
+        product.default_code = "FEEDONLY1"
+        self.env["int.victron.feed"]._replace_from_rows([
+            {
+                "sku": "FEEDONLY1",
+                "description": "Feed Only",
+                "stock_quantity": 12,
+                "additional_stock_quantity": 4,
+            },
+            {
+                "sku": "NOTOURS",
+                "description": "Not in our catalog",
+                "stock_quantity": 3,
+            },
+        ], "sku", "stock_quantity")
+
+        ours = self.env["int.victron.feed"].search([("sku", "=", "FEEDONLY1")])
+        self.assertEqual(ours.qty, 12)
+        self.assertEqual(ours.additional_qty, 4)
+        self.assertEqual(ours.product_id, product.product_tmpl_id)
+        other = self.env["int.victron.feed"].search([("sku", "=", "NOTOURS")])
+        self.assertFalse(other.product_id)
+        self.assertEqual(product.qty_available, 0)
+        self.assertFalse(self.env["stock.quant"].search([
+            ("product_id", "=", product.id),
+            ("quantity", ">", 0),
+        ]))
+
+        self.env["int.victron.feed"]._replace_from_rows([], "sku", "stock_quantity")
+        self.assertFalse(self.env["int.victron.feed"].search([("sku", "=", "FEEDONLY1")]))
+
     def test_labels_show_full_warehouse_stock_and_cap_victron(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)
         lines = product.product_tmpl_id._int_availability_lines(product)
