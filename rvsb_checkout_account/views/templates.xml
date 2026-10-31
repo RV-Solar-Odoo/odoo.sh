@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Confirmation page: offer guests an account, below Odoo's own sign up block,
-         which is left as it is. static/src/interactions/account_cta.js shows the
-         outcome in place, because reloading this page sends the GA purchase event again. -->
+    <!-- Confirmation page: offer guests an account, in place of Odoo's instant "Sign Up"
+         button, which skips email verification. static/src/interactions/account_cta.js
+         shows the outcome in place, because reloading this page sends the GA purchase
+         event again. -->
     <template id="confirmation_account_status" inherit_id="website_sale.confirmation" name="RVSB: account status">
-        <xpath expr="//div[@id='order_name']/following-sibling::t[1]" position="after">
+        <xpath expr="//div[@id='order_name']/following-sibling::t[1]" position="replace">
             <t t-set="rvsb_status" t-value="order.rvsb_account_status"/>
             <div t-if="request.website.is_public_user() and order.state in ('sent', 'sale') and (rvsb_status or not order.partner_id.user_ids)"
                  class="rvsb_account_request mt-3">

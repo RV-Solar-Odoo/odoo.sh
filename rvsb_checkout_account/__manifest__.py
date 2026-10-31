@@ -1,6 +1,6 @@
 {
     'name': 'RVSB Checkout Account',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.2.0',
     'summary': 'Guests can ask for an account on the order confirmation page; it is activated from an emailed link.',
     'category': 'Website/Website',
     'depends': ['website_sale', 'auth_signup'],
