@@ -46,15 +46,17 @@ class PickingSplit(models.TransientModel):
             raise UserError(self.env._("Enter the quantity to split onto the new delivery."))
         for line in lines:
             move = line.move_id
-            if move.product_uom.compare(line.split_qty, line.demand_qty) > 0:
+            # The form does not send readonly quantities back, so demand_qty can
+            # arrive as 0 even when the delivery still has units.
+            if move.product_uom.compare(line.split_qty, move.product_uom_qty) > 0:
                 raise UserError(self.env._(
                     "You can split at most %(qty)s %(uom)s of %(product)s.",
-                    qty=line.demand_qty,
+                    qty=move.product_uom_qty,
                     uom=move.product_uom.name,
                     product=move.product_id.display_name,
                 ))
         if all(
-            line.move_id.product_uom.compare(line.split_qty, line.demand_qty) == 0
+            line.move_id.product_uom.compare(line.split_qty, line.move_id.product_uom_qty) == 0
             for line in self.line_ids
         ):
             raise UserError(self.env._("Leave at least one unit on this delivery."))
