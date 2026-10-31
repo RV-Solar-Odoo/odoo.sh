@@ -31,8 +31,8 @@ sidebar instead of one flat "Tags" list.
   tags are shown in one labeled row per group in group order (e.g. "Battery
   Voltage: 12V 24V" above "AC Voltage: 120V"), with any ungrouped tags in an
   unlabeled row last. On /shop cards they appear under the product name as
-  compact plain text with a line between groups, and the card grows to fit its
-  rows. Toggling "Product Tags" off in Customize on the product page hides them
+  compact outlined tags with a line between groups, and the card grows to fit
+  its rows. Toggling "Product Tags" off in Customize on the product page hides them
   in both places, since it's the same underlying view.
 
 ## Install

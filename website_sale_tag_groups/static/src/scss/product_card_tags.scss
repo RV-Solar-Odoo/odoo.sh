@@ -14,24 +14,32 @@
   line-height: 1.4;
 }
 
-/* Shop grid card only: compact plain-text tags, with a line between groups. The
+/* An inline-block keeps the line height of the surrounding, larger font, which sits
+   the smaller tag text low in its box and below the label. inline-flex doesn't. */
+.o_product_tags .o_tag_group_row span.position-relative {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* Shop grid card only: compact outlined tags, with a line between groups. The
    !important rules beat stock utility classes and the badge style in rvs_website. */
 .oe_product_cart {
   .o_product_tags {
     gap: 6px !important;
   }
   .o_tag_group_row {
-    gap: 2px 10px;
+    gap: 4px 6px;
   }
   .o_tag_group_row + .o_tag_group_row {
     padding-top: 6px;
     border-top: 1px solid #e6e8ef;
   }
   .o_product_tags span.position-relative {
-    padding: 0 !important;
+    padding: 1px 6px !important;
     background: transparent !important;
+    border: 1px solid #c9cdd8;
   }
   .o_product_tags span.position-relative > .text-nowrap {
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 }
