@@ -158,20 +158,34 @@
     </template>
 
     <!--
-        Shop grid card: show the same colored tag badges used on the product
-        page (stock website_sale.product_tags, reused as-is: it already
-        filters to visible_to_customers and styles each tag with its own
-        color, no extra CSS needed). Gated on the same Customize toggle as
-        the product page so the two stay in sync.
+        Shop grid card: one labeled row per tag group, stacked in group order,
+        using the same tag badges as the product page (stock
+        website_sale.product_tags, called once per row). Tags with no group
+        follow in an unlabeled row. Gated on the same Customize toggle as the
+        product page so the two stay in sync.
     -->
     <template id="products_item_tags"
               inherit_id="website_sale.products_item"
               name="Show Tags on Product Card">
         <xpath expr="//h2[hasclass('o_wsale_products_item_title')]" position="after">
             <t t-if="is_view_active('website_sale.product_tags')">
-                <t t-call="website_sale.product_tags">
-                    <t t-set="all_product_tags" t-value="variant.all_product_tag_ids"/>
-                </t>
+                <t t-set="card_tags" t-value="variant.all_product_tag_ids.filtered('visible_to_customers')"/>
+                <t t-set="ungrouped_card_tags" t-value="card_tags.filtered(lambda t: not t.group_id)"/>
+                <div t-if="card_tags" class="o_tag_group_rows">
+                    <t t-foreach="card_tags.mapped('group_id').sorted(lambda g: (g.sequence, g.id))" t-as="card_group">
+                        <div class="o_tag_group_row">
+                            <span class="o_tag_group_label"><t t-out="card_group.name"/>:</span>
+                            <t t-call="website_sale.product_tags">
+                                <t t-set="all_product_tags" t-value="card_tags.filtered(lambda t: t.group_id == card_group)"/>
+                            </t>
+                        </div>
+                    </t>
+                    <div t-if="ungrouped_card_tags" class="o_tag_group_row">
+                        <t t-call="website_sale.product_tags">
+                            <t t-set="all_product_tags" t-value="ungrouped_card_tags"/>
+                        </t>
+                    </div>
+                </div>
             </t>
         </xpath>
     </template>
