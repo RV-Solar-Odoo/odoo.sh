@@ -58,7 +58,13 @@ class SaleOrder(models.Model):
         self.ensure_one()
         product = self.env["product.product"].browse(product_id)
         template = product.product_tmpl_id
-        if not product.is_storable or template._int_victron_feed_qty() <= 0:
+        if not product.is_storable:
+            return super()._verify_updated_quantity(
+                order_line, product_id, new_qty, uom_id, **kwargs
+            )
+        if not template._int_can_order_online(product):
+            return new_qty, self.env._("Currently unavailable — contact us for lead time")
+        if template._int_victron_feed_qty() <= 0:
             return super()._verify_updated_quantity(
                 order_line, product_id, new_qty, uom_id, **kwargs
             )

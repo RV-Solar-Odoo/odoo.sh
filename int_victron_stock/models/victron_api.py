@@ -23,15 +23,12 @@ class VictronApi(models.AbstractModel):
         token = (icp.get_param("int_victron.token") or "").strip()
         if token.lower().startswith("token "):
             token = token[6:].strip()
-        if token:
-            return f"Token {token}"
-        username = (icp.get_param("int_victron.username") or "").strip()
-        password = (icp.get_param("int_victron.password") or "").strip()
-        if not username or not password:
+        if not token:
             raise UserError(self.env._(
                 "Set the Victron API token under Inventory → Settings → Victron E-Order."
             ))
-        raw = base64.b64encode(f"{username}:{password}".encode()).decode()
+        # E-Order expects HTTP Basic auth. The username is the word "token" and the API key is the password.
+        raw = base64.b64encode(f"token:{token}".encode()).decode()
         return f"Basic {raw}"
 
     def fetch_all(self, path):

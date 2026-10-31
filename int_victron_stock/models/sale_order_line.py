@@ -127,19 +127,27 @@ class SaleOrderLine(models.Model):
         ) > 0
 
     def _check_availability(self):
+        product = self.product_id
+        template = product.product_tmpl_id
+        if product.is_storable and not template._int_can_order_online(product):
+            self.shop_warning = self.env._("Currently unavailable — contact us for lead time")
+            return False
         if self._int_victron_cart_is_over():
             self.shop_warning = self._int_victron_over_message(
                 self.order_id._get_cart_qty(self.product_id.id)
             )
             return False
         marker = self.env._(OVER_LIMIT_MARKER)
-        if self.product_id.product_tmpl_id._int_victron_feed_qty() > 0:
+        if template._int_victron_feed_qty() > 0:
             if self.shop_warning and marker in self.shop_warning:
                 self.shop_warning = False
             return True
         return super()._check_availability()
 
     def _get_max_line_qty(self):
-        if self.product_id.product_tmpl_id._int_victron_feed_qty() > 0:
+        template = self.product_id.product_tmpl_id
+        if self.product_id.is_storable and not template._int_can_order_online(self.product_id):
+            return 0
+        if template._int_victron_feed_qty() > 0:
             return None
         return super()._get_max_line_qty()

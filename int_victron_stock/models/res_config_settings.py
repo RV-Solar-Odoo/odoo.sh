@@ -12,15 +12,7 @@ class ResConfigSettings(models.TransientModel):
     int_victron_token = fields.Char(
         string="Victron API Token",
         config_parameter="int_victron.token",
-        help="Token from the E-Order API documentation. Sent as Authorization: Token.",
-    )
-    int_victron_username = fields.Char(
-        string="Victron E-Order Username",
-        config_parameter="int_victron.username",
-    )
-    int_victron_password = fields.Char(
-        string="Victron E-Order Password",
-        config_parameter="int_victron.password",
+        help="E-Order API key. Sent as the password, with the username token.",
     )
     int_victron_endpoint = fields.Char(
         string="Victron Stock Endpoint",

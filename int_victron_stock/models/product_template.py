@@ -180,6 +180,18 @@ class ProductTemplate(models.Model):
             return 0.0
         return sum(website._get_product_available_qty(item) for item in variants)
 
+    def _int_can_order_online(self, variant=None):
+        """True when the shop can sell this product from our warehouse or Victron."""
+        self.ensure_one()
+        if not self.is_storable:
+            return True
+        if self._int_own_available_qty(variant) > 0:
+            return True
+        return self._int_victron_available_qty() > 0
+
+    def _website_show_quick_add(self):
+        return super()._website_show_quick_add() and self._int_can_order_online()
+
     def _int_availability_lines(self, variant=None):
         """Shop labels. Own stock is exact. Victron stock is capped at 20+."""
         self.ensure_one()
@@ -239,10 +251,16 @@ class ProductTemplate(models.Model):
         if not template.is_storable:
             return res
         res["int_availability_lines"] = template._int_availability_lines(variant)
+        if not product_or_template.is_product_variant:
+            return res
         # The browser uses free_qty as a hard cap. Keep that number equal to warehouse
         # stock (which we show) and turn the cap off when Victron can fill more, so a
         # customer can order 400 without the page telling them Victron's real count.
-        if template._int_victron_feed_qty() > 0 and product_or_template.is_product_variant:
+        # When neither side has any left, force the sold-out flag so Add to cart hides
+        # even if the product is set to keep selling at zero.
+        if not template._int_can_order_online(variant):
+            res["allow_out_of_stock_order"] = False
+        elif template._int_victron_available_qty() > 0:
             res["allow_out_of_stock_order"] = True
             res["show_availability"] = False
         return res

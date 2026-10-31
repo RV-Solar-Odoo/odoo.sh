@@ -1,5 +1,7 @@
+import base64
+
 from odoo import fields
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
@@ -62,16 +64,16 @@ class TestVictronShop(TransactionCase):
             })],
         })
 
-    def test_api_token_is_preferred_over_the_password(self):
+    def test_api_token_is_sent_as_the_basic_password(self):
         icp = self.env["ir.config_parameter"].sudo()
         icp.set_param("int_victron.token", "Token abc123")
         icp.set_param("int_victron.username", "user")
         icp.set_param("int_victron.password", "secret")
-        self.assertEqual(self.env["int.victron.api"]._auth_header(), "Token abc123")
+        expected = "Basic " + base64.b64encode(b"token:abc123").decode()
+        self.assertEqual(self.env["int.victron.api"]._auth_header(), expected)
         icp.set_param("int_victron.token", "")
-        header = self.env["int.victron.api"]._auth_header()
-        self.assertTrue(header.startswith("Basic "))
-        self.assertNotIn("abc123", header)
+        with self.assertRaises(UserError):
+            self.env["int.victron.api"]._auth_header()
 
     def test_victron_feed_is_not_our_stock(self):
         product = self._product("Feed Only", on_hand=0, victron=0)
@@ -145,6 +147,60 @@ class TestVictronShop(TransactionCase):
         self.assertIn("17 in stock — ready to ship", rendered)
         self.assertIn("20+", rendered)
         self.assertNotIn("45", rendered)
+
+    def test_add_to_cart_hides_only_when_both_stocks_are_zero(self):
+        empty = self._product("Empty", on_hand=0, victron=0)
+        empty.allow_out_of_stock_order = True
+        supplier = self._product("Supplier Only", on_hand=0, victron=8)
+        supplier.allow_out_of_stock_order = True
+        ours = self._product("Warehouse Only", on_hand=2, victron=0)
+        ours.allow_out_of_stock_order = True
+
+        for product in (empty, supplier, ours):
+            product.website_published = True
+        self.assertFalse(empty.product_tmpl_id._int_can_order_online(empty))
+        self.assertTrue(supplier.product_tmpl_id._int_can_order_online(supplier))
+        self.assertTrue(ours.product_tmpl_id._int_can_order_online(ours))
+
+        with MockRequest(self.env, website=self.website):
+            empty_info = empty.product_tmpl_id.with_context(
+                website_sale_stock_get_quantity=True
+            )._get_additionnal_combination_info(
+                empty, 1.0, empty.uom_id, fields.Datetime.now(), self.website
+            )
+            supplier_info = supplier.product_tmpl_id.with_context(
+                website_sale_stock_get_quantity=True
+            )._get_additionnal_combination_info(
+                supplier, 1.0, supplier.uom_id, fields.Datetime.now(), self.website
+            )
+            self.assertFalse(empty.product_tmpl_id._website_show_quick_add())
+            self.assertFalse(empty._website_show_quick_add())
+            self.assertFalse(empty._is_add_to_cart_allowed())
+            self.assertTrue(supplier._website_show_quick_add())
+            self.assertTrue(ours.product_tmpl_id._website_show_quick_add())
+        self.assertFalse(empty_info["allow_out_of_stock_order"])
+        self.assertTrue(supplier_info["allow_out_of_stock_order"])
+        self.assertNotIn("victron_qty", empty_info)
+
+        order = self.env["sale.order"].create({
+            "partner_id": self.partner.id,
+            "website_id": self.website.id,
+            "warehouse_id": self.warehouse.id,
+        })
+        qty, warning = order._verify_updated_quantity(
+            self.env["sale.order.line"], empty.id, 1, empty.uom_id.id
+        )
+        self.assertEqual(qty, 1)
+        self.assertEqual(warning, "Currently unavailable — contact us for lead time")
+        blocked = self._order(empty, 1)
+        self.assertFalse(blocked.order_line._check_availability())
+        self.assertEqual(blocked.order_line._get_max_line_qty(), 0)
+
+        allowed, allowed_warning = order._verify_updated_quantity(
+            self.env["sale.order.line"], supplier.id, 3, supplier.uom_id.id
+        )
+        self.assertEqual(allowed, 3)
+        self.assertFalse(allowed_warning)
 
     def test_cart_accepts_victron_stock_and_blocks_past_it_without_a_number(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)

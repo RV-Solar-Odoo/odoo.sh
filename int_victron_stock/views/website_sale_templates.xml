@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <template id="product_hide_cart_when_unavailable" inherit_id="website_sale.cta_wrapper"
+              name="Hide cart when nothing to ship">
+        <!-- d-none wins over d-flex in Bootstrap, so the button is gone on first paint.
+             A later variant change removes d-none when either side has stock. -->
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="attributes">
+            <attribute name="t-att-class"
+                       add="(' d-none out_of_stock' if product and not product._int_can_order_online(product_variant) else '')"
+                       separator=" + "/>
+        </xpath>
+    </template>
+
     <template id="product_shipping_badge" inherit_id="website_sale.product" name="Shipping Availability">
         <xpath expr="//div[hasclass('o_wsale_product_details_content_section_cta')]" position="after">
             <t t-set="int_variant" t-value="product.env['product.product'].browse(combination_info.get('product_id'))"/>
