@@ -1,6 +1,6 @@
 {
     "name": "Victron Stock",
-    "version": "19.0.1.6.0",
+    "version": "19.0.1.7.0",
     "category": "Inventory/Inventory",
     "summary": "Show warehouse and Victron availability on the shop, and draft a purchase order for the shortfall",
     "author": "Internal",
@@ -17,6 +17,7 @@
     ],
     "assets": {
         "web.assets_frontend": [
+            "int_victron_stock/static/src/scss/shop_availability.scss",
             "int_victron_stock/static/src/js/availability.js",
             "int_victron_stock/static/src/xml/click_and_collect_availability.xml",
         ],

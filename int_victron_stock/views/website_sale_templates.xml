@@ -47,10 +47,15 @@
               name="Shipping Availability (grid)" active="True">
         <xpath expr="//div[hasclass('o_wsale_product_information_text')]" position="inside">
             <t t-set="int_lines" t-value="product._int_availability_lines()"/>
-            <t t-foreach="int_lines" t-as="int_line">
-                <small t-attf-class="d-block mt-1 #{'text-success' if int_line['status'] == 'immediate' else 'text-muted'}"
-                       t-out="int_line['label']"/>
-            </t>
+            <div t-if="int_lines" class="o_int_card_availability">
+                <span class="o_int_card_availability_label">Availability:</span>
+                <div class="o_int_card_availability_lines">
+                    <t t-foreach="int_lines" t-as="int_line">
+                        <div t-attf-class="#{'text-success' if int_line['status'] == 'immediate' else 'text-muted'}"
+                             t-out="int_line['label']"/>
+                    </t>
+                </div>
+            </div>
         </xpath>
     </template>
 

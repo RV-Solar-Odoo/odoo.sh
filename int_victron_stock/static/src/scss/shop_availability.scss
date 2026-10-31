@@ -1,0 +1,19 @@
+/* Shop grid card: "Availability:" beside its messages, or above them when the card
+   is too narrow to leave the messages room. */
+.o_int_card_availability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.o_int_card_availability_label {
+  color: #161b2e;
+  font-weight: 600;
+}
+.o_int_card_availability_lines {
+  flex: 1 1 130px;
+  min-width: 0;
+}
