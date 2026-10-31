@@ -77,7 +77,6 @@ class VictronFeed(models.Model):
             for sku, vals in parsed.items()
         ])
 
-    @api.model
     def action_refresh(self):
         """Pull the feed now. Warehouse stock is left untouched."""
         if not self.env.user.has_group("stock.group_stock_manager"):
