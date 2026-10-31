@@ -9,6 +9,11 @@ class ResConfigSettings(models.TransientModel):
         if self.int_victron_vendor_id and self.int_victron_buyer_id:
             self.int_victron_vendor_id.buyer_id = self.int_victron_buyer_id
 
+    int_victron_token = fields.Char(
+        string="Victron API Token",
+        config_parameter="int_victron.token",
+        help="Token from the E-Order API documentation. Sent as Authorization: Token.",
+    )
     int_victron_username = fields.Char(
         string="Victron E-Order Username",
         config_parameter="int_victron.username",

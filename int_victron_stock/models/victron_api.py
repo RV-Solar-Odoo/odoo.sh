@@ -20,11 +20,16 @@ class VictronApi(models.AbstractModel):
 
     def _auth_header(self):
         icp = self.env["ir.config_parameter"].sudo()
+        token = (icp.get_param("int_victron.token") or "").strip()
+        if token.lower().startswith("token "):
+            token = token[6:].strip()
+        if token:
+            return f"Token {token}"
         username = (icp.get_param("int_victron.username") or "").strip()
         password = (icp.get_param("int_victron.password") or "").strip()
         if not username or not password:
             raise UserError(self.env._(
-                "Set the Victron E-Order username and password under Inventory → Settings → Victron E-Order."
+                "Set the Victron API token under Inventory → Settings → Victron E-Order."
             ))
         raw = base64.b64encode(f"{username}:{password}".encode()).decode()
         return f"Basic {raw}"

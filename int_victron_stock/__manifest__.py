@@ -1,6 +1,6 @@
 {
     "name": "Victron Stock",
-    "version": "19.0.1.4.1",
+    "version": "19.0.1.5.0",
     "category": "Inventory/Inventory",
     "summary": "Show warehouse and Victron availability on the shop, and draft a purchase order for the shortfall",
     "author": "Internal",

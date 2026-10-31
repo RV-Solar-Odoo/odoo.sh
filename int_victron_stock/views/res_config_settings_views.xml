@@ -7,7 +7,8 @@
         <field name="arch" type="xml">
             <xpath expr="//app[@name='stock']" position="inside">
                 <block title="Victron E-Order" name="int_victron_settings">
-                    <setting string="Credentials" help="Dealer login used to read Victron stock levels. E-Order uses HTTP Basic authentication.">
+                    <setting string="Credentials" help="Log in to E-Order, open the API documentation at https://eorder.victronenergy.com/api/v1/, and paste the API token here. The username and password are only used when the token is empty.">
+                        <field name="int_victron_token" password="True"/>
                         <field name="int_victron_username"/>
                         <field name="int_victron_password" password="True"/>
                     </setting>

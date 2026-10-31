@@ -62,6 +62,17 @@ class TestVictronShop(TransactionCase):
             })],
         })
 
+    def test_api_token_is_preferred_over_the_password(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        icp.set_param("int_victron.token", "Token abc123")
+        icp.set_param("int_victron.username", "user")
+        icp.set_param("int_victron.password", "secret")
+        self.assertEqual(self.env["int.victron.api"]._auth_header(), "Token abc123")
+        icp.set_param("int_victron.token", "")
+        header = self.env["int.victron.api"]._auth_header()
+        self.assertTrue(header.startswith("Basic "))
+        self.assertNotIn("abc123", header)
+
     def test_victron_feed_is_not_our_stock(self):
         product = self._product("Feed Only", on_hand=0, victron=0)
         product.default_code = "FEEDONLY1"
