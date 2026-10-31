@@ -27,13 +27,13 @@ sidebar instead of one flat "Tags" list.
   "12V" + "48V" (same group) returns products that are either.
   Stock Odoo ORs every tag together; this is overridden in
   `product.template._search_get_detail`.
-- **Tags on the shop grid card**: each product's visible tags are shown under
-  the product name on /shop, one labeled row per group in group order (e.g.
-  "Battery Voltage: 12V 24V" above "AC Voltage: 120V"), with any ungrouped tags
-  in an unlabeled row last. The card grows to fit its rows. Badges reuse the
-  template from the product detail page. Toggling "Product Tags" off in
-  Customize on the product page hides them in both places, since it's the same
-  underlying view.
+- **Grouped tags on the product page and shop grid card**: a product's visible
+  tags are shown in one labeled row per group in group order (e.g. "Battery
+  Voltage: 12V 24V" above "AC Voltage: 120V"), with any ungrouped tags in an
+  unlabeled row last. On /shop cards they appear under the product name as
+  compact plain text with a line between groups, and the card grows to fit its
+  rows. Toggling "Product Tags" off in Customize on the product page hides them
+  in both places, since it's the same underlying view.
 
 ## Install
 1. Drop the `website_sale_tag_groups` folder into your Odoo.sh repo's addons
@@ -63,7 +63,7 @@ sidebar instead of one flat "Tags" list.
 - models/product_template.py    AND/OR filter override
 - controllers/main.py           category/search scoping + auto-clear stale tags
 - views/templates.xml           shop sidebar (desktop + mobile) overrides,
-                                 plus labeled tag rows on the shop grid card
-- static/src/scss/              layout of the labeled tag rows
+                                 plus grouped tags on the product page and card
+- static/src/scss/              layout of the grouped tags
 - views/*_views.xml             backend forms/lists/menu
 - security/ir.model.access.csv

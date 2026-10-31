@@ -307,7 +307,7 @@
    Same look as the carousel's category bubble above, instead of
    Odoo's default colored-dot tag style. Not scoped to the carousel —
    o_product_tags only appears on /shop cards and the product page. */
-.o_product_tags > span.position-relative {
+.o_product_tags span.position-relative {
   display: inline-block !important;
   max-width: 100%;
   padding: 3px 10px !important;
@@ -318,10 +318,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.o_product_tags > span.position-relative > .position-absolute {
+.o_product_tags span.position-relative > .position-absolute {
   display: none !important;
 }
-.o_product_tags > span.position-relative > .text-nowrap {
+.o_product_tags span.position-relative > .text-nowrap {
   color: #686F86 !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;

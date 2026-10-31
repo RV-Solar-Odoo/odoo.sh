@@ -1,23 +1,37 @@
-/* Shop grid card: "Battery Voltage: 12V 24V", one row per tag group. The tags wrap
-   under the label when the card is too narrow to fit them beside it. */
-.o_tag_group_rows {
-  margin-bottom: 8px;
-}
+/* "Battery Voltage: 12V 24V", one row per tag group (shop card and product page).
+   The tags wrap under the label when there isn't room for them beside it. */
 .o_tag_group_row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  margin-top: 6px;
-
-  /* stock website_sale.product_tags spaces itself with !important utility classes */
-  > .o_product_tags {
-    margin: 0 !important;
-  }
+  width: 100%;
 }
 .o_tag_group_label {
-  color: #686F86;
+  color: #161b2e;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
+}
+
+/* Shop grid card only: compact plain-text tags, with a line between groups. The
+   !important rules beat stock utility classes and the badge style in rvs_website. */
+.oe_product_cart {
+  .o_product_tags {
+    gap: 6px !important;
+  }
+  .o_tag_group_row {
+    gap: 2px 10px;
+  }
+  .o_tag_group_row + .o_tag_group_row {
+    padding-top: 6px;
+    border-top: 1px solid #e6e8ef;
+  }
+  .o_product_tags span.position-relative {
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .o_product_tags span.position-relative > .text-nowrap {
+    font-size: 11px !important;
+  }
 }
