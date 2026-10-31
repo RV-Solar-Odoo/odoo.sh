@@ -5,7 +5,7 @@ from lxml import etree
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError
-from odoo.fields import Command
+from odoo.fields import Command, Domain
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.website_sale.tests.common import MockRequest
@@ -388,3 +388,16 @@ class TestVictronShop(TransactionCase):
         charges = order.order_line.filtered("is_delivery")
         self.assertEqual(charges, delivery)
         self.assertEqual(delivery.price_unit, 40.0)
+
+    def test_hide_out_of_stock_keeps_anything_we_can_still_sell(self):
+        warehouse_stock = self._product("Warehouse Stock", 5, 0).product_tmpl_id
+        victron_stock = self._product("Victron Stock", 0, 5).product_tmpl_id
+        no_stock = self._product("No Stock", 0, 0).product_tmpl_id
+        service = self.env["product.template"].create({"name": "Install", "type": "service"})
+        candidates = warehouse_stock | victron_stock | no_stock | service
+
+        with MockRequest(self.env, website=self.website):
+            domain = self.env["product.template"]._int_in_stock_domain()
+
+        found = self.env["product.template"].search(Domain("id", "in", candidates.ids) & domain)
+        self.assertEqual(found, warehouse_stock | victron_stock | service)

@@ -59,6 +59,87 @@
         </xpath>
     </template>
 
+    <!-- Shop filter, in the markup of a tag group section. It stays outside form.js_attributes:
+         the stock script reloads on any change in there and only reads tags and attributes. -->
+    <template id="shop_hide_out_of_stock" name="Hide Out of Stock Filter">
+        <t t-if="isMobile">
+            <div>
+                <h2 class="accordion-header mb-0" id="o_wsale_offcanvas_int_availability_header">
+                    <button class="o_wsale_offcanvas_title accordion-button border-top rounded-0"
+                            type="button"
+                            t-att-data-status="int_hide_out_of_stock and 'active' or 'inactive'"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#o_wsale_offcanvas_int_availability"
+                            aria-expanded="true"
+                            aria-controls="o_wsale_offcanvas_int_availability">
+                        <b>Availability</b>
+                    </button>
+                </h2>
+                <div id="o_wsale_offcanvas_int_availability"
+                     class="accordion-collapse collapse show"
+                     aria-labelledby="o_wsale_offcanvas_int_availability_header">
+                    <div class="accordion-body pt-0">
+                        <div class="list-group list-group-flush">
+                            <t t-call="int_victron_stock.shop_hide_out_of_stock_input">
+                                <t t-set="int_input_id" t-valuef="int_hide_out_of_stock_mobile"/>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+        <t t-else="">
+            <div class="accordion-item">
+                <div class="accordion-header h6 mb-0">
+                    <button class="accordion-button px-0 bg-transparent shadow-none"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            aria-expanded="true"
+                            data-bs-target="#o_wsale_int_availability_inner"
+                            aria-controls="o_wsale_int_availability_inner">
+                        <b>Availability</b>
+                    </button>
+                </div>
+                <div id="o_wsale_int_availability_inner" class="accordion-collapse collapse show">
+                    <div class="flex-column mb-3">
+                        <t t-call="int_victron_stock.shop_hide_out_of_stock_input">
+                            <t t-set="int_input_id" t-valuef="int_hide_out_of_stock_desktop"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="shop_hide_out_of_stock_input" name="Hide Out of Stock Checkbox">
+        <div class="form-check mb-1">
+            <input type="checkbox"
+                   class="form-check-input o_int_hide_out_of_stock"
+                   t-att-id="int_input_id"
+                   t-att-checked="'checked' if int_hide_out_of_stock else None"
+                   t-att-data-href="keep(hide_out_of_stock=0 if int_hide_out_of_stock else '1')"/>
+            <label class="form-check-label fw-normal" t-att-for="int_input_id">Hide out of stock items</label>
+        </div>
+    </template>
+
+    <template id="products_hide_out_of_stock" inherit_id="website_sale.products"
+              name="Hide Out of Stock Filter (sidebar)">
+        <xpath expr="//div[contains(@t-attf-class, 'products_attributes_filters')]" position="before">
+            <t t-call="int_victron_stock.shop_hide_out_of_stock">
+                <t t-set="isMobile" t-value="False"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="offcanvas_hide_out_of_stock" inherit_id="website_sale.o_wsale_offcanvas"
+              name="Hide Out of Stock Filter (mobile)">
+        <xpath expr="//t[@t-call='website_sale.product_attribute_filters_form']" position="before">
+            <t t-call="int_victron_stock.shop_hide_out_of_stock">
+                <t t-set="isMobile" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
     <template id="cart_line_victron" inherit_id="website_sale.cart_lines" name="Victron Cart Split">
         <xpath expr="//t[@t-call='website_sale.cart_line_description_following_lines']" position="after">
             <div t-if="line._int_victron_cart_note()" class="small text-muted mt-1" t-out="line._int_victron_cart_note()"/>

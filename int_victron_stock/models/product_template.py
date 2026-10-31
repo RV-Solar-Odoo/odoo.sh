@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 # Supplier stock above this is shown as "20+". Our own warehouse quantity is never capped.
 VICTRON_PUBLIC_CAP = 20
@@ -196,6 +197,24 @@ class ProductTemplate(models.Model):
 
     def _website_show_quick_add(self):
         return super()._website_show_quick_add() and self._int_can_order_online()
+
+    @api.model
+    def _int_in_stock_domain(self):
+        """Leaves out storable products with nothing in our warehouse or at Victron.
+
+        Stock isn't searchable in SQL, so each storable product is checked with the same
+        test that decides Add to cart.
+        """
+        storable = self.sudo().search([("is_storable", "=", True)])
+        out_of_stock = storable.filtered(lambda template: not template._int_can_order_online())
+        return Domain("id", "not in", out_of_stock.ids)
+
+    @api.model
+    def _search_get_detail(self, website, order, options):
+        detail = super()._search_get_detail(website, order, options)
+        if options.get("int_hide_out_of_stock"):
+            detail["base_domain"].append(self._int_in_stock_domain())
+        return detail
 
     def _int_availability_lines(self, variant=None):
         """Shop labels. Own stock is exact. Victron stock is capped at 20+."""

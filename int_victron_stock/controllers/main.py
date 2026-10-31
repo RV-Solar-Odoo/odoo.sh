@@ -5,6 +5,22 @@ from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 class IntVictronWebsiteSale(WebsiteSale):
 
+    def _get_search_options(self, *args, **post):
+        options = super()._get_search_options(*args, **post)
+        options["int_hide_out_of_stock"] = post.get("hide_out_of_stock") == "1"
+        return options
+
+    def _shop_get_query_url_kwargs(self, search, min_price, max_price, **kwargs):
+        """Keep the filter on across other filters, categories and sorting."""
+        query = super()._shop_get_query_url_kwargs(search, min_price, max_price, **kwargs)
+        query["hide_out_of_stock"] = kwargs.get("hide_out_of_stock")
+        return query
+
+    def _get_additional_shop_values(self, values, **kwargs):
+        shop_values = super()._get_additional_shop_values(values, **kwargs)
+        shop_values["int_hide_out_of_stock"] = kwargs.get("hide_out_of_stock") == "1"
+        return shop_values
+
     @route("/shop/victron_ship_when", type="http", auth="public", website=True, methods=["POST"])
     def shop_victron_ship_when(self, policy=None, **kwargs):
         order = request.cart
