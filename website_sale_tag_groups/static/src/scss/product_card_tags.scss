@@ -21,6 +21,14 @@
   align-items: center;
 }
 
+/* Shop grid only, not the carousels: a line under the product name. */
+#o_wsale_products_grid .o_wsale_products_item_title {
+  max-width: none;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6e8ef;
+}
+
 /* Shop grid card only: compact outlined tags, with a line between groups. The
    !important rules beat stock utility classes and the badge style in rvs_website. */
 .oe_product_cart {
@@ -49,5 +57,70 @@
   }
   .o_product_tags span.position-relative > .text-nowrap {
     font-size: 14px !important;
+  }
+}
+
+/* ============ Product page: tag groups as a spec block ============ */
+.o_wsale_product_details_content_section .o_product_tags {
+  display: block !important;
+  margin: 18px 0 22px !important;
+  border-top: 1px solid #eef0f5;
+  border-bottom: 1px solid #eef0f5;
+
+  /* stock renders this element empty on a product with no visible tags */
+  &:not(:has(.o_tag_group_row)) { display: none !important; }
+
+  .o_tag_group_row {
+    position: relative;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px !important;
+    padding: 10px 0 10px 144px !important;
+    & + .o_tag_group_row { border-top: 1px solid #eef0f5; }
+  }
+
+  /* label pinned in a fixed left column so rows line up */
+  .o_tag_group_label {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 132px;
+    line-height: 30px !important;
+    color: #767c96 !important;
+    font-size: 11.5px !important;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* chips, styled like the category pill */
+  .o_tag_group_row > span.position-relative {
+    display: inline-flex !important;
+    align-items: center;
+    height: 30px;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    background: #f1f2f6 !important;
+    border: 1px solid #e6e8ef;
+    > span.position-absolute { display: none !important; }
+    > span.small {
+      color: #161b2e !important;
+      font-size: 13px !important;
+      font-weight: 500;
+      line-height: 1;
+    }
+  }
+
+  /* phones: label above the chips */
+  @media (max-width: 575.98px) {
+    .o_tag_group_row { padding-left: 0 !important; }
+    .o_tag_group_label {
+      position: static;
+      width: 100%;
+      line-height: 1.3 !important;
+      margin-bottom: 2px;
+    }
   }
 }
