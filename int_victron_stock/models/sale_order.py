@@ -158,11 +158,12 @@ class SaleOrder(models.Model):
             if not mine:
                 continue
             if order.picking_policy == "one":
-                outgoing = order.picking_ids.filtered(
-                    lambda picking: picking.picking_type_code == "outgoing"
-                    and picking.state not in ("done", "cancel")
+                # Two-step warehouses only have the pick at confirmation. The
+                # customer delivery is created when that pick is finished.
+                open_pickings = order.picking_ids.filtered(
+                    lambda picking: picking.state not in ("done", "cancel")
                 )
-                order._int_victron_note_wait(outgoing)
+                order._int_victron_note_wait(open_pickings)
                 continue
             sources = {}
             for line in order.order_line:
@@ -265,17 +266,25 @@ class SaleOrder(models.Model):
             return self.env._("no purchase order has been raised yet")
         return Markup(", ").join(order._get_html_link() for order in orders)
 
+    def _int_victron_record_note(self, picking, body):
+        """Put the note on the transfer itself and in its chatter.
+
+        The warehouse reads the pick, which is the only transfer that exists
+        at confirmation when delivery is two steps.
+        """
+        picking.message_post(body=body, subtype_xmlid="mail.mt_note")
+        paragraph = Markup("<p>%s</p>") % body
+        picking.note = (picking.note or Markup("")) + paragraph
+
     def _int_victron_note_wait(self, pickings):
         link = self._int_victron_po_links()
+        body = self.env._(
+            "Customer has elected to wait for extra stock to arrive. "
+            "Fulfil this order with stock from PO %(po)s.",
+            po=link,
+        )
         for picking in pickings:
-            picking.message_post(
-                body=self.env._(
-                    "Customer has elected to wait for extra stock to arrive. "
-                    "Fulfil this order with stock from PO %(po)s.",
-                    po=link,
-                ),
-                subtype_xmlid="mail.mt_note",
-            )
+            self._int_victron_record_note(picking, body)
 
     def _int_victron_note_ship_now(self, clones, later_moves):
         link = self._int_victron_po_links()
@@ -284,28 +293,21 @@ class SaleOrder(models.Model):
             "raised to fill this order.",
             po=link,
         )
-        noted = False
+        noted = self.env["stock.picking"]
         for source_id, clone in clones.items():
             source = self.env["stock.picking"].browse(source_id)
-            if source.picking_type_code != "outgoing":
+            if source.state == "cancel":
                 continue
-            noted = True
-            source.message_post(
-                body=self.env._(
-                    "Shipment of immediate stock. The rest will be fulfilled on %(delivery)s.",
-                    delivery=clone._get_html_link(),
-                ),
-                subtype_xmlid="mail.mt_note",
-            )
-            clone.message_post(body=later_body, subtype_xmlid="mail.mt_note")
+            noted |= source
+            self._int_victron_record_note(source, self.env._(
+                "Shipment of immediate stock. The rest will be fulfilled on %(delivery)s.",
+                delivery=clone._get_html_link(),
+            ))
+            self._int_victron_record_note(clone, later_body)
         if noted:
             return
-        outgoing = later_moves.picking_id.filtered(
-            lambda picking: picking.picking_type_code == "outgoing"
-            and picking.state != "cancel"
-        )
-        for picking in outgoing:
-            picking.message_post(body=later_body, subtype_xmlid="mail.mt_note")
+        for picking in later_moves.picking_id.filtered(lambda item: item.state != "cancel"):
+            self._int_victron_record_note(picking, later_body)
 
     def _action_cancel(self):
         result = super()._action_cancel()
