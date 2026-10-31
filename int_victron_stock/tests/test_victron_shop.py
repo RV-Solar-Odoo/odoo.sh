@@ -342,6 +342,78 @@ class TestVictronShop(TransactionCase):
         self.assertFalse(added.exists())
         self.assertTrue(po.order_line)
 
+    def _outgoing(self, order):
+        return order.picking_ids.filtered(
+            lambda picking: picking.picking_type_code == "outgoing" and picking.state != "cancel"
+        )
+
+    def _note_bodies(self, picking):
+        return " ".join(str(message.body or "") for message in picking.message_ids)
+
+    def test_ship_now_splits_stock_on_hand_from_the_victron_remainder(self):
+        product = self._product("Blue Solar", on_hand=10, victron=50)
+        order = self._order(product, 40)
+        order.picking_policy = "direct"
+        order.action_confirm()
+
+        outgoing = self._outgoing(order)
+        self.assertEqual(len(outgoing), 2)
+        self.assertEqual(sorted(outgoing.move_ids.mapped("product_uom_qty")), [10.0, 30.0])
+        now = outgoing.filtered(lambda picking: not picking.backorder_id)
+        later = outgoing - now
+        self.assertEqual(sum(now.move_ids.mapped("product_uom_qty")), 10.0)
+        self.assertEqual(sum(later.move_ids.mapped("product_uom_qty")), 30.0)
+        self.assertEqual(later.backorder_id, now)
+        if later.move_ids.move_orig_ids:
+            self.assertFalse(later.move_ids.move_orig_ids & now.move_ids.move_orig_ids)
+            self.assertEqual(sum(later.move_ids.move_orig_ids.mapped("product_uom_qty")), 30.0)
+        po = self.env["purchase.order"].search([
+            ("int_victron_rfq", "=", True),
+            ("partner_id", "=", self.vendor.id),
+        ])
+        self.assertIn("immediate stock", self._note_bodies(now))
+        self.assertIn(later.name, self._note_bodies(now))
+        self.assertIn("Victron order", self._note_bodies(later))
+        self.assertIn(po.name, self._note_bodies(later))
+
+    def test_nothing_in_stock_stays_one_delivery_for_the_victron_order(self):
+        product = self._product("Blue Solar", on_hand=0, victron=50)
+        order = self._order(product, 40)
+        order.picking_policy = "direct"
+        order.action_confirm()
+
+        outgoing = self._outgoing(order)
+        self.assertEqual(len(outgoing), 1)
+        self.assertEqual(sum(outgoing.move_ids.mapped("product_uom_qty")), 40.0)
+        body = self._note_bodies(outgoing)
+        self.assertIn("Victron order", body)
+        self.assertNotIn("immediate stock", body)
+
+    def test_an_ordinary_held_order_is_left_alone(self):
+        product = self._product("Plain Cable", on_hand=5, victron=0)
+        order = self._order(product, 2)
+        order.picking_policy = "one"
+        order.action_confirm()
+        self.assertNotIn("elected to wait", self._note_bodies(self._outgoing(order)))
+
+    def test_hold_keeps_one_delivery_and_names_the_purchase_order(self):
+        product = self._product("Blue Solar", on_hand=10, victron=50)
+        order = self._order(product, 40)
+        order.int_ship_policy_chosen = True
+        order.picking_policy = "one"
+        order.action_confirm()
+
+        outgoing = self._outgoing(order)
+        self.assertEqual(len(outgoing), 1)
+        self.assertEqual(sum(outgoing.move_ids.mapped("product_uom_qty")), 40.0)
+        po = self.env["purchase.order"].search([
+            ("int_victron_rfq", "=", True),
+            ("partner_id", "=", self.vendor.id),
+        ])
+        body = self._note_bodies(outgoing)
+        self.assertIn("elected to wait", body)
+        self.assertIn(po.name, body)
+
     def test_mixed_cart_defaults_to_two_shipments_until_the_customer_chooses(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)
         order = self._order(product, 20)

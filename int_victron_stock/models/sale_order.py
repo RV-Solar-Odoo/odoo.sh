@@ -1,6 +1,9 @@
 import logging
 
+from markupsafe import Markup
+
 from odoo import api, fields, models
+from odoo.fields import Command
 from odoo.tools.float_utils import float_compare, float_round
 
 from .sale_order_line import OVER_LIMIT_MARKER
@@ -102,11 +105,24 @@ class SaleOrder(models.Model):
         self._int_victron_default_ship_policy()
         return result
 
+    def _int_victron_ship_later_qty(self):
+        """Quantity that cannot ship from stock now, per sale line.
+
+        Read before confirmation. Afterwards the reservation makes free stock look empty
+        and every unit would look like a Victron remainder.
+        """
+        later = {}
+        for order in self:
+            for line in order.order_line:
+                split = line._int_victron_split()
+                if not split["applies"] or line.product_id.uom_id.is_zero(split["later"]):
+                    continue
+                later[line.id] = split["later"]
+        return later
+
     def action_confirm(self):
         plan = self._int_victron_shortfall_plan()
-        split_orders = self.filtered(
-            lambda order: order._int_victron_needs_ship_choice() and order.picking_policy == "direct"
-        )
+        ship_later = self._int_victron_ship_later_qty()
         result = super().action_confirm()
         confirmed = self.filtered(lambda order: order.state in ("sale", "done"))
         if plan and confirmed:
@@ -123,16 +139,173 @@ class SaleOrder(models.Model):
                         ),
                         subtype_xmlid="mail.mt_note",
                     )
-        for order in split_orders.filtered(lambda item: item.state in ("sale", "done")):
-            order.message_post(
-                body=order.env._(
-                    "This order ships in more than one delivery. The customer was charged "
-                    "shipping once, for the full order. Do not add a second shipping charge "
-                    "for the follow-up shipment."
+        if confirmed:
+            confirmed._int_victron_arrange_deliveries(ship_later)
+        return result
+
+    def _int_victron_arrange_deliveries(self, later_by_line):
+        """Split ship-now orders. A held order stays one delivery.
+
+        ``later_by_line`` maps a sale line id to the quantity that is not in stock,
+        in the product's unit.
+        """
+        for order in self:
+            mine = {
+                line_id: qty
+                for line_id, qty in later_by_line.items()
+                if line_id in order.order_line.ids
+            }
+            if not mine:
+                continue
+            if order.picking_policy == "one":
+                outgoing = order.picking_ids.filtered(
+                    lambda picking: picking.picking_type_code == "outgoing"
+                    and picking.state not in ("done", "cancel")
+                )
+                order._int_victron_note_wait(outgoing)
+                continue
+            sources = {}
+            for line in order.order_line:
+                later_qty = mine.get(line.id) or 0.0
+                if not line.product_id or line.product_id.uom_id.is_zero(later_qty):
+                    continue
+                moves = line.move_ids.filtered(lambda move: move.state not in ("done", "cancel"))
+                roots = moves.filtered(lambda move: not (move.move_dest_ids & moves))
+                for root in roots:
+                    order._int_victron_peel_later(root, later_qty, sources)
+            later_moves = self.env["stock.move"]
+            for move in sources:
+                later_moves |= move
+            clones = order._int_victron_place_later_moves(later_moves, sources)
+            order._int_victron_note_ship_now(clones, later_moves)
+
+    def _int_victron_peel_later(self, move, later_qty, sources, seen=None):
+        """Move ``later_qty`` off ``move`` and the pick that feeds it.
+
+        The original move keeps what can ship now. The returned move is the
+        Victron portion, still without its own picking.
+        """
+        seen = seen if seen is not None else {}
+        if move.id in seen:
+            return seen[move.id]
+        product = move.product_id
+        rounding = product.uom_id.rounding
+        full = move.product_uom._compute_quantity(move.product_uom_qty, product.uom_id)
+        if float_compare(later_qty, full, precision_rounding=rounding) >= 0:
+            later = move
+        else:
+            vals = move._split(later_qty)
+            if not vals:
+                seen[move.id] = self.env["stock.move"]
+                return seen[move.id]
+            vals = vals[0]
+            vals["picking_id"] = False
+            later = self.env["stock.move"].create(vals)
+        sources[later] = move.picking_id
+        seen[move.id] = later
+        new_origs = self.env["stock.move"]
+        old_origs = move.move_orig_ids
+        for orig in list(old_origs):
+            new_origs |= self._int_victron_peel_later(orig, later_qty, sources, seen)
+        if later != move:
+            later.write({"move_orig_ids": [Command.set(new_origs.ids)]})
+            # A newly split pick must feed only the follow-up delivery. An unsplit
+            # pick already feeds the original delivery and has to keep that link.
+            for orig in new_origs - old_origs:
+                orig.write({"move_dest_ids": [Command.set(later.ids)]})
+        return later
+
+    def _int_victron_place_later_moves(self, later_moves, sources):
+        clones = {}
+        for later in later_moves:
+            source = sources.get(later)
+            if not source or source.state in ("done", "cancel"):
+                continue
+            staying = source.move_ids.filtered(
+                lambda move: move.state != "cancel"
+            ) - later_moves
+            if not staying:
+                if not later.picking_id:
+                    later.picking_id = source
+                continue
+            clone = clones.get(source.id)
+            if not clone:
+                vals = {
+                    "name": "/",
+                    "move_ids": [],
+                    "move_line_ids": [],
+                    "backorder_id": source.id,
+                }
+                if "carrier_tracking_ref" in source._fields:
+                    vals["carrier_tracking_ref"] = False
+                if "carrier_price" in source._fields:
+                    vals["carrier_price"] = 0.0
+                clone = source.copy(vals)
+                clones[source.id] = clone
+            later.write({"picking_id": clone.id})
+            later.move_line_ids.write({"picking_id": clone.id})
+        drafts = later_moves.filtered(lambda move: move.state == "draft")
+        if drafts:
+            drafts.with_context(bypass_entire_pack=True)._action_confirm(
+                merge=False, create_proc=False,
+            )
+        return clones
+
+    def _int_victron_purchase_orders(self):
+        self.ensure_one()
+        lines = self.env["purchase.order.line"].sudo().search([
+            ("int_source_sale_line_id", "in", self.order_line.ids),
+            ("order_id.state", "!=", "cancel"),
+        ])
+        return lines.order_id
+
+    def _int_victron_po_links(self):
+        orders = self._int_victron_purchase_orders()
+        if not orders:
+            return self.env._("no purchase order has been raised yet")
+        return Markup(", ").join(order._get_html_link() for order in orders)
+
+    def _int_victron_note_wait(self, pickings):
+        link = self._int_victron_po_links()
+        for picking in pickings:
+            picking.message_post(
+                body=self.env._(
+                    "Customer has elected to wait for extra stock to arrive. "
+                    "Fulfil this order with stock from PO %(po)s.",
+                    po=link,
                 ),
                 subtype_xmlid="mail.mt_note",
             )
-        return result
+
+    def _int_victron_note_ship_now(self, clones, later_moves):
+        link = self._int_victron_po_links()
+        later_body = self.env._(
+            "Stock to be sent from the Victron order. Purchase %(po)s has been "
+            "raised to fill this order.",
+            po=link,
+        )
+        noted = False
+        for source_id, clone in clones.items():
+            source = self.env["stock.picking"].browse(source_id)
+            if source.picking_type_code != "outgoing":
+                continue
+            noted = True
+            source.message_post(
+                body=self.env._(
+                    "Shipment of immediate stock. The rest will be fulfilled on %(delivery)s.",
+                    delivery=clone._get_html_link(),
+                ),
+                subtype_xmlid="mail.mt_note",
+            )
+            clone.message_post(body=later_body, subtype_xmlid="mail.mt_note")
+        if noted:
+            return
+        outgoing = later_moves.picking_id.filtered(
+            lambda picking: picking.picking_type_code == "outgoing"
+            and picking.state != "cancel"
+        )
+        for picking in outgoing:
+            picking.message_post(body=later_body, subtype_xmlid="mail.mt_note")
 
     def _action_cancel(self):
         result = super()._action_cancel()
