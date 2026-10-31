@@ -24,14 +24,15 @@
 /* Shop grid card only: compact outlined tags, with a line between groups. The
    !important rules beat stock utility classes and the badge style in rvs_website. */
 .oe_product_cart {
+  /* 12px each side of every line, here and around availability in int_victron_stock */
   .o_product_tags {
-    gap: 6px !important;
+    gap: 12px !important;
   }
   .o_tag_group_row {
     gap: 4px 6px;
   }
   .o_tag_group_row + .o_tag_group_row {
-    padding-top: 6px;
+    padding-top: 12px;
     border-top: 1px solid #e6e8ef;
   }
   .o_tag_group_row:last-child {
