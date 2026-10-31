@@ -184,4 +184,14 @@
             <attribute name="t-elif">product._int_can_order_online(product_variant)</attribute>
         </xpath>
     </template>
+
+    <template id="product_terms_drop_stock_shipping_days" inherit_id="website_sale.product_terms_and_conditions"
+              name="Drop stock 2-3 business days shipping text">
+        <xpath expr="//small" position="replace">
+            <small class="text-muted mb-0">
+                <a href="/terms" class="o_translate_inline text-muted"><u>Terms and Conditions</u></a><br/>
+                30-day money-back guarantee
+            </small>
+        </xpath>
+    </template>
 </odoo>

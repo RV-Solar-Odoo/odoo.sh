@@ -185,6 +185,9 @@ class TestVictronShop(TransactionCase):
         self.assertTrue(any(label.startswith("8 available") for label in plenty_labels))
         self.assertFalse(any("20+" in label for label in plenty_labels))
 
+        terms = self.env.ref("website_sale.product_terms_and_conditions").get_combined_arch()
+        self.assertNotIn("2-3 Business Days", terms)
+
     def test_shop_payload_hides_victron_quantity(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)
         template = product.product_tmpl_id

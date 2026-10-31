@@ -4,7 +4,7 @@
         <xpath expr="//div[@name='click_and_collect_availability']/h6" position="replace">
             <h6>
                 <i class="fa fa-fw fa-map-marker text-muted"/>
-                In warehouse, ready to ship
+                Ready to ship
             </h6>
         </xpath>
         <xpath expr="//div[@name='click_and_collect_availability']/div[hasclass('d-flex')]" position="replace">
@@ -13,9 +13,13 @@
                     <i class="fa fa-fw fa-circle text-success"/>
                     <t t-out="this.warehouseLine.detail"/>
                 </div>
+                <div t-elif="this.supplierLine" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-muted"/>
+                    Out of stock in our warehouse
+                </div>
                 <div t-else="" class="text-muted">
                     <i class="fa fa-fw fa-circle text-danger"/>
-                    None in stock
+                    Out of stock
                 </div>
                 <a t-if="this.props.showSelectStoreButton" role="button" href="#">
                     <t t-if="this.state.selectedLocationData.id">Change store</t>
@@ -28,12 +32,7 @@
                 <hr/>
                 <h6>
                     <i class="fa fa-fw fa-truck text-muted"/>
-                    Delivery
-                    <i
-                        class="fa fa-info-circle cursor-pointer ms-1"
-                        data-tooltip="Restrictions may apply"
-                        data-tooltip-delay="0"
-                    />
+                    Additional stock
                 </h6>
                 <div t-if="this.supplierLine" class="text-muted">
                     <i class="fa fa-fw fa-circle text-success"/>
@@ -45,7 +44,7 @@
                 </div>
                 <div t-else="" class="text-muted">
                     <i class="fa fa-fw fa-circle text-muted"/>
-                    Not available
+                    None available
                 </div>
             </div>
         </xpath>
