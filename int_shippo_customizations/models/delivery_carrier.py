@@ -11,8 +11,8 @@ class DeliveryCarrier(models.Model):
     )
     int_shippo_provider = fields.Char(
         string="Shippo carriers",
-        help="Comma-separated Shippo providers this method may quote from (e.g. UPS,FedEx). "
-             "Checkout uses the cheapest matching rate across them. Empty means any provider.",
+        help="Comma-separated Shippo providers this method quotes (e.g. UPS). "
+             "Checkout uses the cheapest service that matches. Empty means any provider.",
     )
     int_shippo_service_include = fields.Char(
         string="Shippo service includes",

@@ -71,9 +71,15 @@ class TestShippoCheckout(TransactionCase):
             "name": "Shippo Test Inverter", "type": "consu", "list_price": 300.0, "weight": 20.0,
         })
         cls.ground = env.ref("int_shippo_customizations.delivery_carrier_shippo_ups_ground")
+        cls.fedex_ground = env.ref("int_shippo_customizations.delivery_carrier_shippo_fedex_ground")
         cls.two_day = env.ref("int_shippo_customizations.delivery_carrier_shippo_ups_2day")
+        cls.fedex_two_day = env.ref("int_shippo_customizations.delivery_carrier_shippo_fedex_2day")
         cls.overnight = env.ref("int_shippo_customizations.delivery_carrier_shippo_ups_overnight")
-        cls.shippo_methods = cls.ground | cls.two_day | cls.overnight
+        cls.fedex_overnight = env.ref("int_shippo_customizations.delivery_carrier_shippo_fedex_overnight")
+        cls.shippo_methods = (
+            cls.ground | cls.fedex_ground | cls.two_day | cls.fedex_two_day
+            | cls.overnight | cls.fedex_overnight
+        )
 
     def setUp(self):
         super().setUp()
@@ -100,17 +106,22 @@ class TestShippoCheckout(TransactionCase):
     def _new_request(self):
         self.env.cr._int_shippo_rates = {}
 
-    def test_each_tier_quotes_the_cheapest_matching_service(self):
+    def test_each_carrier_quotes_its_own_service(self):
         order = self._order(self.cheap)
-        self.assertEqual(self.ground.rate_shipment(order)["price"], 11.00)
-        self.assertEqual(self.two_day.rate_shipment(order)["price"], 38.00)
-        self.assertEqual(self.overnight.rate_shipment(order)["price"], 70.00)
-        self.assertEqual(len(self.calls), 1, "Every tier should share one Shippo call")
+        self.assertEqual(self.ground.rate_shipment(order)["price"], 12.50)
+        self.assertEqual(self.fedex_ground.rate_shipment(order)["price"], 11.00)
+        self.assertEqual(self.two_day.rate_shipment(order)["price"], 40.00)
+        self.assertEqual(self.fedex_two_day.rate_shipment(order)["price"], 38.00)
+        self.assertEqual(self.overnight.rate_shipment(order)["price"], 80.00)
+        self.assertEqual(self.fedex_overnight.rate_shipment(order)["price"], 70.00)
+        self.assertEqual(len(self.calls), 1, "Every method should share one Shippo call")
 
     def test_ground_is_free_over_threshold_and_faster_tiers_are_not(self):
         order = self._order(self.pricey)
         self.assertEqual(self.ground.rate_shipment(order)["price"], 0.0)
-        self.assertEqual(self.two_day.rate_shipment(order)["price"], 38.00)
+        self.assertEqual(self.fedex_ground.rate_shipment(order)["price"], 0.0)
+        self.assertEqual(self.two_day.rate_shipment(order)["price"], 40.00)
+        self.assertEqual(self.fedex_two_day.rate_shipment(order)["price"], 38.00)
 
     def test_fresh_quote_is_reused_on_the_next_page_load(self):
         order = self._order(self.cheap)
@@ -135,7 +146,7 @@ class TestShippoCheckout(TransactionCase):
         self.response = UserError("Shippo error 503: down")
         result = self.ground.rate_shipment(order)
         self.assertTrue(result["success"])
-        self.assertEqual(result["price"], 11.00)
+        self.assertEqual(result["price"], 12.50)
 
     def test_outage_without_a_quote_hides_shippo_methods(self):
         order = self._order(self.cheap)
@@ -152,7 +163,8 @@ class TestShippoCheckout(TransactionCase):
             "rates": [r for r in RATES if r["provider"] != "FedEx"],
             "messages": [{"source": "FedEx", "text": "Rate limit exceeded"}],
         }
-        self.assertEqual(self.ground.rate_shipment(order)["price"], 11.00)
+        self.assertEqual(self.ground.rate_shipment(order)["price"], 12.50)
+        self.assertEqual(self.fedex_ground.rate_shipment(order)["price"], 11.00)
 
     def test_ground_only_category_hides_faster_tiers(self):
         if "ground_shipping_only" not in self.env["product.category"]._fields:
@@ -163,8 +175,11 @@ class TestShippoCheckout(TransactionCase):
         self.cheap.categ_id = category
         order = self._order(self.cheap)
         self.assertTrue(self.ground._is_available_for_order(order))
+        self.assertTrue(self.fedex_ground._is_available_for_order(order))
         self.assertFalse(self.two_day._is_available_for_order(order))
+        self.assertFalse(self.fedex_two_day._is_available_for_order(order))
         self.assertFalse(self.overnight._is_available_for_order(order))
+        self.assertFalse(self.fedex_overnight._is_available_for_order(order))
 
     def test_no_message_when_a_shipped_method_is_offered(self):
         order = self._order(self.cheap)
