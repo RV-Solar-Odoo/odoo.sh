@@ -16,8 +16,12 @@
                         <field name="int_victron_sku_field"/>
                         <field name="int_victron_qty_field"/>
                     </setting>
-                    <setting string="Webshop lead time" help="Shown when we are out of stock but Victron has the item.">
+                    <setting string="Webshop lead time" help="Shown after the supplier quantity. Own warehouse stock is shown in full.">
                         <field name="int_victron_lead_time_label"/>
+                    </setting>
+                    <setting string="Purchasing" help="When a sale needs more than the warehouse has, a draft purchase order is created for this vendor and assigned to this buyer.">
+                        <field name="int_victron_vendor_id"/>
+                        <field name="int_victron_buyer_id"/>
                     </setting>
                 </block>
             </xpath>

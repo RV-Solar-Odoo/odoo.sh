@@ -4,6 +4,11 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
+    def set_values(self):
+        super().set_values()
+        if self.int_victron_vendor_id and self.int_victron_buyer_id:
+            self.int_victron_vendor_id.buyer_id = self.int_victron_buyer_id
+
     int_victron_username = fields.Char(
         string="Victron E-Order Username",
         config_parameter="int_victron.username",
@@ -31,8 +36,22 @@ class ResConfigSettings(models.TransientModel):
         help="Name of the stock-quantity key in the E-Order response.",
     )
     int_victron_lead_time_label = fields.Char(
-        string="Victron Lead Time Label",
+        string="Victron Lead Time",
         config_parameter="int_victron.lead_time_label",
-        default="Ships in about 2 weeks",
-        help="Shown on the webshop when only Victron has stock.",
+        default="within 7–10 days",
+        help="Shown after the supplier quantity, for example \"20+ more available — ships within 7–10 days\".",
+    )
+    int_victron_vendor_id = fields.Many2one(
+        "res.partner",
+        string="Victron Vendor",
+        config_parameter="int_victron.vendor_partner_id",
+        help="Contact that receives the draft purchase order when the warehouse cannot fill an order.",
+    )
+    int_victron_buyer_id = fields.Many2one(
+        "res.users",
+        string="Victron Buyer",
+        config_parameter="int_victron.buyer_user_id",
+        domain="[('share', '=', False)]",
+        help="Assigned to those draft purchase orders, with a to-do to finish and send them. "
+             "Leave empty to use the user named Casey Shirts.",
     )

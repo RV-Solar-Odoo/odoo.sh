@@ -4,6 +4,10 @@ from collections import defaultdict
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+# Supplier stock above this is shown as "20+". Our own warehouse quantity is never capped.
+VICTRON_PUBLIC_CAP = 20
+LEAD_TIME_PHRASE = "within 7–10 days"
+
 _logger = logging.getLogger(__name__)
 
 
@@ -12,6 +16,7 @@ class ProductTemplate(models.Model):
 
     victron_sku = fields.Char(
         string="Victron SKU",
+        groups="base.group_user",
         help="Victron article code used to match this product against the E-Order feed. "
              "Leave empty to fall back on the Internal SKU.",
     )
@@ -20,6 +25,7 @@ class ProductTemplate(models.Model):
         digits="Product Unit of Measure",
         readonly=True,
         copy=False,
+        groups="base.group_user",
         help="Quantity Victron reports in stock. Informational only — it never creates quants "
              "and never affects valuation, reordering, or inventory reports.",
     )
@@ -27,6 +33,7 @@ class ProductTemplate(models.Model):
         string="Victron Stock Changed",
         readonly=True,
         copy=False,
+        groups="base.group_user",
         help="Last time the E-Order feed reported a different quantity for this product.",
     )
 
@@ -106,39 +113,129 @@ class ProductTemplate(models.Model):
             sum(len(ids) for ids in by_qty.values()),
         )
 
-    def _int_own_available_qty(self):
+    def _int_lead_phrase(self):
+        phrase = (self.env["ir.config_parameter"].sudo().get_param("int_victron.lead_time_label") or "").strip()
+        return phrase or LEAD_TIME_PHRASE
+
+    def _int_format_qty(self, qty):
+        qty = float(qty or 0.0)
+        if abs(qty - round(qty)) < 1e-6:
+            return str(int(round(qty)))
+        return f"{qty:.2f}".rstrip("0").rstrip(".")
+
+    def _int_public_victron_qty(self, qty):
+        """Label for supplier stock. The exact figure never leaves this method."""
+        if qty > VICTRON_PUBLIC_CAP:
+            return f"{VICTRON_PUBLIC_CAP}+"
+        return self._int_format_qty(qty)
+
+    def _int_victron_feed_qty(self):
+        self.ensure_one()
+        return self.sudo().victron_qty or 0.0
+
+    @api.model
+    def _int_victron_clear_po_cache(self):
+        if hasattr(self.env.cr, "int_victron_open_po_by_template"):
+            del self.env.cr.int_victron_open_po_by_template
+
+    @api.model
+    def _int_victron_open_po_by_template(self):
+        """Supplier quantity already promised on open Victron RFQs, by product template."""
+        cached = getattr(self.env.cr, "int_victron_open_po_by_template", None)
+        if cached is not None:
+            return cached
+        lines = self.env["purchase.order.line"].sudo().search([
+            ("order_id.int_victron_rfq", "=", True),
+            ("order_id.state", "in", ("draft", "sent", "purchase")),
+            ("product_id", "!=", False),
+        ])
+        totals = defaultdict(float)
+        for line in lines:
+            remaining = max((line.product_qty or 0.0) - (line.qty_received or 0.0), 0.0)
+            product_uom = line.product_id.uom_id
+            if line.product_uom_id and line.product_uom_id != product_uom:
+                remaining = line.product_uom_id._compute_quantity(remaining, product_uom)
+            totals[line.product_id.product_tmpl_id.id] += remaining
+        self.env.cr.int_victron_open_po_by_template = totals
+        return totals
+
+    def _int_victron_available_qty(self):
+        """Supplier quantity we can still promise. Exact value, for server-side checks only."""
+        self.ensure_one()
+        promised = self._int_victron_open_po_by_template().get(self.id, 0.0)
+        return max(self._int_victron_feed_qty() - promised, 0.0)
+
+    def _int_own_available_qty(self, variant=None):
         """Quantity we can ship today from the website warehouse."""
         self.ensure_one()
         website = self.env["website"].get_current_website()
+        if variant:
+            return website._get_product_available_qty(variant.sudo())
         variants = self.sudo().product_variant_ids
         if not variants:
             return 0.0
-        return sum(website._get_product_available_qty(variant) for variant in variants)
+        return sum(website._get_product_available_qty(item) for item in variants)
 
-    def _int_shipping_badge(self):
-        """Return the availability badge shown on the shop, or False to show nothing."""
+    def _int_availability_lines(self, variant=None):
+        """Shop labels. Own stock is exact. Victron stock is capped at 20+."""
         self.ensure_one()
         if not self.is_storable:
-            return False
-        if self._int_own_available_qty() > 0:
-            return {
+            return []
+        if variant and (not variant.exists() or variant.product_tmpl_id != self):
+            variant = None
+        lines = []
+        own = self._int_own_available_qty(variant)
+        if own > 0:
+            lines.append({
                 "status": "immediate",
                 "css": "text-bg-success",
                 "icon": "fa-check",
-                "label": self.env._("In stock — ships immediately"),
-            }
-        if self.sudo().victron_qty > 0:
-            icp = self.env["ir.config_parameter"].sudo()
-            return {
+                "label": self.env._(
+                    "%(qty)s in stock — ready to ship",
+                    qty=self._int_format_qty(own),
+                ),
+            })
+        victron = self._int_victron_available_qty()
+        if victron > 0:
+            lines.append({
                 "status": "backup",
                 "css": "text-bg-info",
                 "icon": "fa-truck",
-                "label": icp.get_param("int_victron.lead_time_label")
-                or self.env._("Ships in about 2 weeks"),
-            }
-        return {
-            "status": "unavailable",
-            "css": "text-bg-secondary",
-            "icon": "fa-clock-o",
-            "label": self.env._("Currently unavailable — contact us for lead time"),
-        }
+                "label": self.env._(
+                    "%(qty)s more available — ships %(when)s",
+                    qty=self._int_public_victron_qty(victron),
+                    when=self._int_lead_phrase(),
+                ),
+            })
+        if not lines:
+            lines.append({
+                "status": "unavailable",
+                "css": "text-bg-secondary",
+                "icon": "fa-clock-o",
+                "label": self.env._("Currently unavailable — contact us for lead time"),
+            })
+        return lines
+
+    def _get_additionnal_combination_info(self, product_or_template, quantity, uom, date, website):
+        """Publish our own free quantity only, and let the server enforce Victron's real limit."""
+        res = super()._get_additionnal_combination_info(
+            product_or_template, quantity, uom, date, website
+        )
+        if not self.env.context.get("website_sale_stock_get_quantity"):
+            return res
+        if product_or_template.is_product_variant:
+            template = product_or_template.product_tmpl_id
+            variant = product_or_template
+        else:
+            template = product_or_template
+            variant = None
+        if not template.is_storable:
+            return res
+        res["int_availability_lines"] = template._int_availability_lines(variant)
+        # The browser uses free_qty as a hard cap. Keep that number equal to warehouse
+        # stock (which we show) and turn the cap off when Victron can fill more, so a
+        # customer can order 400 without the page telling them Victron's real count.
+        if template._int_victron_feed_qty() > 0 and product_or_template.is_product_variant:
+            res["allow_out_of_stock_order"] = True
+            res["show_availability"] = False
+        return res

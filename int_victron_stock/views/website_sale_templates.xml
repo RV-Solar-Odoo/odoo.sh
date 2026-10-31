@@ -2,12 +2,17 @@
 <odoo>
     <template id="product_shipping_badge" inherit_id="website_sale.product" name="Shipping Availability">
         <xpath expr="//div[hasclass('o_wsale_product_details_content_section_cta')]" position="after">
-            <t t-set="int_badge" t-value="product._int_shipping_badge()"/>
-            <div t-if="int_badge" class="o_int_shipping_badge mb-4">
-                <span t-attf-class="badge #{int_badge['css']}">
-                    <i t-attf-class="fa #{int_badge['icon']} me-1" role="presentation"/>
-                    <t t-out="int_badge['label']"/>
-                </span>
+            <t t-set="int_variant" t-value="product.env['product.product'].browse(combination_info.get('product_id'))"/>
+            <t t-set="int_lines" t-value="product._int_availability_lines(int_variant)"/>
+            <div t-if="int_lines" class="o_int_shipping_badge mb-4">
+                <t t-foreach="int_lines" t-as="int_line">
+                    <div class="mb-1">
+                        <span t-attf-class="badge #{int_line['css']}">
+                            <i t-attf-class="fa #{int_line['icon']} me-1" role="presentation"/>
+                            <t t-out="int_line['label']"/>
+                        </span>
+                    </div>
+                </t>
             </div>
         </xpath>
     </template>
@@ -15,9 +20,48 @@
     <template id="products_item_shipping_badge" inherit_id="website_sale.products_item"
               name="Shipping Availability (grid)" active="True">
         <xpath expr="//div[hasclass('o_wsale_product_information_text')]" position="inside">
-            <t t-set="int_badge" t-value="product._int_shipping_badge()"/>
-            <small t-if="int_badge" t-attf-class="o_int_shipping_badge d-block mt-1 #{'text-success' if int_badge['status'] == 'immediate' else 'text-muted'}"
-                   t-out="int_badge['label']"/>
+            <t t-set="int_lines" t-value="product._int_availability_lines()"/>
+            <t t-foreach="int_lines" t-as="int_line">
+                <small t-attf-class="d-block mt-1 #{'text-success' if int_line['status'] == 'immediate' else 'text-muted'}"
+                       t-out="int_line['label']"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="cart_line_victron" inherit_id="website_sale.cart_lines" name="Victron Cart Split">
+        <xpath expr="//t[@t-call='website_sale.cart_line_description_following_lines']" position="after">
+            <div t-if="line._int_victron_cart_note()" class="small text-muted mt-1" t-out="line._int_victron_cart_note()"/>
+            <div t-if="line._int_victron_checkout_warning()" class="small text-danger mt-1" t-out="line._int_victron_checkout_warning()"/>
+        </xpath>
+    </template>
+
+    <template id="checkout_ship_when" inherit_id="website_sale.checkout" name="When to Ship">
+        <xpath expr="//div[@id='shop_checkout']/*[1]" position="before">
+            <div t-if="order._int_victron_needs_ship_choice()" id="int_victron_ship_when" class="mb-4">
+                <h5 class="mb-2">When to ship</h5>
+                <p class="text-muted small">
+                    Shipping is charged once, for the full order, including units that ship later.
+                </p>
+                <form action="/shop/victron_ship_when" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="policy" value="direct" id="int_victron_ship_direct"
+                               onchange="this.form.submit()"
+                               t-att-checked="'checked' if order.picking_policy != 'one' else None"/>
+                        <label class="form-check-label" for="int_victron_ship_direct">
+                            Ship what's in stock now, and the rest <t t-out="order.env['product.template']._int_lead_phrase()"/>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="policy" value="one" id="int_victron_ship_together"
+                               onchange="this.form.submit()"
+                               t-att-checked="'checked' if order.picking_policy == 'one' else None"/>
+                        <label class="form-check-label" for="int_victron_ship_together">
+                            Hold the order and ship everything together
+                        </label>
+                    </div>
+                </form>
+            </div>
         </xpath>
     </template>
 </odoo>
