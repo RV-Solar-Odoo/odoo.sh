@@ -1,40 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Checkout "Details" form: optional account checkbox for guests. -->
-    <template id="address_create_account" inherit_id="website_sale.address" name="RVSB: create account checkbox">
-        <xpath expr="//form[@name='address_form']/div[hasclass('row')]" position="after">
-            <t t-if="rvsb_offer_account">
-                <input type="hidden" name="rvsb_account_offered" value="1"/>
-                <div class="rvsb_create_account form-check mt-2 mb-3">
-                    <input class="form-check-input" type="checkbox" value="1"
-                           id="rvsb_create_account" name="rvsb_create_account"
-                           t-att-checked="rvsb_create_account or None"/>
-                    <label class="form-check-label" for="rvsb_create_account">
-                        Create an account to track my orders
-                        <small class="d-block text-muted">
-                            After your order we'll email you a link to set your password.
-                        </small>
-                    </label>
-                </div>
-            </t>
-        </xpath>
-    </template>
-
-    <!-- Confirmation page: replace Odoo's instant "Sign Up" button (it skips email
-         verification) with the status of the guest's account request. -->
+    <!-- Confirmation page: offer guests an account, below Odoo's own sign up block,
+         which is left as it is. static/src/interactions/account_cta.js shows the
+         outcome in place, because reloading this page sends the GA purchase event again. -->
     <template id="confirmation_account_status" inherit_id="website_sale.confirmation" name="RVSB: account status">
-        <xpath expr="//div[@id='order_name']/following-sibling::t[1]" position="replace">
-            <t t-if="request.website.is_public_user() and order.rvsb_account_status">
-                <div t-if="order.rvsb_account_status == 'invited'" class="alert alert-info mt-3 rvsb_account_alert" role="status">
+        <xpath expr="//div[@id='order_name']/following-sibling::t[1]" position="after">
+            <t t-set="rvsb_status" t-value="order.rvsb_account_status"/>
+            <div t-if="request.website.is_public_user() and order.state in ('sent', 'sale') and (rvsb_status or not order.partner_id.user_ids)"
+                 class="rvsb_account_request mt-3">
+                <div data-rvsb-status="offer" role="status"
+                     t-attf-class="alert alert-info d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 #{'d-none' if rvsb_status else ''}">
+                    <span>
+                        <strong>Want to create an account?</strong>
+                        Track your orders in one place. We'll email you a link to set your password.
+                    </span>
+                    <button type="button" name="rvsb_create_account" class="btn btn-primary flex-shrink-0">Create an account</button>
+                </div>
+                <div data-rvsb-status="invited" role="status"
+                     t-attf-class="alert alert-info #{'' if rvsb_status == 'invited' else 'd-none'}">
                     <strong>Check your inbox to finish setting up your account.</strong>
                     We sent a link to <span t-out="order.partner_id.email"/> to set your password.
                 </div>
-                <div t-elif="order.rvsb_account_status == 'exists'" class="alert alert-light border mt-3 rvsb_account_alert" role="status">
+                <div data-rvsb-status="exists" role="status"
+                     t-attf-class="alert alert-light border #{'' if rvsb_status == 'exists' else 'd-none'}">
                     There's already an account for <span t-out="order.partner_id.email"/>.
                     <a href="/web/login">Sign in</a> next time to keep your orders in one place.
                 </div>
-            </t>
+                <div data-rvsb-status="failed" role="status"
+                     t-attf-class="alert alert-warning #{'' if rvsb_status == 'failed' else 'd-none'}">
+                    We couldn't create your account. Your order isn't affected. Please contact us and we'll set it up for you.
+                </div>
+            </div>
         </xpath>
     </template>
 

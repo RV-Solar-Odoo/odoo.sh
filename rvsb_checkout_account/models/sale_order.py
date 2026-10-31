@@ -9,11 +9,6 @@ _logger = logging.getLogger(__name__)
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    rvsb_create_account = fields.Boolean(
-        string="Account Requested",
-        copy=False,
-        help="The guest ticked 'Create an account' at checkout.",
-    )
     rvsb_account_status = fields.Selection(
         selection=[
             ('invited', "Activation email sent"),
@@ -24,16 +19,6 @@ class SaleOrder(models.Model):
         copy=False,
         readonly=True,
     )
-
-    def write(self, vals):
-        res = super().write(vals)
-        # 'sent' = order placed with a pending payment (e.g. wire transfer),
-        # 'sale' = order confirmed. Either way the checkout is finished.
-        if vals.get('state') in ('sent', 'sale'):
-            self.filtered(
-                lambda so: so.rvsb_create_account and not so.rvsb_account_status
-            )._rvsb_invite_customer()
-        return res
 
     def _rvsb_invite_customer(self):
         """Create a password-less portal user for the order's customer and email them
