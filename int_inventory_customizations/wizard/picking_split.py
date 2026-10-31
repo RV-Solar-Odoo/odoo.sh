@@ -68,19 +68,12 @@ class PickingSplit(models.TransientModel):
             "backorder_id": picking.id,
             "carrier_tracking_ref": False,
         })
-        moved = []
         for line in lines:
             self._split_move(line.move_id, line.split_qty, new_picking)
-            moved.append("%s %s" % (
-                float_round(line.split_qty, precision_rounding=line.move_id.product_uom.rounding),
-                line.move_id.product_id.display_name,
-            ))
-        body = self.env._(
-            "Split %(qty)s onto %(delivery)s. Serial numbers already selected stayed on those units.",
-            qty=", ".join(moved),
+        picking.message_post(body=self.env._(
+            "Delivery order split onto %(delivery)s.",
             delivery=new_picking._get_html_link(),
-        )
-        picking.message_post(body=body)
+        ))
         new_picking.message_post(body=self.env._(
             "Split from %(delivery)s.",
             delivery=picking._get_html_link(),
