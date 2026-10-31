@@ -55,7 +55,7 @@ class ProductTemplate(models.Model):
 
         endpoint = icp.get_param("int_victron.endpoint") or "/products-extended/"
         sku_field = icp.get_param("int_victron.sku_field") or "sku"
-        qty_field = icp.get_param("int_victron.qty_field") or "stock"
+        qty_field = icp.get_param("int_victron.qty_field") or "stock_quantity"
 
         try:
             rows = self.env["int.victron.api"].fetch_all(endpoint)
@@ -186,33 +186,36 @@ class ProductTemplate(models.Model):
         lines = []
         own = self._int_own_available_qty(variant)
         if own > 0:
+            qty = self._int_format_qty(own)
             lines.append({
                 "status": "immediate",
                 "css": "text-bg-success",
                 "icon": "fa-check",
-                "label": self.env._(
-                    "%(qty)s in stock — ready to ship",
-                    qty=self._int_format_qty(own),
-                ),
+                "detail": self.env._("%(qty)s in stock", qty=qty),
+                "label": self.env._("%(qty)s in stock — ready to ship", qty=qty),
             })
         victron = self._int_victron_available_qty()
         if victron > 0:
+            supplier = self.env._(
+                "%(qty)s more available — ships %(when)s",
+                qty=self._int_public_victron_qty(victron),
+                when=self._int_lead_phrase(),
+            )
             lines.append({
                 "status": "backup",
                 "css": "text-bg-info",
                 "icon": "fa-truck",
-                "label": self.env._(
-                    "%(qty)s more available — ships %(when)s",
-                    qty=self._int_public_victron_qty(victron),
-                    when=self._int_lead_phrase(),
-                ),
+                "detail": supplier,
+                "label": supplier,
             })
         if not lines:
+            unavailable = self.env._("Currently unavailable — contact us for lead time")
             lines.append({
                 "status": "unavailable",
                 "css": "text-bg-secondary",
                 "icon": "fa-clock-o",
-                "label": self.env._("Currently unavailable — contact us for lead time"),
+                "detail": unavailable,
+                "label": unavailable,
             })
         return lines
 

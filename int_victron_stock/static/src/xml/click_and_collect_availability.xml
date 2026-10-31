@@ -7,5 +7,47 @@
                 In warehouse, ready to ship
             </h6>
         </xpath>
+        <xpath expr="//div[@name='click_and_collect_availability']/div[hasclass('d-flex')]" position="replace">
+            <div class="d-flex justify-content-between">
+                <div t-if="this.warehouseLine" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-success"/>
+                    <t t-out="this.warehouseLine.detail"/>
+                </div>
+                <div t-else="" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-danger"/>
+                    None in stock
+                </div>
+                <a t-if="this.props.showSelectStoreButton" role="button" href="#">
+                    <t t-if="this.state.selectedLocationData.id">Change store</t>
+                    <t t-elif="this.state.inStoreStockData.in_stock">Select store</t>
+                </a>
+            </div>
+        </xpath>
+        <xpath expr="//div[@name='delivery_availability']" position="replace">
+            <div name="delivery_availability" class="flex-row">
+                <hr/>
+                <h6>
+                    <i class="fa fa-fw fa-truck text-muted"/>
+                    Delivery
+                    <i
+                        class="fa fa-info-circle cursor-pointer ms-1"
+                        data-tooltip="Restrictions may apply"
+                        data-tooltip-delay="0"
+                    />
+                </h6>
+                <div t-if="this.supplierLine" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-success"/>
+                    <t t-out="this.supplierLine.detail"/>
+                </div>
+                <div t-elif="this.unavailableLine" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-danger"/>
+                    <t t-out="this.unavailableLine.detail"/>
+                </div>
+                <div t-else="" class="text-muted">
+                    <i class="fa fa-fw fa-circle text-muted"/>
+                    Not available
+                </div>
+            </div>
+        </xpath>
     </t>
 </templates>

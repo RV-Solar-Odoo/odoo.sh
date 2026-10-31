@@ -64,10 +64,14 @@ class TestVictronShop(TransactionCase):
 
     def test_labels_show_full_warehouse_stock_and_cap_victron(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)
-        labels = [line["label"] for line in product.product_tmpl_id._int_availability_lines(product)]
+        lines = product.product_tmpl_id._int_availability_lines(product)
+        labels = [line["label"] for line in lines]
+        details = {line["status"]: line["detail"] for line in lines}
         self.assertIn("17 in stock — ready to ship", labels)
-        self.assertTrue(any(label.startswith("20+ more available") for label in labels))
+        self.assertEqual(details["immediate"], "17 in stock")
+        self.assertTrue(details["backup"].startswith("20+ more available"))
         self.assertFalse(any("45" in label for label in labels))
+        self.assertNotIn("45", details["backup"])
 
         plenty = self._product("Big Pile", on_hand=143, victron=8)
         plenty_labels = [

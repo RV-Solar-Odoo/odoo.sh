@@ -32,8 +32,8 @@ class ResConfigSettings(models.TransientModel):
     int_victron_qty_field = fields.Char(
         string="Victron Quantity Field",
         config_parameter="int_victron.qty_field",
-        default="stock",
-        help="Name of the stock-quantity key in the E-Order response.",
+        default="stock_quantity",
+        help="Name of the stock-quantity key in the E-Order response. The feed calls this stock_quantity.",
     )
     int_victron_lead_time_label = fields.Char(
         string="Victron Lead Time",
