@@ -1,11 +1,11 @@
 {
     "name": "Victron Stock",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Inventory/Inventory",
     "summary": "Show warehouse and Victron availability on the shop, and draft a purchase order for the shortfall",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["stock", "website_sale", "website_sale_stock", "purchase_stock"],
+    "depends": ["stock", "website_sale", "website_sale_stock", "website_sale_collect", "purchase_stock"],
     "application": False,
     "data": [
         "data/victron_cron.xml",
@@ -16,6 +16,7 @@
     "assets": {
         "web.assets_frontend": [
             "int_victron_stock/static/src/js/availability.js",
+            "int_victron_stock/static/src/xml/click_and_collect_availability.xml",
         ],
     },
 }
