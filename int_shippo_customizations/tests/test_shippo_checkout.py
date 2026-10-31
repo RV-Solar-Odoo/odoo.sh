@@ -123,6 +123,21 @@ class TestShippoCheckout(TransactionCase):
         self.assertEqual(self.two_day.rate_shipment(order)["price"], 40.00)
         self.assertEqual(self.fedex_two_day.rate_shipment(order)["price"], 38.00)
 
+    def test_ground_free_shipping_uses_the_price_before_the_discount(self):
+        order = self._order(self.pricey)
+        order.order_line.discount = 50
+        self.assertLess(order.amount_total, self.ground.int_free_over_amount)
+        self.assertEqual(self.ground.rate_shipment(order)["price"], 0.0)
+        self.assertEqual(self.fedex_ground.rate_shipment(order)["price"], 0.0)
+        self.assertEqual(self.two_day.rate_shipment(order)["price"], 40.00)
+
+        under = self.env["product.product"].create({
+            "name": "Shippo Test Under Threshold", "type": "consu", "list_price": 200.0, "weight": 1.0,
+        })
+        small = self._order(under)
+        small.order_line.discount = 50
+        self.assertEqual(self.ground.rate_shipment(small)["price"], 12.50)
+
     def test_fresh_quote_is_reused_on_the_next_page_load(self):
         order = self._order(self.cheap)
         self.ground.rate_shipment(order)

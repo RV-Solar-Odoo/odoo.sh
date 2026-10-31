@@ -26,8 +26,9 @@ class DeliveryCarrier(models.Model):
     )
     int_free_over_amount = fields.Float(
         string="Free over",
-        help="If the order total without shipping is at least this amount, checkout quotes $0 "
-             "for this method. Faster methods are unchanged.",
+        help="If the product total before discounts, without shipping, is at least this amount, "
+             "checkout quotes $0 for this method. A $300 item at 50% off still counts as $300. "
+             "Faster methods are unchanged.",
     )
 
     def _int_is_ground_method(self):
@@ -85,11 +86,42 @@ class DeliveryCarrier(models.Model):
         delivery_total = sum(order.order_line.filtered("is_delivery").mapped("price_total"))
         return order.amount_total - delivery_total
 
+    def _int_line_amount_before_discount(self, line):
+        """Tax-included line total with the discount put back."""
+        currency = line.currency_id or line.order_id.currency_id
+        paid = line.price_total
+        discount = line.discount or 0.0
+        if discount:
+            factor = 1.0 - (discount / 100.0)
+            if factor > 1e-6:
+                return paid / factor
+        before = line.price_unit
+        if line.pricelist_item_id:
+            base = line._get_pricelist_price_before_discount()
+            if base and not currency.is_zero(base - line.price_unit) and abs(base) > abs(line.price_unit):
+                before = base
+        if not line.price_unit or currency.is_zero(before - line.price_unit):
+            return paid
+        return paid * (before / line.price_unit)
+
+    def _int_merchandise_before_discount(self, order):
+        """Product total before discounts. Shipping and reward lines are not included."""
+        if order._name != "sale.order":
+            return 0.0
+        total = 0.0
+        for line in order.order_line:
+            if line.display_type or line.is_delivery:
+                continue
+            if getattr(line, "reward_id", False) or line._is_global_discount():
+                continue
+            total += self._int_line_amount_before_discount(line)
+        return total
+
     def _int_shippo_checkout_price(self, order, price):
         if (
             order._name == "sale.order"
             and self.int_free_over_amount
-            and self._int_order_amount_without_delivery(order) + 1e-6 >= self.int_free_over_amount
+            and self._int_merchandise_before_discount(order) + 1e-6 >= self.int_free_over_amount
         ):
             price = 0.0
         if order._name == "sale.order":

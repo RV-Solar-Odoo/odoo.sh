@@ -95,4 +95,12 @@
             </div>
         </xpath>
     </template>
+
+    <template id="wishlist_hide_cart_when_unavailable" inherit_id="website_sale_wishlist.product_wishlist"
+              name="Hide wishlist cart when nothing to ship">
+        <xpath expr="//button[@id='add_to_cart_button']" position="attributes">
+            <attribute name="t-else"/>
+            <attribute name="t-elif">product._int_can_order_online(product_variant)</attribute>
+        </xpath>
+    </template>
 </odoo>

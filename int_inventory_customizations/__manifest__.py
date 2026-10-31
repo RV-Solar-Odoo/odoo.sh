@@ -1,6 +1,6 @@
 {
     "name": "Inventory Customizations",
-    "version": "19.0.2.4.0",
+    "version": "19.0.2.5.0",
     "category": "Inventory/Inventory",
     "summary": "Adds RVSB product fields, form layout, and battery Ground shipping rules",
     "author": "Internal",
@@ -10,7 +10,10 @@
     "data": [
         "data/product_category_data.xml",
         "data/product_category_shipping.xml",
+        "security/ir.model.access.csv",
         "views/product_category_views.xml",
         "views/product_template_views.xml",
+        "views/stock_picking_views.xml",
+        "wizard/picking_split_views.xml",
     ],
 }

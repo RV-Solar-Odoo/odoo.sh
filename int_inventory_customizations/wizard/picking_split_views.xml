@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_int_picking_split_form" model="ir.ui.view">
+        <field name="name">int.picking.split.form</field>
+        <field name="model">int.picking.split</field>
+        <field name="arch" type="xml">
+            <form string="Split">
+                <div class="alert alert-info" role="alert">
+                    Enter how much of each product goes onto a new delivery. Serial numbers already selected on this delivery stay on those units.
+                </div>
+                <field name="picking_id" invisible="1"/>
+                <field name="line_ids">
+                    <list editable="bottom" create="false" delete="false">
+                        <field name="move_id" column_invisible="1"/>
+                        <field name="product_id" readonly="1"/>
+                        <field name="demand_qty" readonly="1"/>
+                        <field name="product_uom_id" groups="uom.group_uom" readonly="1"/>
+                        <field name="reserved_qty" readonly="1"/>
+                        <field name="serials" readonly="1" optional="show"/>
+                        <field name="split_qty"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_split" type="object" string="Split" class="btn-primary"/>
+                    <button special="cancel" string="Cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

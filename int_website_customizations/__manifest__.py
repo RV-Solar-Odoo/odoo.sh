@@ -1,6 +1,6 @@
 {
     "name": "Website Customizations",
-    "version": "19.0.1.4.0",
+    "version": "19.0.1.6.0",
     "category": "Website/Website",
     "summary": "Checkout delivery rules; free UPS Ground on orders of $250 or more",
     "author": "Internal",

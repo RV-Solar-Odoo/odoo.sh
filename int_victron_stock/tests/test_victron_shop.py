@@ -1,6 +1,8 @@
 import base64
 from unittest.mock import patch
 
+from lxml import etree
+
 from odoo import fields
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Command
@@ -238,6 +240,15 @@ class TestVictronShop(TransactionCase):
         self.assertFalse(empty_info["allow_out_of_stock_order"])
         self.assertTrue(supplier_info["allow_out_of_stock_order"])
         self.assertNotIn("victron_qty", empty_info)
+
+        wishlist = self.env.ref("website_sale_wishlist.product_wishlist")
+        arch = etree.fromstring(wishlist.get_combined_arch())
+        button = arch.find(".//button[@id='add_to_cart_button']")
+        self.assertEqual(
+            button.get("t-elif"),
+            "product._int_can_order_online(product_variant)",
+        )
+        self.assertIsNone(button.get("t-else"))
 
         order = self.env["sale.order"].create({
             "partner_id": self.partner.id,
