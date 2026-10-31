@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Replaces each document link in the "Documents" block of the product page
+        with a row that offers "View" (opens in a new tab, inline) and "Download".
+        "View" is only shown for PDFs and images, since those are the types a
+        browser can actually display; everything else keeps a single Download link.
+    -->
+    <template id="product_documents_view_download" inherit_id="website_sale.product" name="Product Documents: View / Download">
+        <xpath expr="//div[@id='product_documents']//a[hasclass('list-group-item')]" position="replace">
+            <t t-set="doc_url" t-value="'/shop/' + slug(product) + '/document/' + str(document_sudo.id)"/>
+            <t t-set="is_url" t-value="attachment_sudo.type == 'url'"/>
+            <t t-set="mimetype" t-value="attachment_sudo.mimetype or ''"/>
+            <t t-set="viewable" t-value="not is_url and (mimetype == 'application/pdf' or mimetype.startswith('image/'))"/>
+            <t t-set="doc_icon" t-value="is_url and 'fa-link' or (mimetype == 'application/pdf' and 'fa-file-pdf-o') or (mimetype.startswith('image/') and 'fa-file-image-o') or 'fa-file-o'"/>
+
+            <!-- Inline in the browser's own viewer (Chrome/Edge/Firefox/Safari). -->
+            <t t-set="view_url" t-value="doc_url + '?download=0'"/>
+            <!-- Alternative: Odoo's bundled pdf.js viewer. Works on Android Chrome too
+                 and gives every visitor the same viewer with zoom/print/download.
+                 To use it, replace the line above with:
+            <t t-set="view_url" t-value="'/web/static/lib/pdfjs/web/viewer.html?file=' + url_quote(doc_url + '?download=0') + '#pagemode=none'"/>
+            -->
+
+            <div class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                <span class="text-truncate">
+                    <i t-att-class="'fa ' + doc_icon + ' me-2'"/>
+                    <t t-out="attachment_sudo.name"/>
+                </span>
+                <span class="d-flex gap-2 flex-shrink-0">
+                    <a t-if="is_url"
+                       class="btn btn-sm btn-outline-primary"
+                       t-att-href="doc_url" target="_blank" rel="noopener">
+                        <i class="fa fa-external-link me-1"/>Open
+                    </a>
+                    <a t-if="viewable"
+                       class="btn btn-sm btn-outline-primary"
+                       t-att-href="view_url" target="_blank" rel="noopener">
+                        <i class="fa fa-eye me-1"/>View
+                    </a>
+                    <a t-if="not is_url"
+                       class="btn btn-sm btn-outline-secondary"
+                       t-att-href="doc_url">
+                        <i class="fa fa-download me-1"/>Download
+                    </a>
+                </span>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>
