@@ -76,7 +76,7 @@
                 Victron has not been fetched yet.
             </p>
             <p>
-                This list is what Victron reports. It is not added to our warehouse.
+                This list is the stock Victron reports for our SKUs. It is not added to our warehouse.
                 An inventory manager can use Refresh from Victron, or wait for the scheduled sync.
             </p>
         </field>

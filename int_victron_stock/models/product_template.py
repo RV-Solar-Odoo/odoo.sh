@@ -57,50 +57,55 @@ class ProductTemplate(models.Model):
 
     @api.model
     def _int_victron_sync_feed(self):
-        """Read the E-Order catalog and remember it. Never creates warehouse stock."""
+        """Read E-Order stock for our SKUs only. Never creates warehouse stock."""
         icp = self.env["ir.config_parameter"].sudo()
         if icp.get_param("database.is_neutralized"):
             _logger.info("Victron sync skipped: database is neutralized.")
             return
 
-        endpoint = icp.get_param("int_victron.endpoint") or "/products-extended/"
+        endpoint = icp.get_param("int_victron.endpoint") or "/products-stock/"
         sku_field = icp.get_param("int_victron.sku_field") or "sku"
         qty_field = icp.get_param("int_victron.qty_field") or "stock_quantity"
-
-        rows = self.env["int.victron.api"].fetch_all(endpoint)
-
-        stock_by_sku = {}
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            sku = str(row.get(sku_field) or "").strip().upper()
-            if not sku:
-                continue
-            try:
-                stock_by_sku[sku] = float(row.get(qty_field) or 0)
-            except (TypeError, ValueError):
-                stock_by_sku[sku] = 0.0
-
-        if not stock_by_sku:
-            _logger.warning(
-                "Victron sync: %s rows returned but none usable. Check the SKU and quantity "
-                "field names under Inventory → Settings → Victron E-Order.",
-                len(rows),
-            )
-            return
-
+        api = self.env["int.victron.api"]
         products = self.with_context(active_test=False).search(
             ["|", ("victron_sku", "!=", False), ("default_code", "!=", False)]
         )
+        skus = []
+        seen = set()
+        for product in products:
+            sku = product._victron_effective_sku()
+            if sku and sku not in seen:
+                seen.add(sku)
+                skus.append(sku)
+        if not skus:
+            _logger.info("Victron sync skipped: no products have a SKU.")
+            return
+
+        # Ask for each of our SKUs before writing anything. A throttle or outage
+        # then leaves the last known quantities in place.
+        rows = []
+        stock_by_sku = {}
+        for sku in skus:
+            row = api.fetch_one(api._sku_path(endpoint, sku))
+            if not row:
+                stock_by_sku[sku] = 0.0
+                continue
+            reported = str(row.get(sku_field) or sku).strip().upper()
+            try:
+                stock_by_sku[reported] = float(row.get(qty_field) or 0)
+            except (TypeError, ValueError):
+                stock_by_sku[reported] = 0.0
+            rows.append(row)
+
         now = fields.Datetime.now()
         by_qty = defaultdict(list)
         matched = 0
         for product in products:
-            qty = stock_by_sku.get(product._victron_effective_sku())
-            if qty is None:
-                # Absent from the feed means Victron no longer stocks it.
-                qty = 0.0
-            else:
+            sku = product._victron_effective_sku()
+            if not sku:
+                continue
+            qty = stock_by_sku.get(sku, 0.0)
+            if qty:
                 matched += 1
             if product.victron_qty != qty:
                 by_qty[qty].append(product.id)
@@ -111,8 +116,8 @@ class ProductTemplate(models.Model):
         icp.set_param("int_victron.last_sync", fields.Datetime.to_string(now))
         self.env["int.victron.feed"]._replace_from_rows(rows, sku_field, qty_field)
         _logger.info(
-            "Victron sync complete: %s API rows, %s products matched, %s quantities changed.",
-            len(stock_by_sku),
+            "Victron sync complete: %s SKUs requested, %s with stock, %s quantities changed.",
+            len(skus),
             matched,
             sum(len(ids) for ids in by_qty.values()),
         )
@@ -213,7 +218,7 @@ class ProductTemplate(models.Model):
         victron = self._int_victron_available_qty()
         if victron > 0:
             supplier = self.env._(
-                "%(qty)s more available — ships %(when)s",
+                "%(qty)s available — ships %(when)s",
                 qty=self._int_public_victron_qty(victron),
                 when=self._int_lead_phrase(),
             )

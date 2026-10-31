@@ -1,4 +1,5 @@
 import base64
+from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError
@@ -75,6 +76,62 @@ class TestVictronShop(TransactionCase):
         with self.assertRaises(UserError):
             self.env["int.victron.api"]._auth_header()
 
+    def test_sync_polls_only_our_skus_and_keeps_stock_when_throttled(self):
+        cron = self.env.ref("int_victron_stock.ir_cron_sync_victron_stock")
+        self.assertEqual(cron.interval_number, 15)
+        self.assertEqual(cron.interval_type, "minutes")
+
+        ours = self._product("Ours", on_hand=0, victron=0)
+        ours.default_code = "OURS1"
+        missing = self._product("Missing", on_hand=0, victron=9)
+        missing.default_code = "GONE1"
+        untouched = self._product("No Code", on_hand=0, victron=4)
+        self.env["int.victron.feed"].create({"sku": "KEEP", "qty": 3})
+
+        requested = []
+
+        def fake(record, path):
+            self.assertTrue(path.startswith("/products-stock/"))
+            requested.append(path)
+            if path.endswith("/OURS1/"):
+                return {
+                    "sku": "OURS1",
+                    "stock_quantity": 6,
+                    "additional_stock_quantity": 1,
+                    "description": "Ours",
+                }
+            return None
+
+        api = self.env["int.victron.api"]
+
+        def no_catalog(record, path):
+            raise AssertionError(path)
+
+        with patch.object(type(api), "fetch_one", fake), patch.object(type(api), "fetch_all", no_catalog):
+            self.env["int.victron.feed"].action_refresh()
+        self.assertIn("/products-stock/OURS1/", requested)
+        self.assertIn("/products-stock/GONE1/", requested)
+        self.assertEqual(ours.product_tmpl_id.victron_qty, 6)
+        self.assertEqual(missing.product_tmpl_id.victron_qty, 0)
+        self.assertEqual(untouched.product_tmpl_id.victron_qty, 4)
+        row = self.env["int.victron.feed"].search([("sku", "=", "OURS1")])
+        self.assertEqual(row.qty, 6)
+        self.assertEqual(row.additional_qty, 1)
+        self.assertFalse(self.env["int.victron.feed"].search([("sku", "=", "GONE1")]))
+        self.assertFalse(self.env["int.victron.feed"].search([("sku", "=", "KEEP")]))
+
+        ours.product_tmpl_id.victron_qty = 6
+        self.env["int.victron.feed"].create({"sku": "KEEP", "qty": 3})
+
+        def throttled(record, path):
+            raise UserError("Victron E-Order error 429: throttled")
+
+        with patch.object(type(api), "fetch_one", throttled):
+            with self.assertRaises(UserError):
+                self.env["product.template"]._int_victron_sync_feed()
+        self.assertEqual(ours.product_tmpl_id.victron_qty, 6)
+        self.assertEqual(self.env["int.victron.feed"].search([("sku", "=", "KEEP")]).qty, 3)
+
     def test_victron_feed_is_not_our_stock(self):
         product = self._product("Feed Only", on_hand=0, victron=0)
         product.default_code = "FEEDONLY1"
@@ -114,7 +171,7 @@ class TestVictronShop(TransactionCase):
         details = {line["status"]: line["detail"] for line in lines}
         self.assertIn("17 in stock — ready to ship", labels)
         self.assertEqual(details["immediate"], "17 in stock")
-        self.assertTrue(details["backup"].startswith("20+ more available"))
+        self.assertTrue(details["backup"].startswith("20+ available"))
         self.assertFalse(any("45" in label for label in labels))
         self.assertNotIn("45", details["backup"])
 
@@ -123,7 +180,7 @@ class TestVictronShop(TransactionCase):
             line["label"] for line in plenty.product_tmpl_id._int_availability_lines(plenty)
         ]
         self.assertIn("143 in stock — ready to ship", plenty_labels)
-        self.assertTrue(any(label.startswith("8 more available") for label in plenty_labels))
+        self.assertTrue(any(label.startswith("8 available") for label in plenty_labels))
         self.assertFalse(any("20+" in label for label in plenty_labels))
 
     def test_shop_payload_hides_victron_quantity(self):

@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from odoo import models
@@ -53,6 +54,48 @@ class VictronApi(models.AbstractModel):
             )
             url = payload.get("next") or payload.get("next_page_url") or None
         return rows
+
+    def fetch_one(self, path):
+        """Return one E-Order record, or None when that record does not exist."""
+        if not path.startswith("/"):
+            path = "/" + path
+        auth = self._auth_header()
+        url = f"{VICTRON_API}{path}"
+        req = urllib.request.Request(
+            url,
+            method="GET",
+            headers={"Authorization": auth, "Accept": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                body = resp.read().decode()
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                exc.read()
+                return None
+            detail = exc.read().decode()[:500]
+            _logger.warning("Victron GET %s failed: %s", url, detail)
+            raise UserError(self.env._(
+                "Victron E-Order error %(status)s: %(detail)s", status=exc.code, detail=detail
+            )) from exc
+        except urllib.error.URLError as exc:
+            raise UserError(self.env._("Could not reach Victron E-Order: %s", exc.reason)) from exc
+        try:
+            payload = json.loads(body) if body else {}
+        except ValueError as exc:
+            raise UserError(self.env._("Victron E-Order returned a response that is not JSON.")) from exc
+        if isinstance(payload, list):
+            return payload[0] if payload else None
+        return payload if isinstance(payload, dict) else None
+
+    @staticmethod
+    def _sku_path(base, sku):
+        base = (base or "/products-stock/").strip()
+        if not base.startswith("/"):
+            base = "/" + base
+        if not base.endswith("/"):
+            base += "/"
+        return f"{base}{urllib.parse.quote(sku, safe='')}/"
 
     def _get(self, url, auth):
         req = urllib.request.Request(

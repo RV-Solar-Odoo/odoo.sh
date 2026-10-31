@@ -10,7 +10,7 @@
                     <setting string="API key" help="Paste the E-Order API key. It is sent as the password, with the username token.">
                         <field name="int_victron_token" password="True"/>
                     </setting>
-                    <setting string="Feed" help="Adjust only if Victron changes the endpoint or the field names in their response.">
+                    <setting string="Feed" help="Every 15 minutes, each product with an internal reference is read from this path. Adjust the field names only if Victron changes their response.">
                         <field name="int_victron_endpoint"/>
                         <field name="int_victron_sku_field"/>
                         <field name="int_victron_qty_field"/>

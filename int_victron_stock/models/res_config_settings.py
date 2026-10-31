@@ -17,8 +17,8 @@ class ResConfigSettings(models.TransientModel):
     int_victron_endpoint = fields.Char(
         string="Victron Stock Endpoint",
         config_parameter="int_victron.endpoint",
-        default="/products-extended/",
-        help="Path appended to https://eorder.victronenergy.com/api/v1. Keep the trailing slash.",
+        default="/products-stock/",
+        help="Base path on https://eorder.victronenergy.com/api/v1. Each of our SKUs is requested under it, for example /products-stock/PMP242305102/.",
     )
     int_victron_sku_field = fields.Char(
         string="Victron SKU Field",
@@ -36,7 +36,7 @@ class ResConfigSettings(models.TransientModel):
         string="Victron Lead Time",
         config_parameter="int_victron.lead_time_label",
         default="within 7–10 days",
-        help="Shown after the supplier quantity, for example \"20+ more available — ships within 7–10 days\".",
+        help="Shown after the supplier quantity, for example \"20+ available — ships within 7–10 days\".",
     )
     int_victron_vendor_id = fields.Many2one(
         "res.partner",

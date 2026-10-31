@@ -78,7 +78,7 @@ class VictronFeed(models.Model):
         ])
 
     def action_refresh(self):
-        """Pull the feed now. Warehouse stock is left untouched."""
+        """Pull stock for our SKUs now. Warehouse stock is left untouched."""
         if not self.env.user.has_group("stock.group_stock_manager"):
             raise AccessError(self.env._("Only an inventory manager can refresh Victron stock."))
         self.env["product.template"].sudo()._int_victron_sync_feed()
