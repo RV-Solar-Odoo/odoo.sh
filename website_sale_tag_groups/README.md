@@ -17,6 +17,9 @@ sidebar instead of one flat "Tags" list.
 - **Auto-clear stale filters**: moving to a category (or search) where a
   selected tag is not used by any product drops that tag from the URL and
   redirects, so the shopper never lands on an empty page with no filters.
+- **No dead ends**: options that would lead to no products, given the other active
+  filters, are hidden. Selected options always stay so they can be unticked. If the
+  filters still match nothing, every group stays in place so the shopper can try another.
 - **Category scoping**: only tags carried by products in the current category
   (or search) are listed, so groups with no matching tags disappear and a
   category with no tagged products shows no tag filters at all. Selected
