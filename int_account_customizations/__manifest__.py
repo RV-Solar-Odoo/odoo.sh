@@ -1,7 +1,7 @@
 {
     "name": "Accounting Customizations",
     "summary": "Emails when a state's sales tax threshold is crossed",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Accounting/Accounting",
     "author": "Internal",
     "license": "LGPL-3",

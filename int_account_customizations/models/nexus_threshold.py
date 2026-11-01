@@ -106,11 +106,11 @@ class NexusThreshold(models.Model):
     @api.model
     def seed_defaults(self):
         """Add a row per state for each US company. Leave rows that already exist."""
-        companies = self.env["res.company"].search([
-            "|",
-            ("country_id.code", "=", "US"),
-            ("account_fiscal_country_id.code", "=", "US"),
-        ])
+        # country_id is computed from the address and is not stored, so it cannot be searched.
+        companies = self.env["res.company"].search([]).filtered(
+            lambda company: company.country_id.code == "US"
+            or company.account_fiscal_country_id.code == "US"
+        )
         if not companies:
             return
         states = {
@@ -223,7 +223,7 @@ class NexusThreshold(models.Model):
                         "amount_hit": amount_hit,
                         "count_hit": count_hit,
                     }
-                    if watched is None or figures["amount"] > watched["amount"]:
+                    if watched is None or candidate["amount"] > watched["amount"]:
                         watched = candidate
                     if over and hit is None:
                         hit = candidate
