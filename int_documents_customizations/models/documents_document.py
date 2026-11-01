@@ -42,6 +42,7 @@ class DocumentsDocument(models.Model):
     int_sop_apps = fields.Char(string="SOP apps")
     int_sop_sequence = fields.Integer(string="SOP sequence")
 
+    @api.model
     def _int_ensure_sop_documents(self):
         """Create or refresh the staff SOPs in the shared SOPs folder.
 

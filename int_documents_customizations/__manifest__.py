@@ -1,6 +1,6 @@
 {
     "name": "Documents Customizations",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Productivity/Documents",
     "summary": "Opens the staff SOPs from Sales, Inventory, and Barcode",
     "author": "Internal",
