@@ -10,25 +10,25 @@ SOP_DIR = Path(__file__).resolve().parent.parent / "data" / "sops"
 SOPS = (
     {
         "key": "website_orders",
-        "filename": "Website orders.docx",
+        "filename": "Website orders.pdf",
         "sequence": 10,
         "apps": "sale.sale_menu_root",
     },
     {
         "key": "orders_by_hand",
-        "filename": "Orders entered by hand.docx",
+        "filename": "Orders entered by hand.pdf",
         "sequence": 20,
         "apps": "sale.sale_menu_root",
     },
     {
         "key": "receiving_barcodes",
-        "filename": "Receiving with barcodes.docx",
+        "filename": "Receiving with barcodes.pdf",
         "sequence": 10,
         "apps": "stock.menu_stock_root,stock_barcode.stock_barcode_menu",
     },
     {
         "key": "fulfillment_pick_ship",
-        "filename": "Fulfillment pick and ship.docx",
+        "filename": "Fulfillment pick and ship.pdf",
         "sequence": 20,
         "apps": "stock.menu_stock_root,stock_barcode.stock_barcode_menu",
     },
@@ -125,8 +125,10 @@ class DocumentsDocument(models.Model):
             if app_xmlid not in apps or not document.access_url:
                 continue
             label = document.name or ""
-            if label.lower().endswith(".docx"):
-                label = label[:-5]
+            for suffix in (".docx", ".pdf"):
+                if label.lower().endswith(suffix):
+                    label = label[: -len(suffix)]
+                    break
             links.append(
                 {
                     "id": document.id,

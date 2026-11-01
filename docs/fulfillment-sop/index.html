@@ -25,6 +25,7 @@
 <h1>Fulfillment SOP: pick, then ship</h1>
 <p class="lede">A paid order becomes a pick. You scan that pick on the handheld. Validating the pick creates the delivery. The label, the box, and the final Validate are done on the computer.</p>
 <p>Picking is the mobile barcode app. Everything after that is the desktop delivery order (<code>WH/OUT</code>).</p>
+<p>Pick up in store is the same pick. When the customer has the order, <strong>Validate</strong> the delivery and stop. There is no label.</p>
 
 <h2>1. What you are looking at</h2>
 <p>Confirming a sales order does not print a label. It creates a <strong>pick</strong> named <code>WH/PICK/…</code>. That pick moves the units from stock onto the packing table (<code>WH/Stock</code> → <code>WH/Output</code>). The customer shipment, <code>WH/OUT/…</code>, is created when that pick is validated.</p>
@@ -106,7 +107,21 @@
   </li>
 </ol>
 
-<h2>4. On the delivery, in the order you click</h2>
+<h2>4. In-store pickup</h2>
+<p>If <strong>Carrier</strong> on the delivery says <strong>Pick up in store</strong>, the customer collects the order at the shop. There is no label and no box to ship. The delivery address reads <strong>In-Store Pickup</strong>.</p>
+<ol class="steps">
+  <li>Pick it the same way. Scan every serial, then <strong>Validate</strong> the pick.</li>
+  <li>Open the delivery with <strong>Next Transfer</strong>, or from Deliveries.</li>
+  <li>When the customer has the order, click <strong>Validate</strong>. That is the only click on this delivery. Do not set a box, do not click <strong>Get Shippo Rates</strong>, and do not buy a label.
+    <figure>
+      <img src="images/clicks/09-validate.png" alt="Validate button on the delivery">
+      <figcaption>Validate on the delivery. For Pick up in store this is the only click, and only after the customer has the order.</figcaption>
+    </figure>
+  </li>
+</ol>
+<p>If <strong>Get Shippo Rates</strong> is clicked on a pickup, Odoo asks: “This order has been marked as in-store pickup. Are you sure you want to print a shipping label?” Click <strong>Cancel</strong>.</p>
+
+<h2>5. On the delivery, in the order you click</h2>
 <p>The product lines should already show the serials you scanned. Split, when you need it, comes before the label. Validate is last.</p>
 <ol class="steps">
   <li>In the <strong>Shippo</strong> section, set <strong>Shippo Box</strong> to the carton this box actually is. Leave insurance at $0 unless this shipment should be insured.
@@ -204,7 +219,8 @@
   <figcaption>Barcode on the delivery. Leave it. Scanning is only for the pick.</figcaption>
 </figure>
 
-<h2>5. Order of the buttons</h2>
+<h2>6. Order of the buttons</h2>
+<p><strong>Pick up in store</strong> stops earlier. Scan and <strong>Validate</strong> the pick. When the customer has the order, <strong>Validate</strong> the delivery. The list below is for a shipment that leaves the building.</p>
 <ol class="steps">
   <li>Scanner: scan every serial on the pick, then <strong>Validate</strong> the pick.</li>
   <li>Computer: <strong>Next Transfer</strong> on that pick, or open the <code>WH/OUT</code> from Deliveries.</li>
@@ -213,9 +229,9 @@
   <li>Print from <strong>Shipping Label</strong> (or the tab that just opened). Check <strong>Additional Info</strong>.</li>
   <li>Label on the box, then <strong>Validate</strong> the delivery.</li>
 </ol>
-<p>Validating the delivery before the label is on the box marks it shipped with nothing to stick on the carton. If that happens, or if a scan, a split, or a label goes wrong, use the fixes below. Do not correct any of these with an inventory adjustment. An adjustment changes the quantity without a receipt or a delivery, and that throws off cost.</p>
+<p>Validating the delivery before the label is on the box marks it shipped with nothing to stick on the carton. In-store pickup has no label. <strong>Validate</strong> that delivery only after the customer has the order. If a scan, a split, or a label goes wrong, use the fixes below. Do not correct any of these with an inventory adjustment. An adjustment changes the quantity without a receipt or a delivery, and that throws off cost.</p>
 
-<h2>6. Mistakes and how to fix them</h2>
+<h2>7. Mistakes and how to fix them</h2>
 
 <h3>Two barcodes got scanned as one</h3>
 <p>Victron labels sit on top of each other: the product code and the serial. The scanner takes whichever one the beam hits, and it will accept a part number as if it were a serial.</p>
@@ -251,6 +267,7 @@
 <p>Don’t start another pick until the sales order has an open delivery again. If cancelling the delivery left the order with no shipment, leave the units in stock and flag the sales order. Don’t put them back with an inventory adjustment.</p>
 
 <h3>The delivery was validated before the label was on the box</h3>
+<p>Pick up in store is not this case. That delivery has no label. Validate it when the customer has the order.</p>
 <p>Validate on the computer means it has shipped. The customer email goes out. The label file is still on the delivery.</p>
 <p>If the label was already bought, open it with the <strong>Shipping Label</strong> button, print it, and put it on the box before the carrier scans the package. If no label was bought, click <strong>Return</strong> on that delivery. Returning a delivery creates a receipt back into stock. Validate the receipt. The shipment is undone and the units are back. Then pick and ship again. The customer may already have the shipped email. Don’t adjust the quantity by hand to “put it back.”</p>
 
