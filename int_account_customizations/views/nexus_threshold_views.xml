@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="int_nexus_threshold_view_list" model="ir.ui.view">
+        <field name="name">int.nexus.threshold.list</field>
+        <field name="model">int.nexus.threshold</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="state_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="amount_threshold"/>
+                <field name="transaction_threshold"/>
+                <field name="trigger"/>
+                <field name="period"/>
+                <field name="last_amount"/>
+                <field name="last_count"/>
+                <field name="last_window"/>
+                <field name="alerted"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="int_nexus_threshold_view_form" model="ir.ui.view">
+        <field name="name">int.nexus.threshold.form</field>
+        <field name="model">int.nexus.threshold</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="state_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="amount_threshold"/>
+                            <field name="transaction_threshold"/>
+                            <field name="trigger"/>
+                            <field name="period"/>
+                        </group>
+                        <group>
+                            <field name="last_amount"/>
+                            <field name="last_count"/>
+                            <field name="last_window"/>
+                            <field name="alerted"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Sales that count">
+                        <group>
+                            <field name="count_taxable_goods"/>
+                            <field name="count_exempt_goods"/>
+                            <field name="count_resale"/>
+                            <field name="exclude_returned"/>
+                        </group>
+                        <group>
+                            <field name="count_taxable_services"/>
+                            <field name="count_exempt_services"/>
+                            <field name="count_marketplace"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="How this state's rule differs"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="int_nexus_threshold_action" model="ir.actions.act_window">
+        <field name="name">Sales Tax Thresholds</field>
+        <field name="res_model">int.nexus.threshold</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No state thresholds yet</p>
+            <p>
+                On the 1st of each month, confirmed orders are totaled by delivery state.
+                Each state counts only the sales on its list: goods, services, wholesale, or marketplace.
+                The recipient is emailed when a state crosses its dollar amount or its transaction count.
+                The domestic state is skipped, because that tax is already collected.
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_int_nexus_threshold"
+        name="Sales Tax Thresholds"
+        parent="account.menu_finance_configuration"
+        action="int_nexus_threshold_action"
+        sequence="50"
+        groups="account.group_account_manager"/>
+</odoo>

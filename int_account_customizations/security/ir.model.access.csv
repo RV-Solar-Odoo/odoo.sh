@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_int_nexus_threshold_user,int.nexus.threshold.user,model_int_nexus_threshold,account.group_account_user,1,0,0,0
+access_int_nexus_threshold_manager,int.nexus.threshold.manager,model_int_nexus_threshold,account.group_account_manager,1,1,1,1
