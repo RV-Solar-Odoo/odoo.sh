@@ -25,6 +25,19 @@
         </div>
     </template>
 
+    <!-- For templates that send without a layout: their own body, then the signature. -->
+    <template id="mail_notification_signature_only" name="Mail: signature only layout">
+<html t-att-lang="lang">
+<head>
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8"/>
+</head>
+<body style="font-family: Verdana, Arial, sans-serif; color: #454748;">
+    <t t-out="message.body"/>
+    <t t-call="int_hide_odoo_branding.rvsb_email_signature"/>
+</body>
+</html>
+    </template>
+
     <!-- Keep the o_signature wrapper. The responsible signature layout and Peppol's layout
          build on this one and look for it, so removing it would break their install. -->
     <template id="mail_notification_layout_signature" inherit_id="mail.mail_notification_layout" priority="99">

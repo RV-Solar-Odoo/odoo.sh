@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="email_template_form_signature" model="ir.ui.view">
+        <field name="name">mail.template.form.signature</field>
+        <field name="model">mail.template</field>
+        <field name="inherit_id" ref="mail.email_template_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='auto_delete']" position="after">
+                <field name="int_add_company_signature"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
