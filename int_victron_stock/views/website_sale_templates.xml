@@ -180,9 +180,13 @@
         </xpath>
     </template>
 
-    <template id="wishlist_hide_stock_badge" inherit_id="website_sale_stock_wishlist.product_wishlist"
-              name="Hide the wishlist out of stock bubble">
-        <xpath expr="//span[hasclass('o_wsale_stock_badge')]" position="replace"/>
+    <template id="wishlist_hide_stock_badge" inherit_id="website_sale_wishlist.product_wishlist"
+              name="Hide the wishlist out of stock bubble" priority="32">
+        <!-- Stock fills this slot first. Clear it afterwards so the red
+             bubble is not rendered. The span is not in the parent view. -->
+        <xpath expr="//t[@t-call='website_sale.products_item']" position="inside">
+            <t t-set="product_extra_information" t-value="False"/>
+        </xpath>
     </template>
 
     <template id="wishlist_hide_cart_when_unavailable" inherit_id="website_sale_wishlist.product_wishlist"

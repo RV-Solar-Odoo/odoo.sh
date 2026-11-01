@@ -250,7 +250,10 @@ class TestVictronShop(TransactionCase):
         self.assertIsNone(button.get("t-else"))
         self.assertIsNone(button.get("t-elif"))
         self.assertIn("product._int_can_order_online(product_variant)", button.get("t-if"))
-        self.assertIsNone(arch.find(".//span[contains(@class, 'o_wsale_stock_badge')]"))
+        call = arch.find(".//t[@t-call='website_sale.products_item']")
+        extra = call.findall("./t[@t-set='product_extra_information']")
+        self.assertTrue(extra)
+        self.assertEqual(extra[-1].get("t-value"), "False")
 
         order = self.env["sale.order"].create({
             "partner_id": self.partner.id,
