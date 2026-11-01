@@ -1,58 +1,106 @@
+from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
 
 @tagged("-at_install", "post_install")
-class TestPickupAddressName(TransactionCase):
+class TestPickupContact(TransactionCase):
 
-    def test_store_pickup_drops_the_checkout_placeholder(self):
-        customer = self.env["res.partner"].create({"name": "Annie King"})
-        placeholder = self.env["res.partner"].create({
-            "name": "Anonymous express checkout partner for order S00671",
-            "type": "delivery",
-            "parent_id": customer.id,
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.warehouse = cls.env["stock.warehouse"].search([
+            ("company_id", "=", cls.env.company.id),
+        ], limit=1)
+        cls.customer = cls.env["res.partner"].create({
+            "name": "Annie King",
+            "email": "annie@example.com",
+            "phone": "435-555-0100",
         })
-        pickup = self.env["res.partner"].create({
-            "name": "RVSB",
+        cls.placeholder = cls.env["res.partner"].create({
+            "name": "Anonymous express checkout partner for order TEST",
             "type": "delivery",
-            "parent_id": placeholder.id,
-            "is_pickup_location": True,
+            "parent_id": cls.customer.id,
+        })
+        cls.product = cls.env["product.product"].create({
+            "name": "Pickup product",
+            "type": "consu",
+            "is_storable": True,
+            "list_price": 20,
+        })
+        cls.delivery_product = cls.env["product.product"].create({
+            "name": "Pick up in store",
+            "type": "service",
+            "sale_ok": False,
+            "list_price": 0,
+        })
+        cls.carrier = cls.env["delivery.carrier"].create({
+            "name": "Pick up in store",
+            "delivery_type": "in_store",
+            "product_id": cls.delivery_product.id,
+            "warehouse_ids": [Command.set(cls.warehouse.ids)],
+        })
+        cls.fiscal_position = cls.env["account.fiscal.position"].create({
+            "name": "Pickup tax location",
+            "company_id": cls.env.company.id,
+        })
+
+    def _order(self, carrier=None):
+        return self.env["sale.order"].create({
+            "partner_id": self.customer.id,
+            "partner_invoice_id": self.customer.id,
+            "partner_shipping_id": self.placeholder.id,
+            "warehouse_id": self.warehouse.id,
+            "carrier_id": (carrier or self.carrier).id,
+            "fiscal_position_id": self.fiscal_position.id,
+            "order_line": [Command.create({
+                "product_id": self.product.id,
+                "product_uom_qty": 1,
+            })],
+        })
+
+    def test_in_store_pickup_keeps_the_customer_as_the_delivery_contact(self):
+        order = self._order()
+        pickup_data = {
+            "id": self.warehouse.id,
+            "name": "RVSB",
             "street": "335 Commerce St",
             "city": "Hurricane",
-            "zip": "84737",
-        })
+            "state": "UT",
+            "zip_code": "84737",
+            "country_code": "US",
+        }
+        order.pickup_location_data = pickup_data
+        pickup_count = self.env["res.partner"].search_count([
+            ("is_pickup_location", "=", True),
+        ])
 
-        self.assertEqual(pickup.display_name, "In-Store Pickup, RVSB")
-        shown = pickup.with_context(show_address=True).display_name
-        self.assertEqual(shown.split("\n")[0], "In-Store Pickup, RVSB")
-        self.assertIn("335 Commerce St", shown)
-        self.assertEqual(placeholder.display_name, "Annie King, Anonymous express checkout partner for order S00671")
+        order.action_confirm()
 
-    def test_store_pickup_ignores_a_company_name(self):
-        company = self.env["res.partner"].create({"name": "Annie Co", "is_company": True})
-        pickup = self.env["res.partner"].create({
-            "name": "RVSB",
-            "type": "delivery",
-            "parent_id": company.id,
-            "is_pickup_location": True,
-            "street": "335 Commerce St",
-        })
-        self.assertEqual(pickup.display_name, "In-Store Pickup, RVSB")
+        self.assertEqual(order.partner_shipping_id, self.customer)
+        self.assertEqual(order.picking_ids.partner_id, self.customer)
+        self.assertEqual(order.warehouse_id, self.warehouse)
+        self.assertEqual(order.fiscal_position_id, self.fiscal_position)
+        self.assertEqual(order.pickup_location_data, pickup_data)
+        self.assertEqual(
+            self.env["res.partner"].search_count([
+                ("is_pickup_location", "=", True),
+            ]),
+            pickup_count,
+        )
+        self.assertFalse(self.placeholder.active)
 
-    def test_a_pickup_flag_without_an_address_keeps_the_customer_name(self):
-        customer = self.env["res.partner"].create({"name": "Annie King"})
-        label = self.env["res.partner"].create({
-            "name": "In-Store Pickup",
-            "type": "delivery",
-            "parent_id": customer.id,
-            "is_pickup_location": True,
+    def test_shipping_order_keeps_its_delivery_address(self):
+        shipping_product = self.delivery_product.copy({"name": "Shipping fee"})
+        carrier = self.env["delivery.carrier"].create({
+            "name": "Ground",
+            "delivery_type": "fixed",
+            "fixed_price": 0,
+            "product_id": shipping_product.id,
         })
-        self.assertEqual(label.display_name, "Annie King, In-Store Pickup")
+        order = self._order(carrier)
 
-    def test_a_normal_delivery_address_keeps_the_customer_name(self):
-        customer = self.env["res.partner"].create({"name": "Annie King"})
-        delivery = self.env["res.partner"].create({
-            "name": "Warehouse",
-            "type": "delivery",
-            "parent_id": customer.id,
-        })
-        self.assertEqual(delivery.display_name, "Annie King, Warehouse")
+        order.action_confirm()
+
+        self.assertEqual(order.partner_shipping_id, self.placeholder)
+        self.assertEqual(order.picking_ids.partner_id, self.placeholder)
+        self.assertTrue(self.placeholder.active)

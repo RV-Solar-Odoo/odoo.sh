@@ -1,11 +1,11 @@
 {
     "name": "Website Customizations",
-    "version": "19.0.1.10.0",
+    "version": "19.0.1.10.1",
     "category": "Website/Website",
     "summary": "Checkout delivery rules, and a Google check on public address forms",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["website_sale"],
+    "depends": ["website_sale", "website_sale_collect"],
     "application": False,
     "data": [
         "data/delivery_carrier_data.xml",
