@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The one place the signature is defined. Inline styles only: email clients ignore <style>.
+         The layouts already resolve company: the record's company, otherwise the current one. -->
+    <template id="rvsb_email_signature" name="RV Solar &amp; Battery: Email Signature">
+        <div t-if="company" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e6e8ef; font-size: 13px; color: #161b2e;">
+            <img t-att-src="'%s/logo.png?company=%s' % (company.get_base_url(), company.id)"
+                 width="140"
+                 alt="RV Solar &amp; Battery"
+                 style="display: block; width: 140px; height: auto; margin-bottom: 8px;"/>
+            <div><b>RV Solar &amp; Battery</b></div>
+            <div>
+                <a href="mailto:info@rvsolarandbattery.com" style="color: #3a4efd; text-decoration: none;">info@rvsolarandbattery.com</a>
+            </div>
+            <div t-if="company.phone">
+                <a t-att-href="'tel:%s' % company.phone.replace(' ', '')"
+                   style="color: #3a4efd; text-decoration: none;"
+                   t-out="company.phone"/>
+            </div>
+            <div t-if="company.website">
+                <a t-att-href="company.website"
+                   style="color: #3a4efd; text-decoration: none;"
+                   t-out="company.website.removeprefix('https://').removeprefix('http://').rstrip('/')"/>
+            </div>
+        </div>
+    </template>
+
+    <!-- Keep the o_signature wrapper. The responsible signature layout and Peppol's layout
+         build on this one and look for it, so removing it would break their install. -->
+    <template id="mail_notification_layout_signature" inherit_id="mail.mail_notification_layout" priority="99">
+        <xpath expr="//t[hasclass('o_signature')]" position="replace">
+            <t class="o_signature">
+                <t t-call="int_hide_odoo_branding.rvsb_email_signature"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="mail_notification_responsible_signature"
+              inherit_id="mail.mail_notification_layout_with_responsible_signature" priority="99">
+        <xpath expr="//t[hasclass('o_signature')]" position="replace">
+            <t class="o_signature">
+                <t t-call="int_hide_odoo_branding.rvsb_email_signature"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- The light layout has no signature element to replace, so this goes right after the body. -->
+    <template id="mail_notification_light_signature" inherit_id="mail.mail_notification_light" priority="99">
+        <xpath expr="//t[@t-out='message.body']" position="after">
+            <t t-call="int_hide_odoo_branding.rvsb_email_signature"/>
+        </xpath>
+    </template>
+</odoo>
