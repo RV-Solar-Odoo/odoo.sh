@@ -180,11 +180,22 @@
         </xpath>
     </template>
 
+    <template id="wishlist_hide_stock_badge" inherit_id="website_sale_wishlist.product_wishlist"
+              name="Hide the wishlist out of stock bubble" priority="32">
+        <!-- The bubble is injected into this card by another module. Clear the
+             slot after that injection. The span itself is not on this page. -->
+        <xpath expr="//t[@t-call='website_sale.products_item']" position="inside">
+            <t t-set="product_extra_information" t-value="False"/>
+        </xpath>
+    </template>
+
     <template id="wishlist_hide_cart_when_unavailable" inherit_id="website_sale_wishlist.product_wishlist"
-              name="Hide wishlist cart when nothing to ship">
+              name="Hide wishlist cart when nothing to ship" priority="20">
+        <!-- Keep this a t-if. A t-elif here is not directly after a t-if,
+             and that crashes the wishlist page. -->
         <xpath expr="//button[@id='add_to_cart_button']" position="attributes">
             <attribute name="t-else"/>
-            <attribute name="t-elif">product._int_can_order_online(product_variant)</attribute>
+            <attribute name="t-if">not combination_info['prevent_zero_price_sale'] and product._int_can_order_online(product_variant)</attribute>
         </xpath>
     </template>
 

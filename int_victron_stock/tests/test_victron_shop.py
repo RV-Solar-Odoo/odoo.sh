@@ -171,8 +171,8 @@ class TestVictronShop(TransactionCase):
         lines = product.product_tmpl_id._int_availability_lines(product)
         labels = [line["label"] for line in lines]
         details = {line["status"]: line["detail"] for line in lines}
-        self.assertIn("17 in stock — ready to ship", labels)
-        self.assertEqual(details["immediate"], "17 in stock")
+        self.assertIn("17 in stock — ships immediately", labels)
+        self.assertEqual(details["immediate"], "17 in stock — ships immediately")
         self.assertTrue(details["backup"].startswith("20+ available"))
         self.assertFalse(any("45" in label for label in labels))
         self.assertNotIn("45", details["backup"])
@@ -181,7 +181,7 @@ class TestVictronShop(TransactionCase):
         plenty_labels = [
             line["label"] for line in plenty.product_tmpl_id._int_availability_lines(plenty)
         ]
-        self.assertIn("143 in stock — ready to ship", plenty_labels)
+        self.assertIn("143 in stock — ships immediately", plenty_labels)
         self.assertTrue(any(label.startswith("8 available") for label in plenty_labels))
         self.assertFalse(any("20+" in label for label in plenty_labels))
 
@@ -206,7 +206,7 @@ class TestVictronShop(TransactionCase):
         self.assertFalse(info["show_availability"])
         self.assertNotIn("victron_qty", info)
         rendered = " ".join(line["label"] for line in info["int_availability_lines"])
-        self.assertIn("17 in stock — ready to ship", rendered)
+        self.assertIn("17 in stock — ships immediately", rendered)
         self.assertIn("20+", rendered)
         self.assertNotIn("45", rendered)
 
@@ -247,11 +247,13 @@ class TestVictronShop(TransactionCase):
         wishlist = self.env.ref("website_sale_wishlist.product_wishlist")
         arch = etree.fromstring(wishlist.get_combined_arch())
         button = arch.find(".//button[@id='add_to_cart_button']")
-        self.assertEqual(
-            button.get("t-elif"),
-            "product._int_can_order_online(product_variant)",
-        )
         self.assertIsNone(button.get("t-else"))
+        self.assertIsNone(button.get("t-elif"))
+        self.assertIn("product._int_can_order_online(product_variant)", button.get("t-if"))
+        call = arch.find(".//t[@t-call='website_sale.products_item']")
+        extra = call.findall("./t[@t-set='product_extra_information']")
+        self.assertTrue(extra)
+        self.assertEqual(extra[-1].get("t-value"), "False")
 
         order = self.env["sale.order"].create({
             "partner_id": self.partner.id,
