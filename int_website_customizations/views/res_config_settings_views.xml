@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.int.website.places</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <setting id="autocomplete_googleplaces_setting" position="after">
+                <setting
+                    string="Google Places"
+                    help="Suggests an address while the customer types, then blocks the form when Google cannot confirm it. Leave the Google Address Validation checkbox above off so the shop does not ask for a second key. The same value is the system parameter int_website.google_places_api_key."
+                >
+                    <field name="int_google_places_api_key" password="True" placeholder="AIza..."/>
+                </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

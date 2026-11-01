@@ -1,8 +1,8 @@
 {
     "name": "Website Customizations",
-    "version": "19.0.1.6.0",
+    "version": "19.0.1.7.0",
     "category": "Website/Website",
-    "summary": "Checkout delivery rules; free UPS Ground on orders of $250 or more",
+    "summary": "Checkout delivery rules, and a Google check on public address forms",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": ["website_sale"],
@@ -11,6 +11,13 @@
         "data/delivery_carrier_data.xml",
         "data/delivery_carrier_publish.xml",
         "views/delivery_carrier_views.xml",
+        "views/res_config_settings_views.xml",
     ],
+    "assets": {
+        "web.assets_frontend": [
+            "int_website_customizations/static/src/scss/address_places.scss",
+            "int_website_customizations/static/src/interactions/address_places.js",
+        ],
+    },
     "post_init_hook": "post_init_hook",
 }
