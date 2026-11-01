@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="documents.document" name="_int_ensure_sop_documents"/>
+</odoo>

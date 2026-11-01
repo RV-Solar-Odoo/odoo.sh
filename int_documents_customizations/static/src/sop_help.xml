@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="int_documents_customizations.SopHelpMenu">
+        <button t-if="state.items.length === 1" type="button" class="btn o_int_sop_help"
+            t-att-title="state.items[0].label" t-att-aria-label="state.items[0].label"
+            t-on-click="() => this.open(state.items[0])">
+            <i class="fa fa-lg fa-question-circle" role="img"/>
+        </button>
+        <Dropdown t-elif="state.items.length > 1" position="'bottom-end'" bottomSheet="false" menuClass="'o_int_sop_menu'">
+            <button type="button" class="btn o_int_sop_help" title="SOPs" aria-label="SOPs">
+                <i class="fa fa-lg fa-question-circle" role="img"/>
+            </button>
+            <t t-set-slot="content">
+                <DropdownItem t-foreach="state.items" t-as="item" t-key="item.id" onSelected="() => this.open(item)">
+                    <t t-out="item.label"/>
+                </DropdownItem>
+            </t>
+        </Dropdown>
+    </t>
+
+    <t t-inherit="stock_barcode.MainMenu" t-inherit-mode="extension">
+        <xpath expr="//span[hasclass('fs-2')]" position="after">
+            <SopHelpMenu appXmlId="'stock_barcode.stock_barcode_menu'"/>
+        </xpath>
+    </t>
+
+    <t t-inherit="stock_barcode.MainComponent" t-inherit-mode="extension">
+        <xpath expr="//header[hasclass('o_barcode_header')]//nav[hasclass('navbar-nav') and not(hasclass('me-auto'))]" position="inside">
+            <SopHelpMenu appXmlId="'stock_barcode.stock_barcode_menu'"/>
+        </xpath>
+    </t>
+</templates>
