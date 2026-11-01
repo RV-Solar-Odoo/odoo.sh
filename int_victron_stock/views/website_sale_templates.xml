@@ -61,13 +61,13 @@
 
     <!-- Shop filter, in the markup of a tag group section. It stays outside form.js_attributes:
          the stock script reloads on any change in there and only reads tags and attributes. -->
-    <template id="shop_hide_out_of_stock" name="Hide Out of Stock Filter">
+    <template id="shop_ship_filter" name="Availability Filter">
         <t t-if="isMobile">
             <div>
                 <h2 class="accordion-header mb-0" id="o_wsale_offcanvas_int_availability_header">
                     <button class="o_wsale_offcanvas_title accordion-button border-top rounded-0"
                             type="button"
-                            t-att-data-status="int_hide_out_of_stock and 'active' or 'inactive'"
+                            t-att-data-status="any(f['checked'] for f in int_ship_filters) and 'active' or 'inactive'"
                             data-bs-toggle="collapse"
                             data-bs-target="#o_wsale_offcanvas_int_availability"
                             aria-expanded="true"
@@ -80,8 +80,8 @@
                      aria-labelledby="o_wsale_offcanvas_int_availability_header">
                     <div class="accordion-body pt-0">
                         <div class="list-group list-group-flush">
-                            <t t-call="int_victron_stock.shop_hide_out_of_stock_input">
-                                <t t-set="int_input_id" t-valuef="int_hide_out_of_stock_mobile"/>
+                            <t t-call="int_victron_stock.shop_ship_filter_inputs">
+                                <t t-set="int_input_suffix" t-valuef="mobile"/>
                             </t>
                         </div>
                     </div>
@@ -102,8 +102,8 @@
                 </div>
                 <div id="o_wsale_int_availability_inner" class="accordion-collapse collapse show">
                     <div class="flex-column mb-3">
-                        <t t-call="int_victron_stock.shop_hide_out_of_stock_input">
-                            <t t-set="int_input_id" t-valuef="int_hide_out_of_stock_desktop"/>
+                        <t t-call="int_victron_stock.shop_ship_filter_inputs">
+                            <t t-set="int_input_suffix" t-valuef="desktop"/>
                         </t>
                     </div>
                 </div>
@@ -111,30 +111,33 @@
         </t>
     </template>
 
-    <template id="shop_hide_out_of_stock_input" name="Hide Out of Stock Checkbox">
-        <div class="form-check mb-1">
-            <input type="checkbox"
-                   class="form-check-input o_int_hide_out_of_stock"
-                   t-att-id="int_input_id"
-                   t-att-checked="'checked' if int_hide_out_of_stock else None"
-                   t-att-data-href="keep(hide_out_of_stock=0 if int_hide_out_of_stock else '1')"/>
-            <label class="form-check-label fw-normal" t-att-for="int_input_id">Hide out of stock items</label>
-        </div>
+    <template id="shop_ship_filter_inputs" name="Availability Filter Checkboxes">
+        <t t-foreach="int_ship_filters" t-as="int_filter">
+            <t t-set="int_input_id" t-value="'int_ships_%s_%s' % (int_filter['value'], int_input_suffix)"/>
+            <div class="form-check mb-1">
+                <input type="checkbox"
+                       class="form-check-input o_int_ship_filter"
+                       t-att-id="int_input_id"
+                       t-att-checked="'checked' if int_filter['checked'] else None"
+                       t-att-data-href="int_filter['href']"/>
+                <label class="form-check-label fw-normal" t-att-for="int_input_id" t-out="int_filter['label']"/>
+            </div>
+        </t>
     </template>
 
-    <template id="products_hide_out_of_stock" inherit_id="website_sale.products"
-              name="Hide Out of Stock Filter (sidebar)">
+    <template id="products_ship_filter" inherit_id="website_sale.products"
+              name="Availability Filter (sidebar)">
         <xpath expr="//div[contains(@t-attf-class, 'products_attributes_filters')]" position="before">
-            <t t-call="int_victron_stock.shop_hide_out_of_stock">
+            <t t-call="int_victron_stock.shop_ship_filter">
                 <t t-set="isMobile" t-value="False"/>
             </t>
         </xpath>
     </template>
 
-    <template id="offcanvas_hide_out_of_stock" inherit_id="website_sale.o_wsale_offcanvas"
-              name="Hide Out of Stock Filter (mobile)">
+    <template id="offcanvas_ship_filter" inherit_id="website_sale.o_wsale_offcanvas"
+              name="Availability Filter (mobile)">
         <xpath expr="//t[@t-call='website_sale.product_attribute_filters_form']" position="before">
-            <t t-call="int_victron_stock.shop_hide_out_of_stock">
+            <t t-call="int_victron_stock.shop_ship_filter">
                 <t t-set="isMobile" t-value="True"/>
             </t>
         </xpath>

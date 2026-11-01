@@ -5,20 +5,35 @@ from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 class IntVictronWebsiteSale(WebsiteSale):
 
+    def _int_selected_ships(self, ships):
+        return set((ships or "").split(",")) & {"now", "later"}
+
     def _get_search_options(self, *args, **post):
         options = super()._get_search_options(*args, **post)
-        options["int_hide_out_of_stock"] = post.get("hide_out_of_stock") == "1"
+        options["int_ships"] = self._int_selected_ships(post.get("ships"))
         return options
 
     def _shop_get_query_url_kwargs(self, search, min_price, max_price, **kwargs):
         """Keep the filter on across other filters, categories and sorting."""
         query = super()._shop_get_query_url_kwargs(search, min_price, max_price, **kwargs)
-        query["hide_out_of_stock"] = kwargs.get("hide_out_of_stock")
+        query["ships"] = kwargs.get("ships")
         return query
 
     def _get_additional_shop_values(self, values, **kwargs):
         shop_values = super()._get_additional_shop_values(values, **kwargs)
-        shop_values["int_hide_out_of_stock"] = kwargs.get("hide_out_of_stock") == "1"
+        selected = self._int_selected_ships(kwargs.get("ships"))
+        shop_values["int_ship_filters"] = [
+            {
+                "value": value,
+                "label": label,
+                "checked": value in selected,
+                "href": values["keep"](ships=",".join(sorted(selected ^ {value})) or 0),
+            }
+            for value, label in (
+                ("now", request.env._("Ships immediately")),
+                ("later", request.env._("Ships in 7-10 days")),
+            )
+        ]
         return shop_values
 
     @route("/shop/victron_ship_when", type="http", auth="public", website=True, methods=["POST"])

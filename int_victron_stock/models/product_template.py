@@ -199,21 +199,24 @@ class ProductTemplate(models.Model):
         return super()._website_show_quick_add() and self._int_can_order_online()
 
     @api.model
-    def _int_in_stock_domain(self):
-        """Leaves out storable products with nothing in our warehouse or at Victron.
+    def _int_ships_domain(self, ships):
+        """Storable products that ship "now" from our warehouse or "later" from Victron.
 
         Stock isn't searchable in SQL, so each storable product is checked with the same
-        test that decides Add to cart.
+        quantities its availability lines show.
         """
         storable = self.sudo().search([("is_storable", "=", True)])
-        out_of_stock = storable.filtered(lambda template: not template._int_can_order_online())
-        return Domain("id", "not in", out_of_stock.ids)
+        matching = storable.filtered(lambda template: (
+            ("now" in ships and template._int_own_available_qty() > 0)
+            or ("later" in ships and template._int_victron_available_qty() > 0)
+        ))
+        return Domain("id", "in", matching.ids)
 
     @api.model
     def _search_get_detail(self, website, order, options):
         detail = super()._search_get_detail(website, order, options)
-        if options.get("int_hide_out_of_stock"):
-            detail["base_domain"].append(self._int_in_stock_domain())
+        if options.get("int_ships"):
+            detail["base_domain"].append(self._int_ships_domain(options["int_ships"]))
         return detail
 
     def _int_availability_lines(self, variant=None):
