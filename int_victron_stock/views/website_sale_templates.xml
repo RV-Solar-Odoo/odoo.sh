@@ -180,18 +180,11 @@
         </xpath>
     </template>
 
-    <template id="wishlist_hide_stock_badge" inherit_id="website_sale_stock_wishlist.product_wishlist"
-              name="Hide the wishlist out of stock bubble">
-        <xpath expr="//span[hasclass('o_wsale_stock_badge')]" position="replace"/>
-    </template>
-
     <template id="wishlist_hide_cart_when_unavailable" inherit_id="website_sale_wishlist.product_wishlist"
-              name="Hide wishlist cart when nothing to ship" priority="20">
-        <!-- Keep this a t-if. Replacing the button's t-else with t-elif crashes
-             the wishlist page when that t-elif is not directly after a t-if. -->
+              name="Hide wishlist cart when nothing to ship">
         <xpath expr="//button[@id='add_to_cart_button']" position="attributes">
             <attribute name="t-else"/>
-            <attribute name="t-if">not combination_info['prevent_zero_price_sale'] and product._int_can_order_online(product_variant)</attribute>
+            <attribute name="t-elif">product._int_can_order_online(product_variant)</attribute>
         </xpath>
     </template>
 

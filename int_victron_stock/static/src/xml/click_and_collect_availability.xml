@@ -4,7 +4,7 @@
         <xpath expr="//div[@name='click_and_collect_availability']/h6" position="replace">
             <h6>
                 <i class="fa fa-fw fa-map-marker text-muted"/>
-                Main warehouse
+                Ready to ship
             </h6>
         </xpath>
         <xpath expr="//div[@name='click_and_collect_availability']/div[hasclass('d-flex')]" position="replace">
@@ -15,7 +15,7 @@
                 </div>
                 <div t-elif="this.supplierLine" class="text-muted">
                     <i class="fa fa-fw fa-circle text-muted"/>
-                    Out of stock
+                    Out of stock in main warehouse
                 </div>
                 <div t-else="" class="text-muted">
                     <i class="fa fa-fw fa-circle text-danger"/>

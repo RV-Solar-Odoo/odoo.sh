@@ -230,13 +230,12 @@ class ProductTemplate(models.Model):
         own = self._int_own_available_qty(variant)
         if own > 0:
             qty = self._int_format_qty(own)
-            warehouse = self.env._("%(qty)s in stock — ships immediately", qty=qty)
             lines.append({
                 "status": "immediate",
                 "css": "text-bg-success",
                 "icon": "fa-check",
-                "detail": warehouse,
-                "label": warehouse,
+                "detail": self.env._("%(qty)s in stock", qty=qty),
+                "label": self.env._("%(qty)s in stock — ready to ship", qty=qty),
             })
         victron = self._int_victron_available_qty()
         if victron > 0:
