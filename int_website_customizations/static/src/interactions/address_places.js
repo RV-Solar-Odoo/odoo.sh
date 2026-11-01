@@ -278,15 +278,19 @@ patch(CustomerAddress.prototype, {
         super.setup();
         this._intPlaces = null;
     },
-    async willStart() {
-        await super.willStart();
-        try {
-            this._intPlaces = await attachPlaces(this, this.addressForm, this.el);
-        } catch {
-            this._intPlaces = null;
-        }
+    // Listeners can only be added once the interaction has started.
+    start() {
+        super.start();
+        this._intPlacesReady = attachPlaces(this, this.addressForm, this.el)
+            .then((places) => {
+                this._intPlaces = places;
+            })
+            .catch(() => {
+                this._intPlaces = null;
+            });
     },
     async saveAddress(ev) {
+        await this._intPlacesReady;
         if (this._intPlaces && !(await this._intPlaces.allowSubmit())) {
             return;
         }
@@ -299,15 +303,18 @@ patch(Form.prototype, {
         super.setup();
         this._intPlaces = null;
     },
-    async willStart() {
-        await super.willStart();
-        try {
-            this._intPlaces = await attachPlaces(this, this.el, this.el);
-        } catch {
-            this._intPlaces = null;
-        }
+    start() {
+        super.start();
+        this._intPlacesReady = attachPlaces(this, this.el, this.el)
+            .then((places) => {
+                this._intPlaces = places;
+            })
+            .catch(() => {
+                this._intPlaces = null;
+            });
     },
     async send() {
+        await this._intPlacesReady;
         if (this._intPlaces && !(await this._intPlaces.allowSubmit())) {
             return false;
         }
