@@ -230,7 +230,7 @@ class ProductTemplate(models.Model):
         own = self._int_own_available_qty(variant)
         if own > 0:
             qty = self._int_format_qty(own)
-            text = self.env._("- ships immediately")
+            text = self.env._("ships immediately")
             lines.append({
                 "status": "immediate",
                 "css": "text-bg-success",
@@ -243,7 +243,7 @@ class ProductTemplate(models.Model):
         victron = self._int_victron_available_qty()
         if victron > 0:
             qty = self._int_public_victron_qty(victron)
-            text = self.env._("- ships in 7 days")
+            text = self.env._("ships in 7 days")
             lines.append({
                 "status": "backup",
                 "css": "text-bg-info",

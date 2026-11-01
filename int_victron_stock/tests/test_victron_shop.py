@@ -171,21 +171,21 @@ class TestVictronShop(TransactionCase):
         lines = product.product_tmpl_id._int_availability_lines(product)
         labels = [line["label"] for line in lines]
         details = {line["status"]: line["detail"] for line in lines}
-        self.assertIn("17 - ships immediately", labels)
-        self.assertEqual(details["immediate"], "17 - ships immediately")
-        self.assertEqual(details["backup"], "20+ - ships in 7 days")
+        self.assertIn("17 ships immediately", labels)
+        self.assertEqual(details["immediate"], "17 ships immediately")
+        self.assertEqual(details["backup"], "20+ ships in 7 days")
         self.assertEqual(lines[0]["qty"], "17")
-        self.assertEqual(lines[0]["text"], "- ships immediately")
+        self.assertEqual(lines[0]["text"], "ships immediately")
         self.assertEqual(lines[1]["qty"], "20+")
-        self.assertEqual(lines[1]["text"], "- ships in 7 days")
+        self.assertEqual(lines[1]["text"], "ships in 7 days")
         self.assertFalse(any("45" in label for label in labels))
         self.assertNotIn("45", details["backup"])
 
         plenty = self._product("Big Pile", on_hand=143, victron=8)
         plenty_lines = plenty.product_tmpl_id._int_availability_lines(plenty)
         plenty_labels = [line["label"] for line in plenty_lines]
-        self.assertIn("143 - ships immediately", plenty_labels)
-        self.assertTrue(any(line["qty"] == "8" and line["text"] == "- ships in 7 days" for line in plenty_lines))
+        self.assertIn("143 ships immediately", plenty_labels)
+        self.assertTrue(any(line["qty"] == "8" and line["text"] == "ships in 7 days" for line in plenty_lines))
         self.assertFalse(any("20+" in label for label in plenty_labels))
 
         terms = self.env.ref("website_sale.product_terms_and_conditions").get_combined_arch()
@@ -209,7 +209,7 @@ class TestVictronShop(TransactionCase):
         self.assertFalse(info["show_availability"])
         self.assertNotIn("victron_qty", info)
         rendered = " ".join(line["label"] for line in info["int_availability_lines"])
-        self.assertIn("17 - ships immediately", rendered)
+        self.assertIn("17 ships immediately", rendered)
         self.assertIn("20+", rendered)
         self.assertNotIn("45", rendered)
 

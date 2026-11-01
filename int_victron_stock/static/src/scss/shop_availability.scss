@@ -21,7 +21,7 @@
 }
 
 /* Quantity column is at least as wide as "20+" and shared by the lines in a
-   block, so "5 - ships immediately" and "20+ - ships in 7 days" start together. */
+   block, so "5 ships immediately" and "20+ ships in 7 days" start together. */
 .o_int_shipping_badge,
 .o_int_card_availability_lines {
   display: grid;
@@ -64,12 +64,12 @@ div.o_int_avail_item .o_int_avail_row {
 .o_int_avail_qty {
   display: inline-grid;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: left;
 }
 .o_int_avail_qty_sizer,
 .o_int_avail_qty_value {
   grid-area: 1 / 1;
-  text-align: right;
+  text-align: left;
 }
 .o_int_avail_qty_sizer {
   visibility: hidden;
