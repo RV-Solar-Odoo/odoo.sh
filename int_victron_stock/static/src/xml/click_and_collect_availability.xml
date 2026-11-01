@@ -49,4 +49,8 @@
             </div>
         </xpath>
     </t>
+
+    <t t-inherit="website_sale_stock.product_availability" t-inherit-mode="extension">
+        <xpath expr="//div[@id='out_of_stock_message']" position="replace"/>
+    </t>
 </templates>

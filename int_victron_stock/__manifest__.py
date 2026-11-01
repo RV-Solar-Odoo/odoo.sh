@@ -5,7 +5,7 @@
     "summary": "Show warehouse and Victron availability on the shop, and draft a purchase order for the shortfall",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["stock", "website_sale", "website_sale_stock", "website_sale_stock_wishlist", "website_sale_collect", "website_sale_wishlist", "purchase_stock"],
+    "depends": ["stock", "website_sale", "website_sale_stock", "website_sale_collect", "website_sale_wishlist", "purchase_stock"],
     "application": False,
     "data": [
         "security/ir.model.access.csv",

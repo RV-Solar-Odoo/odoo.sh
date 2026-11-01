@@ -1,0 +1,102 @@
+// =============================================================================
+// Nomadiq Backend Theme — primary SCSS variables
+// -----------------------------------------------------------------------------
+// This file is PREPENDED to `web._assets_primary_variables`, i.e. it is the very
+// first thing Odoo's SCSS compiler sees. Every Odoo/Bootstrap variable below is
+// declared by Odoo with `!default`, so whatever we set here wins.
+//
+// RULES FOR THIS FILE
+//   * Literal values only. Nothing from Odoo ($o-white, $o-gray-100, ...) exists yet.
+//   * No `!default` on our own lines, otherwise Odoo's defaults would not be replaced.
+//
+// To re-tune the theme, change the palette block and nothing else.
+// =============================================================================
+
+// -- Palette ------------------------------------------------------------------
+$nq-black:        #141414;   // top bar
+$nq-black-border: #2a2a2e;   // top bar bottom border / dividers on black
+$nq-charcoal:     #2b2b30;   // current pipeline step, "Send message" button
+$nq-hover-dark:   #242428;   // top bar hover
+$nq-active-dark:  #2c2c31;   // top bar open dropdown
+$nq-nav-text:     #c9c9ce;   // top bar menu text
+$nq-white:        #ffffff;
+
+$nq-blue:         #3a4efd;   // website --brand-blue
+$nq-blue-hover:   #2f41e0;
+$nq-blue-active:  #2838c4;
+$nq-blue-text:    #2c3fe0;   // links on white (AA contrast)
+$nq-blue-soft:    #edefff;   // selected / active tint
+$nq-blue-on-dark: #7b8aff;   // website --brand-blue-on-dark
+
+$nq-text:         #1b1b1f;
+$nq-muted:        #6b6b73;
+$nq-bg:           #f3f3f5;   // web client background
+$nq-border:       #e3e3e7;
+$nq-border-2:     #d3d3d8;
+$nq-btn-hover:    #f0f0f2;
+
+// -- Brand / action colors ----------------------------------------------------
+$o-enterprise-color:        $nq-charcoal;
+$o-enterprise-action-color: $nq-blue;
+$o-brand-odoo:              $nq-black;      // navbar + a few derived accents
+$o-brand-primary:           $nq-blue;       // $primary, buttons, checkboxes, focus
+$o-brand-secondary:         $nq-muted;
+$o-action:                  $nq-blue;       // "action" color (active states, some icons)
+
+$o-main-link-color:         $nq-blue-text;  // $link-color
+$o-main-text-color:         $nq-text;
+$o-main-headings-color:     $nq-black;
+
+$o-component-active-color:  $nq-text;       // active list-group / view switcher / toggles
+$o-component-active-bg:     $nq-blue-soft;
+$o-component-active-border: $nq-blue;
+
+// -- Surfaces -----------------------------------------------------------------
+$o-webclient-background-color:    $nq-bg;
+$o-view-background-color:         $nq-white;
+$o-control-panel-background-color: $nq-white;
+$o-control-panel-border-bottom:   1px solid $nq-border;
+
+// -- Top bar ------------------------------------------------------------------
+$o-navbar-background:          $nq-black;
+$o-navbar-border-bottom:       1px solid $nq-black-border;
+$o-navbar-entry-color:         $nq-nav-text;
+$o-navbar-entry-color--hover:  $nq-white;
+$o-navbar-entry-bg--hover:     $nq-hover-dark;
+$o-navbar-entry-color--active: $nq-white;
+$o-navbar-entry-bg--active:    $nq-active-dark;
+$o-navbar-brand-color:         $nq-white;
+$o-navbar-badge-bg:            $nq-blue;
+$o-navbar-badge-color:         $nq-white;
+$o-navbar-badge-text-shadow:   none;
+
+// -- Buttons ------------------------------------------------------------------
+// Odoo merges this map over its own; every state must be present.
+$o-btns-bs-override: (
+    "primary": (
+        background: $nq-blue,
+        border: $nq-blue,
+        color: $nq-white,
+
+        hover-background: $nq-blue-hover,
+        hover-border: $nq-blue-hover,
+        hover-color: $nq-white,
+
+        active-background: $nq-blue-active,
+        active-border: $nq-blue-active,
+        active-color: $nq-white,
+    ),
+    "secondary": (
+        background: $nq-white,
+        border: $nq-border-2,
+        color: $nq-text,
+
+        hover-background: $nq-btn-hover,
+        hover-border: $nq-border-2,
+        hover-color: $nq-black,
+
+        active-background: $nq-blue-soft,
+        active-border: $nq-blue,
+        active-color: $nq-text,
+    ),
+);

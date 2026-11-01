@@ -1,0 +1,166 @@
+// =============================================================================
+// Nomadiq Backend Theme — web.assets_backend
+// -----------------------------------------------------------------------------
+// Loaded after all of Odoo's own backend CSS. Two jobs:
+//   1. Put the Nomadiq wordmark in the top bar (pure CSS, no template override).
+//   2. Safety net: restate the key colors through the CSS custom properties Odoo
+//      itself reads (--NavBar-*, --btn-*, --table-active-*, --o-statusbar-*), so the
+//      look holds even if an Enterprise variable is not overridable.
+// Keep in sync with primary_variables.scss.
+// =============================================================================
+
+$nq-black:        #141414;
+$nq-black-border: #2a2a2e;
+$nq-charcoal:     #2b2b30;
+$nq-hover-dark:   #242428;
+$nq-active-dark:  #2c2c31;
+$nq-nav-text:     #c9c9ce;
+$nq-white:        #ffffff;
+
+$nq-blue:         #3a4efd;
+$nq-blue-hover:   #2f41e0;
+$nq-blue-active:  #2838c4;
+$nq-blue-text:    #2c3fe0;
+$nq-blue-soft:    #edefff;
+$nq-blue-on-dark: #7b8aff;
+
+$nq-text:         #1b1b1f;
+$nq-sel:          #eef0ff;
+
+$nq-is-dark: $o-webclient-color-scheme == dark;
+
+// -- 1. Top bar ---------------------------------------------------------------
+.o_main_navbar {
+    --NavBar-entry-color: #{$nq-nav-text};
+    --NavBar-entry-color--hover: #{$nq-white};
+    --NavBar-entry-color--active: #{$nq-white};
+    --NavBar-brand-color: #{$nq-white};
+    --NavBar-entry-backgroundColor: #{$nq-black};
+    --NavBar-entry-backgroundColor--hover: #{$nq-hover-dark};
+    --NavBar-entry-backgroundColor--focus: #{$nq-hover-dark};
+    --NavBar-entry-backgroundColor--active: #{$nq-active-dark};
+    --o-navbar-badge-bg: #{$nq-blue};
+    --o-navbar-badge-color: #{$nq-white};
+    --o-navbar-badge-text-shadow: none;
+
+    background: $nq-black;
+    border-bottom-color: $nq-black-border;
+
+    // Nomadiq wordmark, first flex item of the bar.
+    &::before {
+        content: "";
+        flex: 0 0 auto;
+        align-self: center;
+        box-sizing: content-box;
+        width: 92px;
+        height: 19px;
+        margin: 0 4px 0 14px;
+        padding-right: 14px;
+        border-right: 1px solid $nq-black-border;
+        background: url("/int_web_customizations/static/src/img/nomadiq_logo_nav.png") no-repeat left center / 92px 19px;
+        pointer-events: none;
+
+        @media (max-width: 767.98px) {
+            display: none;
+        }
+    }
+
+    // Thin blue line under the open/active section dropdown.
+    .o_menu_sections .dropdown.show .dropdown-toggle,
+    .o_menu_sections .o_nav_entry:focus-visible {
+        box-shadow: inset 0 -2px 0 $nq-blue-on-dark;
+    }
+}
+
+// Enterprise apps home: solid black behind the app grid (a company background
+// image set in Settings still wins because it is applied inline).
+.o_home_menu_background {
+    background-color: $nq-black;
+    background-image: radial-gradient(1200px 520px at 50% -10%, #26262c 0%, $nq-black 70%);
+}
+
+// -- 2. Safety net (light scheme only; Odoo's dark mode keeps its own surfaces) --
+@if not $nq-is-dark {
+
+    // Bootstrap root tokens used by .text-primary / .bg-primary / links.
+    :root, .o_web_client {
+        --primary: #{$nq-blue};
+        --primary-rgb: 58, 78, 253;
+        --link-color: #{$nq-blue-text};
+        --link-color-rgb: 44, 63, 224;
+        --link-hover-color: #{$nq-blue-active};
+        --link-hover-color-rgb: 40, 56, 196;
+    }
+
+    .btn-primary {
+        --btn-color: #{$nq-white};
+        --btn-bg: #{$nq-blue};
+        --btn-border-color: #{$nq-blue};
+        --btn-hover-color: #{$nq-white};
+        --btn-hover-bg: #{$nq-blue-hover};
+        --btn-hover-border-color: #{$nq-blue-hover};
+        --btn-active-color: #{$nq-white};
+        --btn-active-bg: #{$nq-blue-active};
+        --btn-active-border-color: #{$nq-blue-active};
+        --btn-disabled-color: #{$nq-white};
+        --btn-disabled-bg: #{$nq-blue};
+        --btn-disabled-border-color: #{$nq-blue};
+        --btn-focus-shadow-rgb: 58, 78, 253;
+    }
+
+    .btn-link {
+        --btn-color: #{$nq-blue-text};
+        --btn-hover-color: #{$nq-blue-active};
+        --btn-active-color: #{$nq-blue-active};
+    }
+
+    .form-check-input:checked,
+    .form-check-input:indeterminate {
+        background-color: $nq-blue;
+        border-color: $nq-blue;
+    }
+
+    .form-check-input:focus,
+    .form-control:focus,
+    .form-select:focus {
+        border-color: $nq-blue;
+    }
+
+    // Checked rows in list views.
+    .o_list_table {
+        --table-active-bg: #{$nq-sel};
+        --table-active-color: #{$nq-text};
+    }
+
+    // Current step of a pipeline / statusbar: charcoal with white text.
+    .o_statusbar_status {
+        --o-statusbar-background-active: #{$nq-charcoal};
+        --o-statusbar-border-active: #{$nq-charcoal};
+
+        > .o_arrow_button.o_arrow_button_current,
+        > .o_arrow_button.o_arrow_button_current:disabled {
+            color: $nq-white;
+            opacity: 1;
+        }
+    }
+
+    // Active notebook tab: blue top edge, dark label.
+    .o_notebook {
+        --Notebook__link-border-top-color--active: #{$nq-blue};
+
+        .nav-tabs .nav-link.active {
+            color: $nq-text;
+        }
+    }
+
+    // Chatter: primary composer button in charcoal, keep blue for real actions.
+    .o-mail-Chatter-topbar .btn-primary,
+    .o-mail-Chatter .o-mail-Chatter-sendMessage.btn-primary {
+        --btn-bg: #{$nq-charcoal};
+        --btn-border-color: #{$nq-charcoal};
+        --btn-hover-bg: #{$nq-black};
+        --btn-hover-border-color: #{$nq-black};
+        --btn-active-bg: #{$nq-black};
+        --btn-active-border-color: #{$nq-black};
+    }
+}
