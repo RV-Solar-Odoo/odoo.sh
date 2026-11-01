@@ -221,7 +221,7 @@
 
     <!-- The panel stays open while filters apply, so give it a way back to the results. -->
     <template id="offcanvas_view_results" inherit_id="website_sale.o_wsale_offcanvas" name="Filter Panel: View Results">
-        <xpath expr="//a[@title='Clear Filters']" position="after">
+        <xpath expr="//div[hasclass('justify-content-between')]" position="inside">
             <button type="button" class="btn btn-primary py-1 mb-2" data-bs-dismiss="offcanvas">
                 <t t-if="search_count">View <t t-out="search_count"/> <t t-if="search_count == 1">product</t><t t-else="">products</t></t>
                 <t t-else="">No products found</t>
