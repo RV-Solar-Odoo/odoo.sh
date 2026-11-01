@@ -1,6 +1,15 @@
 def unpublish_standard_delivery(env):
     configure_checkout_shipping(env)
     show_payment_brand_on_receipt(env)
+    ensure_google_places_parameter(env)
+
+
+def ensure_google_places_parameter(env):
+    """Show the key in System Parameters before anyone opens Website settings."""
+    icp = env["ir.config_parameter"].sudo()
+    key = "int_website.google_places_api_key"
+    if not icp.search([("key", "=", key)], limit=1):
+        icp.set_param(key, "")
 
 
 def disable_customer_invoice_email(env):
