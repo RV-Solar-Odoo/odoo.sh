@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="layout_hero_font" inherit_id="website.layout" name="Hero Font">
+        <xpath expr="//head" position="inside">
+            <link rel="preconnect" href="https://fonts.googleapis.com"/>
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+            <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,700&amp;display=swap" rel="stylesheet"/>
+        </xpath>
+    </template>
+</odoo>

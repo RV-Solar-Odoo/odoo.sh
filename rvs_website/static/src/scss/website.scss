@@ -92,6 +92,116 @@
     max-width: 280px;
 }
 
+/* ============ Homepage hero: centered, logo on top ============ */
+#wrap > section.s_cover:first-child {
+  display: flex;
+  align-items: center;
+  min-height: unquote("min(86vh, 820px)");
+  padding-top: 88px !important;
+  padding-bottom: 88px !important;
+
+  /* even darkening, a touch heavier at the bottom */
+  > .o_we_bg_filter {
+    background: linear-gradient(180deg,
+      rgba(10, 12, 20, .55) 0%,
+      rgba(10, 12, 20, .62) 55%,
+      rgba(10, 12, 20, .8) 100%) !important;
+  }
+
+  > .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    > .s_hr,
+    > p:has(br:only-child) { display: none !important; }
+
+    /* logo */
+    > img {
+      order: -2;
+      display: block !important;
+      width: 200px !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      height: auto !important;
+      margin: 0 auto 32px !important;
+      padding: 0 !important;
+    }
+
+    /* "Authorized Victron dealer…" label */
+    > p.small {
+      order: -1;
+      margin: 0 0 18px;
+      text-align: center !important;
+      color: #aab3ff;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      span { font-size: inherit !important; }
+      br { display: none; }
+    }
+
+    /* headline */
+    > h1 {
+      font-size: 0 !important;
+      margin: 0 0 34px;
+      text-align: center !important;
+      br { display: none; }
+      span {
+        display: block;
+        max-width: 20ch;
+        margin: 0 auto;
+        font-family: 'Archivo', sans-serif !important;
+        font-stretch: 112%;
+        font-size: clamp(1.8rem, calc(.9rem + 2.2vw), 2.8rem) !important;
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -.01em;
+        color: #fff;
+      }
+    }
+
+    /* buttons */
+    > p:has(.btn) {
+      margin: 0;
+      text-align: center !important;
+    }
+  }
+
+  /* phones */
+  @media (max-width: 767.98px) {
+    min-height: 88vh;
+    min-height: 88svh; /* stays inside the screen when the browser bar is showing */
+    padding-top: 72px !important;
+    padding-bottom: 48px !important;
+
+    > .container {
+      > img {
+        width: 150px !important;
+        margin-bottom: 24px !important;
+      }
+      > p.small {
+        font-size: 11px;
+        letter-spacing: .12em;
+      }
+      > h1 span {
+        max-width: 14ch;
+        overflow-wrap: break-word;
+      }
+      > p:has(.btn) {
+        width: 100%;
+        .btn {
+          display: block;
+          width: 100%;
+          margin: 0 0 10px;
+        }
+      }
+    }
+  }
+}
+
 
 /* ── SHOP PRODUCT IMAGES ─────────────────────────────────────
    [CHANGED] Was 4 blocks across the file, 2 of which were dead
