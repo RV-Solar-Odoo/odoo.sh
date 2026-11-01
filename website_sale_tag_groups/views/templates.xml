@@ -121,11 +121,11 @@
                     <input type="checkbox"
                            name="tags"
                            class="form-check-input"
-                           t-attf-id="tag_#{tag.id}"
+                           t-attf-id="tag_#{tag.id}#{isMobile and '_mobile' or ''}"
                            t-att-value="tag.id"
                            t-att-checked="'checked' if tag.id in tags else None"
                     />
-                    <label class="form-check-label fw-normal" t-attf-for="tag_#{tag.id}" t-field="tag.name"/>
+                    <label class="form-check-label fw-normal" t-attf-for="tag_#{tag.id}#{isMobile and '_mobile' or ''}" t-field="tag.name"/>
                 </div>
             </t>
         </t>
@@ -216,6 +216,16 @@
                     <t t-set="all_product_tags" t-value="variant.all_product_tag_ids"/>
                 </t>
             </t>
+        </xpath>
+    </template>
+
+    <!-- The panel stays open while filters apply, so give it a way back to the results. -->
+    <template id="offcanvas_view_results" inherit_id="website_sale.o_wsale_offcanvas" name="Filter Panel: View Results">
+        <xpath expr="//a[@title='Clear Filters']" position="after">
+            <button type="button" class="btn btn-primary py-1 mb-2" data-bs-dismiss="offcanvas">
+                <t t-if="search_count">View <t t-out="search_count"/> <t t-if="search_count == 1">product</t><t t-else="">products</t></t>
+                <t t-else="">No products found</t>
+            </button>
         </xpath>
     </template>
 

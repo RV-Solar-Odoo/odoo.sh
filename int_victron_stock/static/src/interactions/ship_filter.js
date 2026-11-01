@@ -9,7 +9,12 @@ export class ShipFilter extends Interaction {
     };
 
     onChange() {
-        redirect(this.el.dataset.href);
+        // Tag Groups can load this in place. Without it, the event isn't handled and the page reloads.
+        const url = this.el.dataset.href;
+        const load = new CustomEvent("wsale_filter_load", { bubbles: true, cancelable: true, detail: { url } });
+        if (this.el.dispatchEvent(load)) {
+            redirect(url);
+        }
     }
 }
 

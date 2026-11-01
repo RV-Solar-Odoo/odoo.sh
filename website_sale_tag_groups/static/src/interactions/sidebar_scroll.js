@@ -3,15 +3,23 @@ import { registry } from "@web/core/registry";
 import { getScrollingElement } from "@web/core/utils/scrolling";
 
 const STORAGE_KEY = "website_sale_tag_groups.sidebar_scroll";
+const SIDEBAR_SELECTOR = ".o_wsale_products_grid_before_rail";
 
 /**
- * Every filter choice reloads the shop. Remember where the sidebar and the page
- * were, so the shopper can keep ticking options without scrolling back down.
+ * Tag and availability choices update in place, but anything that still reloads the
+ * shop calls this first, so the shopper doesn't have to scroll back down.
  */
+export function saveSidebarScroll() {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        sidebar: document.querySelector(SIDEBAR_SELECTOR)?.scrollTop || 0,
+        page: getScrollingElement().scrollTop,
+    }));
+}
+
 export class SidebarScroll extends Interaction {
-    static selector = ".o_wsale_products_grid_before_rail";
+    static selector = SIDEBAR_SELECTOR;
     dynamicContent = {
-        _root: { "t-on-change": this.onChange },
+        '#o_wsale_price_range_option input[type="range"]': { "t-on-newRangeValue": saveSidebarScroll },
     };
 
     start() {
@@ -23,13 +31,6 @@ export class SidebarScroll extends Interaction {
         const { sidebar, page } = JSON.parse(saved);
         this.el.scrollTop = sidebar;
         getScrollingElement().scrollTop = page;
-    }
-
-    onChange() {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-            sidebar: this.el.scrollTop,
-            page: getScrollingElement().scrollTop,
-        }));
     }
 }
 

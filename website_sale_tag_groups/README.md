@@ -20,6 +20,9 @@ sidebar instead of one flat "Tags" list.
 - **No dead ends**: options that would lead to no products, given the other active
   filters, are hidden. Selected options always stay so they can be unticked. If the
   filters still match nothing, every group stays in place so the shopper can try another.
+- **Filters apply in place**: tag and availability choices update the results and
+  sidebar without reloading the page (desktop and the mobile panel, which stays open).
+  Anything that fails falls back to a normal page load.
 - **Category scoping**: only tags carried by products in the current category
   (or search) are listed, so groups with no matching tags disappear and a
   category with no tagged products shows no tag filters at all. Selected
