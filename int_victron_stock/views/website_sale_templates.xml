@@ -17,12 +17,18 @@
             <t t-set="int_lines" t-value="product._int_availability_lines(int_variant)"/>
             <div t-if="int_lines and not combination_info.get('show_click_and_collect_availability')" class="o_int_shipping_badge mb-4">
                 <t t-foreach="int_lines" t-as="int_line">
-                    <div class="mb-1">
-                        <span t-attf-class="badge #{int_line['css']}">
-                            <i t-attf-class="fa #{int_line['icon']} me-1" role="presentation"/>
-                            <t t-out="int_line['label']"/>
+                    <span t-if="int_line.get('qty')" t-attf-class="badge o_int_avail_line #{int_line['css']}">
+                        <i t-attf-class="fa fa-fw #{int_line['icon']}" role="presentation"/>
+                        <span class="o_int_avail_qty">
+                            <span class="o_int_avail_qty_sizer" aria-hidden="true">20+</span>
+                            <span class="o_int_avail_qty_value" t-out="int_line['qty']"/>
                         </span>
-                    </div>
+                        <span class="o_int_avail_text" t-out="int_line['text']"/>
+                    </span>
+                    <span t-else="" t-attf-class="badge o_int_avail_plain #{int_line['css']}">
+                        <i t-attf-class="fa fa-fw #{int_line['icon']} me-1" role="presentation"/>
+                        <t t-out="int_line['label']"/>
+                    </span>
                 </t>
             </div>
         </xpath>
@@ -51,8 +57,15 @@
                 <span class="o_int_card_availability_label">Availability:</span>
                 <div class="o_int_card_availability_lines">
                     <t t-foreach="int_lines" t-as="int_line">
-                        <div t-attf-class="#{'text-success' if int_line['status'] == 'immediate' else 'text-muted'}"
-                             t-out="int_line['label']"/>
+                        <div t-if="int_line.get('qty')"
+                             t-attf-class="o_int_avail_row #{'text-success' if int_line['status'] == 'immediate' else 'text-muted'}">
+                            <span class="o_int_avail_qty">
+                                <span class="o_int_avail_qty_sizer" aria-hidden="true">20+</span>
+                                <span class="o_int_avail_qty_value" t-out="int_line['qty']"/>
+                            </span>
+                            <span class="o_int_avail_text" t-out="int_line['text']"/>
+                        </div>
+                        <div t-else="" class="text-muted" t-out="int_line['label']"/>
                     </t>
                 </div>
             </div>

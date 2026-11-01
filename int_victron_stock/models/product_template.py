@@ -230,27 +230,28 @@ class ProductTemplate(models.Model):
         own = self._int_own_available_qty(variant)
         if own > 0:
             qty = self._int_format_qty(own)
-            warehouse = self.env._("%(qty)s in stock — ships immediately", qty=qty)
+            text = self.env._("- ships immediately")
             lines.append({
                 "status": "immediate",
                 "css": "text-bg-success",
                 "icon": "fa-check",
-                "detail": warehouse,
-                "label": warehouse,
+                "qty": qty,
+                "text": text,
+                "detail": self.env._("%(qty)s %(text)s", qty=qty, text=text),
+                "label": self.env._("%(qty)s %(text)s", qty=qty, text=text),
             })
         victron = self._int_victron_available_qty()
         if victron > 0:
-            supplier = self.env._(
-                "%(qty)s available — ships %(when)s",
-                qty=self._int_public_victron_qty(victron),
-                when=self._int_lead_phrase(),
-            )
+            qty = self._int_public_victron_qty(victron)
+            text = self.env._("- ships in 7 days")
             lines.append({
                 "status": "backup",
                 "css": "text-bg-info",
                 "icon": "fa-truck",
-                "detail": supplier,
-                "label": supplier,
+                "qty": qty,
+                "text": text,
+                "detail": self.env._("%(qty)s %(text)s", qty=qty, text=text),
+                "label": self.env._("%(qty)s %(text)s", qty=qty, text=text),
             })
         if not lines:
             unavailable = self.env._("Currently unavailable — contact us for lead time")
@@ -258,6 +259,8 @@ class ProductTemplate(models.Model):
                 "status": "unavailable",
                 "css": "text-bg-secondary",
                 "icon": "fa-clock-o",
+                "qty": False,
+                "text": unavailable,
                 "detail": unavailable,
                 "label": unavailable,
             })

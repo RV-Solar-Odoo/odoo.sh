@@ -42,16 +42,33 @@ function renderAvailability(parent, combination) {
     }
     box.replaceChildren();
     for (const line of lines) {
-        const row = document.createElement("div");
-        row.className = "mb-1";
         const badge = document.createElement("span");
-        badge.className = `badge ${line.css}`;
         const icon = document.createElement("i");
-        icon.className = `fa ${line.icon} me-1`;
+        icon.className = `fa fa-fw ${line.icon}`;
         icon.setAttribute("role", "presentation");
-        badge.append(icon, document.createTextNode(line.label));
-        row.append(badge);
-        box.append(row);
+        badge.append(icon);
+        if (line.qty) {
+            badge.className = `badge o_int_avail_line ${line.css}`;
+            const qty = document.createElement("span");
+            qty.className = "o_int_avail_qty";
+            const sizer = document.createElement("span");
+            sizer.className = "o_int_avail_qty_sizer";
+            sizer.setAttribute("aria-hidden", "true");
+            sizer.textContent = "20+";
+            const value = document.createElement("span");
+            value.className = "o_int_avail_qty_value";
+            value.textContent = line.qty;
+            qty.append(sizer, value);
+            const text = document.createElement("span");
+            text.className = "o_int_avail_text";
+            text.textContent = line.text;
+            badge.append(qty, text);
+        } else {
+            badge.className = `badge o_int_avail_plain ${line.css}`;
+            icon.className = `fa fa-fw ${line.icon} me-1`;
+            badge.append(document.createTextNode(line.label));
+        }
+        box.append(badge);
     }
 }
 

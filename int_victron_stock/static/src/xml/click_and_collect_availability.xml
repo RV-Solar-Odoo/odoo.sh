@@ -9,9 +9,15 @@
         </xpath>
         <xpath expr="//div[@name='click_and_collect_availability']/div[hasclass('d-flex')]" position="replace">
             <div class="d-flex justify-content-between">
-                <div t-if="this.warehouseLine" class="text-muted">
+                <div t-if="this.warehouseLine" class="text-muted o_int_avail_item">
                     <i class="fa fa-fw fa-circle text-success"/>
-                    <t t-out="this.warehouseLine.detail"/>
+                    <span class="o_int_avail_row">
+                        <span class="o_int_avail_qty">
+                            <span class="o_int_avail_qty_sizer" aria-hidden="true">20+</span>
+                            <span class="o_int_avail_qty_value" t-out="this.warehouseLine.qty"/>
+                        </span>
+                        <span class="o_int_avail_text" t-out="this.warehouseLine.text"/>
+                    </span>
                 </div>
                 <div t-elif="this.supplierLine" class="text-muted">
                     <i class="fa fa-fw fa-circle text-muted"/>
@@ -34,9 +40,15 @@
                     <i class="fa fa-fw fa-truck text-muted"/>
                     Additional stock
                 </h6>
-                <div t-if="this.supplierLine" class="text-muted">
+                <div t-if="this.supplierLine" class="text-muted o_int_avail_item">
                     <i class="fa fa-fw fa-circle text-success"/>
-                    <t t-out="this.supplierLine.detail"/>
+                    <span class="o_int_avail_row">
+                        <span class="o_int_avail_qty">
+                            <span class="o_int_avail_qty_sizer" aria-hidden="true">20+</span>
+                            <span class="o_int_avail_qty_value" t-out="this.supplierLine.qty"/>
+                        </span>
+                        <span class="o_int_avail_text" t-out="this.supplierLine.text"/>
+                    </span>
                 </div>
                 <div t-elif="this.unavailableLine" class="text-muted">
                     <i class="fa fa-fw fa-circle text-danger"/>

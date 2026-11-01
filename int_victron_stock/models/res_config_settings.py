@@ -36,7 +36,7 @@ class ResConfigSettings(models.TransientModel):
         string="Victron Lead Time",
         config_parameter="int_victron.lead_time_label",
         default="within 7–10 days",
-        help="Shown after the supplier quantity, for example \"20+ available — ships within 7–10 days\".",
+        help="Shown on checkout and in the cart for units that ship from Victron, for example \"within 7–10 days\".",
     )
     int_victron_vendor_id = fields.Many2one(
         "res.partner",
