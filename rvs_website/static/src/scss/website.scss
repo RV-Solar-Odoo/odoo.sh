@@ -1202,6 +1202,23 @@
   }
 }
 
+/* ── WHY CUSTOMERS CHOOSE RV SOLAR (about page + homepage ribbon) ── */
+.o_rvs_about_reason_grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 40px;
+  text-align: left;
+
+  @media (max-width: 991.98px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 575.98px) { grid-template-columns: 1fr; }
+}
+.o_rvs_about_reason {
+  padding-left: 16px;
+  border-left: 2px solid var(--brand-blue);
+  h3 { margin: 0 0 6px; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-muted); }
+}
+
 /* ── HOMEPAGE ABOUT RIBBON (above the dealer strip) ─────────── */
 .o_rvs_about_ribbon {
   padding: 64px 0;
@@ -1209,21 +1226,17 @@
   border-top: 1px solid var(--border-light);
   text-align: center;
 
-  .container { max-width: 760px; }
   h2 {
-    margin: 0 0 18px;
+    margin: 0 0 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
     font-size: clamp(28px, 3.5vw, 38px);
     font-weight: 300;
     letter-spacing: -0.02em;
     line-height: 1.1;
     color: var(--ink);
   }
-  .o_rvs_about_ribbon_text {
-    margin: 0 0 18px;
-    font-size: 17px;
-    line-height: 1.7;
-    color: var(--ink-muted);
-  }
+  .o_rvs_about_ribbon_more { margin: 40px 0 0; }
   .o_rvs_about_ribbon_link {
     color: var(--brand-blue);
     font-size: 13px;
@@ -1327,17 +1340,6 @@
 
   /* reasons */
   .o_rvs_about_reasons { padding: 72px 0; }
-  .o_rvs_about_reason_grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px 40px;
-  }
-  .o_rvs_about_reason {
-    padding-left: 16px;
-    border-left: 2px solid var(--brand-blue);
-    h3 { margin: 0 0 6px; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-muted); }
-  }
 
   /* about us: expertise, markets, visit & contact */
   .o_rvs_about_facts {
@@ -1358,7 +1360,7 @@
     line-height: 1.6;
     color: var(--ink-muted);
 
-    h3 { margin: 0 0 14px; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    h3 { margin: 0 0 14px; color: var(--ink); font-size: 18px; font-weight: 700; }
     ul { margin: 0; padding: 0; list-style: none; }
     li + li { margin-top: 6px; }
     p, address { margin: 0 0 6px; }
@@ -1369,7 +1371,6 @@
 
   @media (max-width: 991.98px) {
     .o_rvs_about_hero .o_rvs_about_hero_grid { grid-template-columns: 1fr; gap: 32px; }
-    .o_rvs_about_reason_grid,
     .o_rvs_about_facts_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .o_rvs_about_fact:last-child { grid-column: 1 / -1; }
   }
@@ -1379,7 +1380,6 @@
     .o_rvs_about_reasons,
     .o_rvs_about_facts { padding: 48px 0; }
     .o_rvs_about_hero .o_rvs_about_eyebrow { font-size: 11px; letter-spacing: .12em; }
-    .o_rvs_about_reason_grid,
     .o_rvs_about_facts_grid { grid-template-columns: 1fr; }
     .o_rvs_about_fact { padding: 22px; }
   }
