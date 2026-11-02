@@ -1104,12 +1104,52 @@
   }
 }
 
+/* ── HOMEPAGE ABOUT RIBBON (above the dealer strip) ─────────── */
+.o_rvs_about_ribbon {
+  padding: 64px 0;
+  background: #ffffff;
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+
+  .container { max-width: 760px; }
+  h2 {
+    margin: 0 0 18px;
+    font-size: clamp(28px, 3.5vw, 38px);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .o_rvs_about_ribbon_text {
+    margin: 0 0 18px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink-muted);
+  }
+  .o_rvs_about_ribbon_link {
+    color: var(--brand-blue);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity .15s ease;
+    &::after { content: " →"; }
+    &:hover { opacity: .65; }
+  }
+
+  @media (max-width: 991.98px) {
+    padding: 48px 0;
+  }
+}
+
 /* ── ABOUT US (/about-us) ─────────────────────────────────────
-   Same type as the rest of the site: Roboto throughout, light
-   headlines, blue uppercase eyebrows, #0d0d0d dark panels. */
+   Same type as the rest of the site: Roboto throughout, blue
+   uppercase eyebrows, #0d0d0d dark panels. */
 .o_rvs_about {
   h1, h2 {
-    font-weight: 300;
+    font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.1;
     color: #111111;
