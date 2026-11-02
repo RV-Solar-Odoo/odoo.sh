@@ -15,7 +15,28 @@ class TestMapWebsitePrice(TransactionCase):
         cls.website = cls.env["website"].search([], limit=1)
         if not cls.website:
             cls.website = cls.env["website"].create({"name": "MAP Test Website"})
-        cls.partner = cls.env["res.partner"].create({"name": "MAP Shop Customer"})
+        public_partner = cls.env.ref("base.public_user").partner_id
+        cls.public_pl = public_partner.property_product_pricelist
+        if not cls.public_pl:
+            cls.public_pl = cls.env["product.pricelist"].search([], limit=1)
+            public_partner.property_product_pricelist = cls.public_pl.id
+        cls.dealer_pl = cls.env["product.pricelist"].create({
+            "name": "MAP Dealer",
+            "website_id": cls.website.id,
+            "item_ids": [Command.create({
+                "applied_on": "3_global",
+                "compute_price": "percentage",
+                "percent_price": 32,
+            })],
+        })
+        cls.retail_partner = cls.env["res.partner"].create({
+            "name": "MAP Retail Customer",
+            "property_product_pricelist": cls.public_pl.id,
+        })
+        cls.dealer_partner = cls.env["res.partner"].create({
+            "name": "MAP Dealer Customer",
+            "property_product_pricelist": cls.dealer_pl.id,
+        })
         cls.template = cls.env["product.template"].create({
             "name": "MAP Test Inverter",
             "type": "consu",
@@ -26,43 +47,33 @@ class TestMapWebsitePrice(TransactionCase):
             "taxes_id": [Command.clear()],
         })
         cls.product = cls.template.product_variant_id
-        cls.public_pl = cls.env["product.pricelist"].create({
-            "name": "MAP Public",
-            "website_id": cls.website.id,
-        })
-        cls.dealer_pl = cls.env["product.pricelist"].create({
-            "name": "MAP Dealer",
-            "website_id": cls.website.id,
-            "item_ids": [Command.create({
-                "applied_on": "3_global",
-                "compute_price": "percentage",
-                "percent_price": 32,
-            })],
-        })
 
     def setUp(self):
         super().setUp()
         if "map_price" not in self.env["product.template"]._fields:
             self.skipTest("MAP price is not installed")
 
-    def _info(self, pricelist):
-        with MockRequest(self.env, website=self.website, website_sale_current_pl=pricelist.id):
-            return self.template._get_combination_info(product_id=self.product.id)
+    def _info(self, partner, session_pricelist=None):
+        tmpl = self.template.with_context(int_pricing_partner_id=partner.id)
+        pl = session_pricelist or partner.property_product_pricelist
+        with MockRequest(self.env, website=self.website, website_sale_current_pl=pl.id):
+            return tmpl._get_combination_info(product_id=self.product.id)
 
     def test_public_shop_uses_map_and_slashes_msrp(self):
-        info = self._info(self.public_pl)
+        info = self._info(self.retail_partner)
         self.assertAlmostEqual(info["price"], 850.0)
         self.assertAlmostEqual(info["list_price"], 1000.0)
         self.assertTrue(info["has_discounted_price"])
         self.assertFalse(info["int_is_dealer"])
 
+        tmpl = self.template.with_context(int_pricing_partner_id=self.retail_partner.id)
         with MockRequest(self.env, website=self.website, website_sale_current_pl=self.public_pl.id):
-            prices = self.template._get_sales_prices(self.website)[self.template.id]
+            prices = tmpl._get_sales_prices(self.website)[self.template.id]
         self.assertAlmostEqual(prices["price_reduce"], 850.0)
         self.assertAlmostEqual(prices["base_price"], 1000.0)
 
-    def test_dealer_shop_uses_the_pricelist_and_slashes_msrp(self):
-        info = self._info(self.dealer_pl)
+    def test_dealer_shop_uses_the_contact_pricelist(self):
+        info = self._info(self.dealer_partner)
         self.assertAlmostEqual(info["price"], 680.0)
         self.assertAlmostEqual(info["list_price"], 1000.0)
         self.assertTrue(info["has_discounted_price"])
@@ -71,16 +82,22 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertAlmostEqual(info["int_map_price"], 850.0)
         self.assertAlmostEqual(info["int_msrp"], 1000.0)
 
+        tmpl = self.template.with_context(int_pricing_partner_id=self.dealer_partner.id)
         with MockRequest(self.env, website=self.website, website_sale_current_pl=self.dealer_pl.id):
-            prices = self.template._get_sales_prices(self.website)[self.template.id]
+            prices = tmpl._get_sales_prices(self.website)[self.template.id]
         self.assertAlmostEqual(prices["price_reduce"], 680.0)
         self.assertAlmostEqual(prices["base_price"], 1000.0)
 
-    def test_website_cart_charges_map_unless_the_order_is_a_dealer(self):
+    def test_session_pricelist_does_not_make_a_retail_contact_a_dealer(self):
+        info = self._info(self.retail_partner, session_pricelist=self.dealer_pl)
+        self.assertFalse(info["int_is_dealer"])
+        self.assertAlmostEqual(info["price"], 850.0)
+
+    def test_website_cart_follows_the_contact_pricelist(self):
         public_order = self.env["sale.order"].create({
-            "partner_id": self.partner.id,
+            "partner_id": self.retail_partner.id,
             "website_id": self.website.id,
-            "pricelist_id": self.public_pl.id,
+            "pricelist_id": self.dealer_pl.id,
             "order_line": [Command.create({
                 "product_id": self.product.id,
                 "product_uom_qty": 1,
@@ -89,9 +106,9 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertAlmostEqual(public_order.order_line.price_unit, 850.0)
 
         dealer_order = self.env["sale.order"].create({
-            "partner_id": self.partner.id,
+            "partner_id": self.dealer_partner.id,
             "website_id": self.website.id,
-            "pricelist_id": self.dealer_pl.id,
+            "pricelist_id": self.public_pl.id,
             "order_line": [Command.create({
                 "product_id": self.product.id,
                 "product_uom_qty": 1,
@@ -108,7 +125,7 @@ class TestMapWebsitePrice(TransactionCase):
         }))
 
     def test_public_product_page_keeps_only_the_two_prices(self):
-        html = self._render_price(self._info(self.public_pl))
+        html = self._render_price(self._info(self.retail_partner))
         self.assertNotIn("MSRP", html)
         self.assertNotIn("MAP", html)
         self.assertNotIn("Dealer", html)
@@ -116,7 +133,7 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertNotIn("oe_default_price mb-0 h6", html)
 
     def test_dealer_product_page_lists_msrp_map_and_dealer(self):
-        html = self._render_price(self._info(self.dealer_pl))
+        html = self._render_price(self._info(self.dealer_partner))
         self.assertIn("MSRP", html)
         self.assertIn("MAP", html)
         self.assertIn("Dealer", html)
