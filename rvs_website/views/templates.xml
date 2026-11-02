@@ -7,4 +7,21 @@
             <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,700&amp;display=swap" rel="stylesheet"/>
         </xpath>
     </template>
+
+    <!-- Priority 99 runs this after whichever footer template replaces #footer. It stays
+         outside #footer because the editor saves everything inside that block into its own
+         copy of the footer, which would repeat these links. -->
+    <template id="footer_nav" inherit_id="website.layout" name="Footer Navigation" priority="99">
+        <xpath expr="//div[@id='footer']" position="after">
+            <nav t-if="not no_footer" class="o_rvs_footer_nav border border-top-0" aria-label="Footer">
+                <ul class="nav justify-content-center" role="menu">
+                    <t t-foreach="website.menu_id.child_id" t-as="submenu">
+                        <t t-call="website.submenu"
+                            item_class.f="nav-item"
+                            link_class.f="nav-link"/>
+                    </t>
+                </ul>
+            </nav>
+        </xpath>
+    </template>
 </odoo>

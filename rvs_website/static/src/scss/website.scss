@@ -1397,6 +1397,20 @@
   .o_footer_copyright_name { margin-right: 0 !important; }
 }
 
+/* footer nav: same links and look as the top nav, joined to the logo block above it */
+#footer:has(+ .o_rvs_footer_nav) { border-bottom: 0 !important; }
+.o_rvs_footer_nav {
+  padding-bottom: 8px;
+  font-size: 0.875rem;
+
+  .nav-link {
+    padding: 0.5rem;
+    color: #000000;
+    > span { color: #000000; }
+    &.active > span { border-bottom: 0.125em solid; }
+  }
+}
+
 /* footer logo: fixed size instead of 25% of a changing column */
 .o_footer_logo img { min-width: 72px; max-width: 72px; }
 @media (max-width: 991.98px) {
