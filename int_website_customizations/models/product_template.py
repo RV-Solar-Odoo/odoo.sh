@@ -59,6 +59,15 @@ class ProductTemplate(models.Model):
         selling = pricelist_price if dealer else map_price
         return selling, msrp, map_price, dealer
 
+    def _int_price_text(self, amount, currency):
+        """``$220.15`` with the symbol against the amount."""
+        rounded = currency.round(amount or 0.0)
+        number = "{:,.{digits}f}".format(rounded, digits=currency.decimal_places)
+        symbol = currency.symbol or ""
+        if currency.position == "after":
+            return f"{number}{symbol}"
+        return f"{symbol}{number}"
+
     def _int_taxed_website_price(self, amount, website, product_or_template=None):
         self.ensure_one()
         product = product_or_template or self
@@ -113,6 +122,8 @@ class ProductTemplate(models.Model):
             "int_msrp": taxed_msrp,
             "int_map_price": self._int_taxed_website_price(map_price, website, product_or_template),
             "int_dealer_price": taxed_selling,
+            "int_price_text": self._int_price_text(taxed_selling, currency),
+            "int_list_text": self._int_price_text(taxed_msrp, currency),
         })
         return info
 
