@@ -47,7 +47,7 @@
                             t-out="combination_info['int_map_price']"
                             t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
                     </tr>
-                    <tr>
+                    <tr class="o_int_dealer_price">
                         <td class="fw-semibold">Dealer</td>
                         <td class="text-end fw-semibold"
                             t-out="combination_info['int_dealer_price']"
