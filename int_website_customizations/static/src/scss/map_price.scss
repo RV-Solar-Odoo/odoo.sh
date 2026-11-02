@@ -1,0 +1,16 @@
+.o_int_price_breakdown {
+  line-height: 1.45;
+
+  table {
+    margin-bottom: 0;
+  }
+
+  td {
+    padding: 0.05em 0;
+    font-size: inherit;
+  }
+
+  td:first-child {
+    padding-right: 0.75rem;
+  }
+}

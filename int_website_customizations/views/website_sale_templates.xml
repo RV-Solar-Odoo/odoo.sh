@@ -13,7 +13,35 @@
         </xpath>
     </template>
 
-    <record id="product_price_breakdown" model="ir.ui.view">
-        <field name="active" eval="False"/>
-    </record>
+    <template id="product_price_breakdown" inherit_id="website_sale.product_price"
+              name="Dealer MSRP, MAP, and dealer price">
+        <xpath expr="//div[@name='product_price_container']" position="attributes">
+            <attribute name="t-if">not combination_info.get('int_is_dealer')</attribute>
+        </xpath>
+        <xpath expr="//div[@name='product_price_container']" position="after">
+            <div t-if="combination_info.get('int_is_dealer')"
+                 class="o_int_price_breakdown h5 mb-0 text-end">
+                <table class="ms-auto">
+                    <tr>
+                        <td class="text-muted">MSRP</td>
+                        <td class="text-end"
+                            t-out="combination_info['int_msrp']"
+                            t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">MAP</td>
+                        <td class="text-end"
+                            t-out="combination_info['int_map_price']"
+                            t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                    </tr>
+                    <tr>
+                        <td class="fw-semibold">Dealer</td>
+                        <td class="text-end fw-semibold"
+                            t-out="combination_info['int_dealer_price']"
+                            t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                    </tr>
+                </table>
+            </div>
+        </xpath>
+    </template>
 </odoo>
