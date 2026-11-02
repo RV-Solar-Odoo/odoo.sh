@@ -1,27 +1,41 @@
-/* A sticky element stops at the end of its parent, so the shop header can't hold the
-   search bar past its own short height. Without a box of its own, the bar's parent is
-   the whole product column. The rules below stand in for what the box provided. */
+/* The whole area above the product cards stays on screen as one solid panel. */
 #o_wsale_products_header {
-  display: contents !important;
+  position: sticky;
+  top: var(--o-int-shop-bar-top, 0px);
+  z-index: 10;
+  margin-bottom: 1rem;
+  background: #fff;
+  border-bottom: 1px solid #e6e8ef;
+}
 
-  > * {
-    padding-left: var(--o-wsale-topbar-padding-left);
-    padding-right: var(--o-wsale-topbar-padding-right);
-  }
-  > * + * {
-    margin-top: 0.5rem;
-  }
-  > :first-child {
-    margin-top: 1.5rem;
-  }
+/* Title, category strip and toolbar together would fill a phone screen, so only the
+   toolbar stays there. A sticky element stops at the end of its parent: without a box
+   of its own, the header no longer limits the toolbar to its short height. The rules
+   below stand in for what the box provided. */
+@media (max-width: 991.98px) {
+  #o_wsale_products_header {
+    display: contents !important;
 
-  .products_header {
-    position: sticky;
-    top: var(--o-int-shop-bar-top, 0px);
-    z-index: 10;
-    margin-bottom: 0.5rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    background-color: var(--bs-body-bg);
+    > * {
+      padding-left: var(--o-wsale-topbar-padding-left);
+      padding-right: var(--o-wsale-topbar-padding-right);
+    }
+    > * + * {
+      margin-top: 0.5rem;
+    }
+    > :first-child {
+      margin-top: 1.5rem;
+    }
+
+    .products_header {
+      position: sticky;
+      top: var(--o-int-shop-bar-top, 0px);
+      z-index: 10;
+      margin-bottom: 0.5rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      background: #fff;
+      border-bottom: 1px solid #e6e8ef;
+    }
   }
 }

@@ -2,7 +2,7 @@ import { Interaction } from "@web/public/interaction";
 import { registry } from "@web/core/registry";
 
 export class ShopSearchBar extends Interaction {
-    static selector = "#o_wsale_products_header .products_header";
+    static selector = "#o_wsale_products_header";
 
     start() {
         this.headerEl = document.querySelector("header#top");

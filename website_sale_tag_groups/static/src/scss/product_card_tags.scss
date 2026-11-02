@@ -28,8 +28,11 @@
   padding-bottom: 12px;
   border-bottom: 1px solid #e6e8ef;
 }
-/* No tags on this card: one line is enough around the empty space. */
-#o_wsale_products_grid .o_wsale_product_information_text:not(:has(.o_tag_group_row)) .o_wsale_products_item_title {
+/* No card in this row has tags (card_tag_rows.js). In a row with any tags the line
+   stays on every card, so the lines sit level across the row. */
+#o_wsale_products_grid .rvsb-row-notags .o_wsale_products_item_title {
+  margin-bottom: 0;
+  padding-bottom: 0;
   border-bottom: 0;
 }
 
