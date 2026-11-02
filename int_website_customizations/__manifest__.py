@@ -1,6 +1,6 @@
 {
     "name": "Website Customizations",
-    "version": "19.0.1.10.1",
+    "version": "19.0.1.11.0",
     "category": "Website/Website",
     "summary": "Checkout delivery rules, and a Google check on public address forms",
     "author": "Internal",
@@ -12,11 +12,13 @@
         "data/delivery_carrier_publish.xml",
         "views/delivery_carrier_views.xml",
         "views/res_config_settings_views.xml",
+        "views/website_sale_templates.xml",
     ],
     "assets": {
         "web.assets_frontend": [
             "int_website_customizations/static/src/scss/address_places.scss",
             "int_website_customizations/static/src/interactions/address_places.js",
+            "int_website_customizations/static/src/interactions/shop_search.js",
         ],
     },
     "post_init_hook": "post_init_hook",

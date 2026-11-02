@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Every product search box renders through here: shop header, mobile modal,
+         filter panel and product page. The autocomplete reads its category from the
+         action too, so this makes it search all products as well. -->
+    <template id="product_search_always_global" inherit_id="website.website_search_box_input"
+              name="Product search covers the whole shop">
+        <xpath expr="//form" position="before">
+            <t t-if="search_type == 'products'">
+                <t t-set="action" t-valuef="/shop"/>
+                <t t-set="placeholder">Search products</t>
+            </t>
+        </xpath>
+    </template>
+</odoo>
