@@ -1104,6 +1104,161 @@
   }
 }
 
+/* ── ABOUT US (/about-us) ───────────────────────────────────── */
+.o_rvs_about {
+  --about-head: 'Archivo', sans-serif;
+
+  h1, h2, h3 {
+    font-family: var(--about-head);
+    font-stretch: 112%;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--ink);
+  }
+  h2 { font-size: clamp(1.4rem, calc(.9rem + 1.2vw), 1.85rem); line-height: 1.15; margin-bottom: 1.5rem; }
+
+  .o_rvs_about_eyebrow,
+  .o_rvs_about_facts_label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  /* hero */
+  .o_rvs_about_hero {
+    background: var(--panel-dark);
+    color: #fff;
+    padding: 72px 0 64px;
+
+    .o_rvs_about_hero_grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 48px;
+      align-items: center;
+    }
+    .o_rvs_about_eyebrow { color: var(--brand-blue-on-dark); margin-bottom: 18px; }
+    h1 {
+      max-width: 22ch;
+      margin: 0 0 20px;
+      font-size: clamp(1.9rem, calc(.9rem + 2.6vw), 3rem);
+      line-height: 1.08;
+      color: #fff;
+    }
+    .o_rvs_about_lead { margin: 0; max-width: 60ch; font-size: 1.1rem; color: rgba(255, 255, 255, .8); }
+  }
+
+  .o_rvs_about_badge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 300px;
+    padding: 20px 24px;
+    background: #fff;
+    color: var(--ink);
+    strong { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; }
+    span:not(.fa) { display: block; margin-top: 2px; font-size: 13.5px; color: var(--ink-muted); }
+  }
+  .o_rvs_about_badge_icon {
+    flex: 0 0 40px;
+    height: 40px;
+    display: inline-grid;
+    place-items: center;
+    background: var(--brand-blue);
+    color: #fff;
+    font-size: 18px;
+  }
+
+  /* who we are */
+  .o_rvs_about_story {
+    padding: 72px 0 24px;
+    p { font-size: 1.05rem; line-height: 1.75; color: #333; max-width: 72ch; }
+    p:last-child { margin-bottom: 0; }
+  }
+
+  /* reasons */
+  .o_rvs_about_reasons { padding: 48px 0; }
+  .o_rvs_about_reason_grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 40px;
+  }
+  .o_rvs_about_reason {
+    padding-left: 16px;
+    border-left: 3px solid var(--brand-blue);
+    h3 { font-size: 1.1rem; margin: 0 0 6px; }
+    p { margin: 0; font-size: .95rem; line-height: 1.55; color: var(--ink-muted); }
+  }
+
+  /* dealer band */
+  .o_rvs_about_dealer { padding: 8px 0 72px; }
+  .o_rvs_about_dealer_box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px;
+    background: #f4f5f8;
+    border: 1px solid var(--border-light);
+    p { margin: 0; font-size: 1.05rem; color: var(--ink-muted); }
+    strong { font-family: var(--about-head); font-stretch: 112%; font-weight: 700; color: var(--ink); }
+    .btn {
+      flex: 0 0 auto;
+      background: var(--brand-blue);
+      border: 1px solid var(--brand-blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border-radius: 0;
+      transition: background-color .15s, border-color .15s;
+      &:hover { background: #2d3ec9; border-color: #2d3ec9; }
+    }
+  }
+
+  /* facts strip */
+  .o_rvs_about_facts {
+    background: var(--panel-dark);
+    color: rgba(255, 255, 255, .8);
+    padding: 32px 0;
+    font-size: 14px;
+    p { margin: 0 0 6px; }
+    p:last-child { margin-bottom: 0; }
+    a { color: #fff; text-decoration: none; &:hover { color: var(--brand-blue-on-dark); } }
+  }
+  .o_rvs_about_facts_grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px 48px;
+  }
+  .o_rvs_about_facts_label { color: var(--brand-blue-on-dark); margin-right: 8px; }
+  .o_rvs_about_contact { text-align: right; white-space: nowrap; }
+
+  @media (max-width: 991.98px) {
+    .o_rvs_about_hero .o_rvs_about_hero_grid { grid-template-columns: 1fr; gap: 32px; }
+    .o_rvs_about_story h2 { margin-bottom: 1rem; }
+    .o_rvs_about_reason_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .o_rvs_about_facts_grid { flex-direction: column; align-items: flex-start; }
+    .o_rvs_about_contact { text-align: left; }
+  }
+
+  @media (max-width: 575.98px) {
+    .o_rvs_about_hero { padding: 48px 0 44px; }
+    .o_rvs_about_story { padding-top: 48px; }
+    .o_rvs_about_reason_grid { grid-template-columns: 1fr; }
+    .o_rvs_about_dealer_box {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 24px;
+      .btn { width: 100%; }
+    }
+    .o_rvs_about_contact { white-space: normal; }
+  }
+}
+
 /* ── FOOTER ──────────────────────────────────────────────────
    [NOTE] .o_brand_promotion is already force-hidden everywhere
    by the global rule above. This footer-scoped hide is redundant

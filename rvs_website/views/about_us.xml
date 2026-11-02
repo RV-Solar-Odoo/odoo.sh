@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="about_us" name="About Us">
+        <t t-call="website.layout">
+            <t t-set="pageName" t-value="'about-us'"/>
+            <div id="wrap" class="oe_structure o_rvs_about">
+                <section class="o_rvs_about_hero">
+                    <div class="container">
+                        <div class="o_rvs_about_hero_grid">
+                            <div>
+                                <p class="o_rvs_about_eyebrow">About RV Solar · Est. 2021</p>
+                                <h1>Genuine Victron. Shipped today. Supported by installers.</h1>
+                                <p class="o_rvs_about_lead">10+ years designing, installing and troubleshooting Victron systems for RV, marine and off-grid.</p>
+                            </div>
+                            <div class="o_rvs_about_badge">
+                                <span class="o_rvs_about_badge_icon fa fa-check"/>
+                                <div>
+                                    <strong>Authorized Victron Energy partner</strong>
+                                    <span>Genuine product, full factory warranty</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_rvs_about_story">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-3">
+                                <h2>Who we are</h2>
+                            </div>
+                            <div class="col-lg-9">
+                                <p>RV Solar started in 2021, but our work with Victron goes back more than a decade. Before we ever shipped an order, we were designing systems, wiring them into trailers, motorhomes, vans and boats, and tracking down the problem when something didn’t behave. That hands-on background shapes everything we do today, from the parts we recommend to the way we answer the phone.</p>
+                                <p>We built RV Solar around a simple idea: getting your power system right shouldn’t be hard. Whether you’re adding solar for weekend trips or planning a full off-grid setup for life on the road, you deserve genuine equipment, fast shipping and straight answers from people who’ve done the work. When you call us, you’ll talk to someone who knows Victron inside and out, and who will still be here after your order arrives.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_rvs_about_reasons">
+                    <div class="container">
+                        <h2>Why customers choose RV Solar</h2>
+                        <div class="o_rvs_about_reason_grid">
+                            <div class="o_rvs_about_reason">
+                                <h3>Same-day shipping</h3>
+                                <p>In-stock orders received by 12:00 p.m. MT ship the same business day.</p>
+                            </div>
+                            <div class="o_rvs_about_reason">
+                                <h3>Genuine Victron only</h3>
+                                <p>Authorized partner. No gray-market product, ever.</p>
+                            </div>
+                            <div class="o_rvs_about_reason">
+                                <h3>Warranty claims handled</h3>
+                                <p>We work directly with Victron so you don’t have to.</p>
+                            </div>
+                            <div class="o_rvs_about_reason">
+                                <h3>System design help</h3>
+                                <p>Sized and matched by people who install these systems.</p>
+                            </div>
+                            <div class="o_rvs_about_reason">
+                                <h3>Real troubleshooting</h3>
+                                <p>Configuration and diagnostic help, before and after the sale.</p>
+                            </div>
+                            <div class="o_rvs_about_reason">
+                                <h3>Real people</h3>
+                                <p>Call and talk to someone who knows Victron. No phone trees.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_rvs_about_dealer">
+                    <div class="container">
+                        <div class="o_rvs_about_dealer_box">
+                            <p><strong>Dealers &amp; installers:</strong> wholesale accounts are available for qualified businesses.</p>
+                            <a href="/dealer-application" class="btn btn-primary">Apply for a dealer account</a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_rvs_about_facts">
+                    <div class="container">
+                        <div class="o_rvs_about_facts_grid">
+                            <div>
+                                <p><span class="o_rvs_about_facts_label">Expertise</span> System design · Installation · GX, VE.Bus, VE.Can &amp; VRM configuration · Troubleshooting</p>
+                                <p><span class="o_rvs_about_facts_label">Markets</span> RV &amp; trailers · Marine · Vans &amp; overland · Off-grid homes &amp; cabins</p>
+                            </div>
+                            <div class="o_rvs_about_contact">
+                                <p><span class="o_rvs_about_facts_label">Phone</span> <a href="tel:+14352752029">435-275-2029</a></p>
+                                <p><span class="o_rvs_about_facts_label">Email</span> <a href="mailto:info@rvsolarandbattery.com">info@rvsolarandbattery.com</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <data noupdate="1">
+        <record id="about_us_page" model="website.page">
+            <field name="url">/about-us</field>
+            <field name="view_id" ref="about_us"/>
+            <field name="website_id" ref="website.default_website"/>
+            <field name="is_published" eval="True"/>
+            <field name="website_indexed" eval="True"/>
+            <field name="track" eval="True"/>
+        </record>
+
+        <record id="menu_about_us" model="website.menu">
+            <field name="name">About Us</field>
+            <field name="url">/about-us</field>
+            <field name="page_id" ref="about_us_page"/>
+            <field name="website_id" ref="website.default_website"/>
+            <field name="parent_id" search="[('website_id', '=', ref('website.default_website')), ('parent_id', '=', False)]"/>
+            <field name="sequence">3</field>
+        </record>
+    </data>
+</odoo>
