@@ -25,33 +25,44 @@
   order: 10;
 }
 
-#o_wsale_product_details_content .o_wsale_product_details_content_section_cta {
+#o_wsale_product_details_content.js_main_product .o_wsale_product_details_content_section_cta {
   display: contents;
 }
 
-#o_wsale_product_details_content .o_wsale_product_details_content_section_title {
-  order: 1;
+#o_wsale_product_details_content.js_main_product .o_wsale_product_details_content_section_title {
+  order: 1 !important;
 }
 
-#o_wsale_product_details_content .o_wsale_product_details_content_section_attributes {
-  order: 2;
+#o_wsale_product_details_content.js_main_product .o_wsale_product_details_content_section_attributes {
+  order: 2 !important;
 }
 
-#o_wsale_product_details_content .availability_messages,
-#o_wsale_product_details_content owl-component[name="website_sale_collect.ClickAndCollectAvailability"] {
-  order: 3;
+#o_wsale_product_details_content.js_main_product .availability_messages,
+#o_wsale_product_details_content.js_main_product owl-component[name="website_sale_collect.ClickAndCollectAvailability"] {
+  order: 3 !important;
 }
 
-#o_wsale_product_details_content .o_wsale_product_details_content_section_price {
-  order: 4;
+#o_wsale_product_details_content.js_main_product .o_wsale_product_details_content_section_price {
+  order: 4 !important;
   width: 100%;
   text-align: end;
 }
 
-#o_wsale_product_details_content #o_wsale_cta_wrapper {
-  order: 5;
+#o_wsale_product_details_content.js_main_product #o_wsale_cta_wrapper {
+  order: 5 !important;
 }
 
-#o_wsale_product_details_content .o_wsale_product_details_content_section_cta > small {
-  order: 6;
+#o_wsale_product_details_content.js_main_product .o_wsale_product_details_content_section_cta > small {
+  order: 6 !important;
+}
+
+/* Retail: struck MSRP first, then MAP, both at the main price size. */
+#o_wsale_product_details_content [name="product_price_container"] {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+#o_wsale_product_details_content [name="product_price_container"] .oe_price,
+#o_wsale_product_details_content [name="product_price_container"] .oe_default_price {
+  font-size: 1em !important;
 }
