@@ -13,17 +13,6 @@
         </xpath>
     </template>
 
-    <!-- Homepage featured-product tiles open the shop search for that name. -->
-    <template id="featured_product_opens_shop_search"
-              inherit_id="website_sale.dynamic_filter_template_product_product_products_item">
-        <xpath expr="//a[hasclass('oe_product_image_link')]" position="attributes">
-            <attribute name="t-att-href">'/shop?search=%s' % quote_plus(product.display_name or '')</attribute>
-        </xpath>
-        <xpath expr="//h6[hasclass('o_wsale_products_item_title')]/a" position="attributes">
-            <attribute name="t-att-href">'/shop?search=%s' % quote_plus(product.display_name or '')</attribute>
-        </xpath>
-    </template>
-
     <template id="product_price_breakdown" inherit_id="website_sale.product_price"
               name="MSRP, MAP, and dealer price">
         <xpath expr="//div[@name='product_price_container']" position="after">
