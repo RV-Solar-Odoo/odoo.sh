@@ -1,0 +1,27 @@
+/* A sticky element stops at the end of its parent, so the shop header can't hold the
+   search bar past its own short height. Without a box of its own, the bar's parent is
+   the whole product column. The rules below stand in for what the box provided. */
+#o_wsale_products_header {
+  display: contents !important;
+
+  > * {
+    padding-left: var(--o-wsale-topbar-padding-left);
+    padding-right: var(--o-wsale-topbar-padding-right);
+  }
+  > * + * {
+    margin-top: 0.5rem;
+  }
+  > :first-child {
+    margin-top: 1.5rem;
+  }
+
+  .products_header {
+    position: sticky;
+    top: var(--o-int-shop-bar-top, 0px);
+    z-index: 10;
+    margin-bottom: 0.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    background-color: var(--bs-body-bg);
+  }
+}
