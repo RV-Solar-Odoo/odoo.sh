@@ -1,6 +1,6 @@
 {
     "name": "Hide Odoo Branding",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "category": "Website/Website",
     "summary": "Remove Powered by Odoo from pages and emails, and add the company signature to wrapped emails",
     "author": "Internal",

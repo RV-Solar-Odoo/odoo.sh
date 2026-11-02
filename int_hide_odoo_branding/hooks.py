@@ -16,6 +16,7 @@ _ROW = re.compile(
 )
 # Otherwise only the credit, so anything beside it (like Unfollow) stays.
 _CREDIT = re.compile(r"(?:<!--\s*POWERED BY\s*-->\s*)?" + _LINK, re.IGNORECASE | re.DOTALL)
+SIGNATURE_LAYOUT = "int_hide_odoo_branding.mail_notification_signature_only"
 
 
 def strip_powered_by(html):
@@ -24,6 +25,12 @@ def strip_powered_by(html):
 
 def post_init_hook(env):
     """Saved email templates are noupdate records, so views can't reach them."""
+    env["mail.template"].with_context(active_test=False).search([
+        ("email_layout_xmlid", "=", False),
+    ]).write({
+        "email_layout_xmlid": SIGNATURE_LAYOUT,
+    })
+
     templates = env["mail.template"].with_context(active_test=False).search([("body_html", "ilike", "powered by")])
     for lang, _name in env["res.lang"].get_installed():
         for template in templates.with_context(lang=lang):
