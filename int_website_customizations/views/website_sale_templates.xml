@@ -15,8 +15,21 @@
 
     <template id="product_price_breakdown" inherit_id="website_sale.product_price"
               name="Dealer MSRP, MAP, and dealer price">
-        <xpath expr="//div[@name='product_price_container']" position="attributes">
-            <attribute name="t-if">not combination_info.get('int_is_dealer')</attribute>
+        <xpath expr="//div[@name='product_price_container']" position="replace">
+            <div name="product_price_container"
+                 t-if="not combination_info.get('int_is_dealer')"
+                 class="css_editable_mode_hidden d-flex align-items-baseline justify-content-end gap-2 flex-wrap h5 mb-0 text-wrap">
+                <span t-if="combination_info.get('has_discounted_price')"
+                      style="text-decoration: line-through; white-space: nowrap;"
+                      name="product_list_price"
+                      class="text-muted oe_default_price mb-0 h5"
+                      t-out="combination_info['list_price']"
+                      t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                <span class="oe_price"
+                      style="white-space: nowrap;"
+                      t-out="combination_info['price']"
+                      t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+            </div>
         </xpath>
         <xpath expr="//div[@name='product_price_container']" position="after">
             <div t-if="combination_info.get('int_is_dealer')"

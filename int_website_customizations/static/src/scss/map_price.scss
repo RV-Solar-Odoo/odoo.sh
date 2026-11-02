@@ -14,3 +14,44 @@
     padding-right: 0.75rem;
   }
 }
+
+/* Price sits under the stock box and just above Add to cart. */
+#o_wsale_product_details_content.js_main_product form {
+  display: flex;
+  flex-direction: column;
+}
+
+#o_wsale_product_details_content.js_main_product form > * {
+  order: 10;
+}
+
+#o_wsale_product_details_content .o_wsale_product_details_content_section_cta {
+  display: contents;
+}
+
+#o_wsale_product_details_content .o_wsale_product_details_content_section_title {
+  order: 1;
+}
+
+#o_wsale_product_details_content .o_wsale_product_details_content_section_attributes {
+  order: 2;
+}
+
+#o_wsale_product_details_content .availability_messages,
+#o_wsale_product_details_content owl-component[name="website_sale_collect.ClickAndCollectAvailability"] {
+  order: 3;
+}
+
+#o_wsale_product_details_content .o_wsale_product_details_content_section_price {
+  order: 4;
+  width: 100%;
+  text-align: end;
+}
+
+#o_wsale_product_details_content #o_wsale_cta_wrapper {
+  order: 5;
+}
+
+#o_wsale_product_details_content .o_wsale_product_details_content_section_cta > small {
+  order: 6;
+}
