@@ -1104,38 +1104,54 @@
   }
 }
 
-/* ── ABOUT US (/about-us) ───────────────────────────────────── */
+/* ── ABOUT US (/about-us) ─────────────────────────────────────
+   Same type as the rest of the site: Roboto throughout, light
+   headlines, blue uppercase eyebrows, #0d0d0d dark panels. */
 .o_rvs_about {
-  --about-head: 'Archivo', sans-serif;
-
-  h1, h2, h3 {
-    font-family: var(--about-head);
-    font-stretch: 112%;
-    font-weight: 700;
-    letter-spacing: -.01em;
-    color: var(--ink);
+  h1, h2 {
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #111111;
   }
-  h2 { font-size: clamp(1.4rem, calc(.9rem + 1.2vw), 1.85rem); line-height: 1.15; margin-bottom: 1.5rem; }
+  h2 { font-size: clamp(28px, 3.5vw, 38px); }
 
   .o_rvs_about_eyebrow {
-    margin-bottom: 14px;
+    margin-bottom: 6px;
+    color: var(--brand-blue);
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: .14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  /* section header: eyebrow + light headline over a hairline */
+  .o_rvs_about_reasons h2,
+  .o_rvs_about_facts h2 {
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border-light);
   }
 
   /* who we are */
   .o_rvs_about_hero {
-    background: var(--panel-dark);
+    background: #0d0d0d;
     color: #fff;
     padding: 72px 0;
 
-    .o_rvs_about_eyebrow { color: var(--brand-blue-on-dark); }
+    /* outlined label, same as the homepage hero */
+    .o_rvs_about_eyebrow {
+      display: inline-block;
+      margin-bottom: 24px;
+      padding: 10px 18px;
+      border: 1px solid rgba(255, 255, 255, .45);
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: .14em;
+    }
     h1 {
-      margin: 0 0 32px;
-      font-size: clamp(2rem, calc(1rem + 2.6vw), 3.1rem);
-      line-height: 1.05;
+      margin: 0 0 28px;
+      font-size: clamp(34px, 5vw, 52px);
       color: #fff;
     }
     .o_rvs_about_hero_grid {
@@ -1146,7 +1162,7 @@
     }
   }
   .o_rvs_about_story {
-    p { max-width: 70ch; font-size: 1.1rem; line-height: 1.75; color: rgba(255, 255, 255, .85); }
+    p { max-width: 70ch; font-size: 1.05rem; line-height: 1.75; color: rgba(255, 255, 255, .7); }
     p:last-child { margin-bottom: 0; }
   }
 
@@ -1156,10 +1172,10 @@
     gap: 16px;
     max-width: 300px;
     padding: 20px 24px;
-    background: #fff;
-    color: var(--ink);
-    strong { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; }
-    span:not(.fa) { display: block; margin-top: 2px; font-size: 13.5px; color: var(--ink-muted); }
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #fff;
+    strong { display: block; font-size: 13px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; line-height: 1.4; }
+    span:not(.fa) { display: block; margin-top: 4px; font-size: 14px; color: rgba(255, 255, 255, .7); }
   }
   .o_rvs_about_badge_icon {
     flex: 0 0 40px;
@@ -1180,19 +1196,15 @@
   }
   .o_rvs_about_reason {
     padding-left: 16px;
-    border-left: 3px solid var(--brand-blue);
-    h3 { font-size: 1.1rem; margin: 0 0 6px; }
-    p { margin: 0; font-size: .95rem; line-height: 1.55; color: var(--ink-muted); }
+    border-left: 2px solid var(--brand-blue);
+    h3 { margin: 0 0 6px; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-muted); }
   }
 
-  /* about us: expertise, markets, address, contact */
+  /* about us: expertise, markets, visit & contact */
   .o_rvs_about_facts {
-    background: #f4f5f8;
     border-top: 1px solid var(--border-light);
     padding: 72px 0;
-
-    .o_rvs_about_eyebrow { color: var(--brand-blue); }
-    h2 { max-width: 24ch; margin-bottom: 40px; }
   }
   .o_rvs_about_facts_grid {
     display: grid;
@@ -1203,18 +1215,18 @@
     padding: 28px;
     background: #fff;
     border: 1px solid var(--border-light);
-    border-top: 3px solid var(--brand-blue);
-    font-size: 1.05rem;
+    border-top: 2px solid var(--brand-blue);
+    font-size: 16px;
     line-height: 1.6;
-    color: #333;
+    color: var(--ink-muted);
 
-    h3 { margin: 0 0 14px; font-size: 1.15rem; }
+    h3 { margin: 0 0 14px; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
     ul { margin: 0; padding: 0; list-style: none; }
     li + li { margin-top: 6px; }
     p, address { margin: 0 0 6px; }
     address { margin-bottom: 14px; }
     p:last-child, address:last-child { margin-bottom: 0; }
-    a { color: var(--ink); font-weight: 600; text-decoration: none; &:hover { color: var(--brand-blue); } }
+    a { color: var(--ink); font-weight: 500; text-decoration: none; transition: color .15s ease; &:hover { color: var(--brand-blue); } }
   }
 
   @media (max-width: 991.98px) {
@@ -1228,6 +1240,7 @@
     .o_rvs_about_hero,
     .o_rvs_about_reasons,
     .o_rvs_about_facts { padding: 48px 0; }
+    .o_rvs_about_hero .o_rvs_about_eyebrow { font-size: 11px; letter-spacing: .12em; }
     .o_rvs_about_reason_grid,
     .o_rvs_about_facts_grid { grid-template-columns: 1fr; }
     .o_rvs_about_fact { padding: 22px; }
