@@ -569,6 +569,26 @@
   border-top: 0 !important;
 }
 
+/* Homepage featured products: no add-to-cart; the whole card opens the product,
+   including empty space under the price. */
+.s_dynamic_snippet_products .oe_product_cart {
+  position: relative !important;
+  cursor: pointer;
+
+  .o_wsale_product_action_row,
+  .o_wsale_product_btn_primary,
+  .o_wsale_product_btn {
+    display: none !important;
+  }
+
+  .o_wsale_products_item_title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+}
+
 /* ============ Shop sidebar categories: even spacing, chevrons, boxed subcategories ============ */
 #wrapwrap #o_wsale_categories {
   /* parent categories: same row height as the others */
@@ -1295,7 +1315,9 @@
 
   /* who we are */
   .o_rvs_about_hero {
-    background: #0d0d0d;
+    background-color: #0d0d0d;
+    background-size: cover;
+    background-repeat: no-repeat;
     color: #fff;
     padding: 72px 0;
 
@@ -1328,23 +1350,18 @@
 
   .o_rvs_about_badge {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 16px;
     max-width: 300px;
-    padding: 20px 24px;
+    padding: 20px 24px 24px;
     border: 1px solid rgba(255, 255, 255, .12);
     color: #fff;
     strong { display: block; font-size: 13px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; line-height: 1.4; }
-    span:not(.fa) { display: block; margin-top: 4px; font-size: 14px; color: rgba(255, 255, 255, .7); }
+    div > span { display: block; margin-top: 4px; font-size: 14px; color: rgba(255, 255, 255, .7); }
   }
-  .o_rvs_about_badge_icon {
-    flex: 0 0 40px;
-    height: 40px;
-    display: inline-grid;
-    place-items: center;
-    background: var(--brand-blue);
-    color: #fff;
-    font-size: 18px;
+  .o_rvs_about_badge_logo {
+    display: block;
+    img { display: block; width: 100%; height: auto; }
   }
 
   /* reasons */

@@ -6,7 +6,7 @@
             <div id="wrap" class="oe_structure o_rvs_about">
                 <section class="o_rvs_about_hero">
                     <div class="container">
-                        <p class="o_rvs_about_eyebrow">About RV Solar · Est. 2021</p>
+                        <p class="o_rvs_about_eyebrow">RV Solar · Est. 2021</p>
                         <h1>Who we are</h1>
                         <div class="o_rvs_about_hero_grid">
                             <div class="o_rvs_about_story">
@@ -14,9 +14,11 @@
                                 <p>We built RV Solar around a simple idea: getting your power system right shouldn’t be hard. Whether you’re adding solar for weekend trips or planning a full off-grid setup for life on the road, you deserve genuine equipment, fast shipping and straight answers from people who’ve done the work. When you call us, you’ll talk to someone who knows Victron inside and out, and who will still be here after your order arrives.</p>
                             </div>
                             <div class="o_rvs_about_badge">
-                                <span class="o_rvs_about_badge_icon fa fa-check"/>
+                                <span class="o_rvs_about_badge_logo">
+                                    <img src="/rvs_website/static/src/img/victron-energy-logo.png" alt="Victron Energy" width="262" height="51"/>
+                                </span>
                                 <div>
-                                    <strong>Authorized Victron Energy distributor</strong>
+                                    <strong>Authorized Victron Distributor</strong>
                                     <span>Genuine product, full factory warranty</span>
                                 </div>
                             </div>
