@@ -28,13 +28,6 @@
   padding-bottom: 12px;
   border-bottom: 1px solid #e6e8ef;
 }
-/* No card in this row has tags (card_tag_rows.js). In a row with any tags the line
-   stays on every card, so the lines sit level across the row. */
-#o_wsale_products_grid .rvsb-row-notags .o_wsale_products_item_title {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: 0;
-}
 
 /* Shop grid card only: compact outlined tags, with a line between groups. The
    !important rules beat stock utility classes and the badge style in rvs_website. */

@@ -3,7 +3,8 @@ import { registry } from "@web/core/registry";
 
 /**
  * CSS can't tell which cards share a row, because the column count changes with the
- * screen width. Mark the cards of each row where no card has tags.
+ * screen width. Mark the cards of each row where no card has tags. The rule using this
+ * class is in rvs_website's website.scss.
  */
 export class CardTagRows extends Interaction {
     static selector = ".o_wsale_products_grid_table";
