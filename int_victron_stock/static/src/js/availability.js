@@ -28,10 +28,6 @@ patch(ClickAndCollectAvailability.prototype, {
     get supplierLine() {
         return (this.state.availabilityLines || []).find((line) => line.status === "backup");
     },
-
-    get unavailableLine() {
-        return (this.state.availabilityLines || []).find((line) => line.status === "unavailable");
-    },
 });
 
 function renderAvailability(parent, combination) {
@@ -46,28 +42,21 @@ function renderAvailability(parent, combination) {
         const icon = document.createElement("i");
         icon.className = `fa fa-fw ${line.icon}`;
         icon.setAttribute("role", "presentation");
-        badge.append(icon);
-        if (line.qty) {
-            badge.className = `badge o_int_avail_line ${line.css}`;
-            const qty = document.createElement("span");
-            qty.className = "o_int_avail_qty";
-            const sizer = document.createElement("span");
-            sizer.className = "o_int_avail_qty_sizer";
-            sizer.setAttribute("aria-hidden", "true");
-            sizer.textContent = "20+";
-            const value = document.createElement("span");
-            value.className = "o_int_avail_qty_value";
-            value.textContent = line.qty;
-            qty.append(sizer, value);
-            const text = document.createElement("span");
-            text.className = "o_int_avail_text";
-            text.textContent = line.text;
-            badge.append(qty, text);
-        } else {
-            badge.className = `badge o_int_avail_plain ${line.css}`;
-            icon.className = `fa fa-fw ${line.icon} me-1`;
-            badge.append(document.createTextNode(line.label));
-        }
+        badge.className = `badge o_int_avail_line ${line.css}`;
+        const qty = document.createElement("span");
+        qty.className = "o_int_avail_qty";
+        const sizer = document.createElement("span");
+        sizer.className = "o_int_avail_qty_sizer";
+        sizer.setAttribute("aria-hidden", "true");
+        sizer.textContent = "20+";
+        const value = document.createElement("span");
+        value.className = "o_int_avail_qty_value";
+        value.textContent = line.qty;
+        qty.append(sizer, value);
+        const text = document.createElement("span");
+        text.className = "o_int_avail_text";
+        text.textContent = line.text;
+        badge.append(icon, qty, text);
         box.append(badge);
     }
 }

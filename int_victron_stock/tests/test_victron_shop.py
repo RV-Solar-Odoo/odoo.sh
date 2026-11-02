@@ -191,6 +191,31 @@ class TestVictronShop(TransactionCase):
         terms = self.env.ref("website_sale.product_terms_and_conditions").get_combined_arch()
         self.assertNotIn("2-3 Business Days", terms)
 
+    def test_both_lines_always_show_and_only_stock_turns_them_green(self):
+        def summary(on_hand, victron):
+            product = self._product("Stock Mix", on_hand=on_hand, victron=victron)
+            return [
+                (line["status"], line["qty"], line["in_stock"], line["css"])
+                for line in product.product_tmpl_id._int_availability_lines(product)
+            ]
+
+        green, grey = "text-bg-success", "text-bg-secondary"
+        self.assertEqual(summary(3, 0), [
+            ("immediate", "3", True, green),
+            ("backup", "0", False, grey),
+        ])
+        self.assertEqual(summary(0, 45), [
+            ("immediate", "0", False, grey),
+            ("backup", "20+", True, green),
+        ])
+        self.assertEqual(summary(0, 0), [
+            ("immediate", "0", False, grey),
+            ("backup", "0", False, grey),
+        ])
+
+        service = self.env["product.template"].create({"name": "Install", "type": "service"})
+        self.assertEqual(service._int_availability_lines(), [])
+
     def test_shop_payload_hides_victron_quantity(self):
         product = self._product("Blue Solar", on_hand=17, victron=45)
         template = product.product_tmpl_id

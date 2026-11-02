@@ -499,9 +499,6 @@
     row-gap: 4px !important;
     align-items: center !important;
     width: auto !important;
-
-    /* plain one-line fallback (no qty) spans the full width */
-    > :not(.o_int_avail_row) { grid-column: 1 / -1; }
   }
 
   .o_int_avail_row {
@@ -519,8 +516,8 @@
       border-radius: 50%;
       background: currentColor;
     }
-    &.text-success { color: #16a34a !important; }   /* ships immediately */
-    &.text-muted   { color: #9aa0b4 !important; }   /* ships later */
+    &.text-success { color: #16a34a !important; }   /* has stock */
+    &.text-muted   { color: #9aa0b4 !important; }   /* no stock */
   }
 
   .o_int_avail_qty  { font-weight: 700; color: #161b2e; }

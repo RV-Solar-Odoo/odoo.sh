@@ -219,52 +219,38 @@ class ProductTemplate(models.Model):
             detail["base_domain"].append(self._int_ships_domain(options["int_ships"]))
         return detail
 
+    def _int_availability_line(self, status, icon, in_stock, qty, text):
+        label = self.env._("%(qty)s %(text)s", qty=qty, text=text)
+        return {
+            "status": status,
+            "in_stock": in_stock,
+            "css": "text-bg-success" if in_stock else "text-bg-secondary",
+            "icon": icon,
+            "qty": qty,
+            "text": text,
+            "detail": label,
+            "label": label,
+        }
+
     def _int_availability_lines(self, variant=None):
-        """Shop labels. Own stock is exact. Victron stock is capped at 20+."""
+        """Shop labels, both always shown. Own stock is exact. Victron stock is capped at 20+."""
         self.ensure_one()
         if not self.is_storable:
             return []
         if variant and (not variant.exists() or variant.product_tmpl_id != self):
             variant = None
-        lines = []
-        own = self._int_own_available_qty(variant)
-        if own > 0:
-            qty = self._int_format_qty(own)
-            text = self.env._("ships immediately")
-            lines.append({
-                "status": "immediate",
-                "css": "text-bg-success",
-                "icon": "fa-check",
-                "qty": qty,
-                "text": text,
-                "detail": self.env._("%(qty)s %(text)s", qty=qty, text=text),
-                "label": self.env._("%(qty)s %(text)s", qty=qty, text=text),
-            })
+        own = max(self._int_own_available_qty(variant), 0.0)
         victron = self._int_victron_available_qty()
-        if victron > 0:
-            qty = self._int_public_victron_qty(victron)
-            text = self.env._("ships in 7 days")
-            lines.append({
-                "status": "backup",
-                "css": "text-bg-info",
-                "icon": "fa-truck",
-                "qty": qty,
-                "text": text,
-                "detail": self.env._("%(qty)s %(text)s", qty=qty, text=text),
-                "label": self.env._("%(qty)s %(text)s", qty=qty, text=text),
-            })
-        if not lines:
-            unavailable = self.env._("Currently unavailable — contact us for lead time")
-            lines.append({
-                "status": "unavailable",
-                "css": "text-bg-secondary",
-                "icon": "fa-clock-o",
-                "qty": False,
-                "text": unavailable,
-                "detail": unavailable,
-                "label": unavailable,
-            })
-        return lines
+        return [
+            self._int_availability_line(
+                "immediate", "fa-check", own > 0, self._int_format_qty(own),
+                self.env._("ships immediately"),
+            ),
+            self._int_availability_line(
+                "backup", "fa-truck", victron > 0, self._int_public_victron_qty(victron),
+                self.env._("ships in 7 days"),
+            ),
+        ]
 
     def _get_additionnal_combination_info(self, product_or_template, quantity, uom, date, website):
         """Publish our own free quantity only, and let the server enforce Victron's real limit."""

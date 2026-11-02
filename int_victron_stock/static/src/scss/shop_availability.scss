@@ -44,10 +44,6 @@
   grid-template-columns: subgrid;
   align-items: baseline;
 }
-.o_int_shipping_badge .o_int_avail_plain {
-  grid-column: 1 / -1;
-  width: max-content;
-}
 div.o_int_avail_item {
   display: flex;
   align-items: baseline;
