@@ -4,8 +4,8 @@
    it lands in a .scss asset or the plain-CSS custom code field.
    -------------------------------------------------------- */
 :root {
-    --brand-blue: #3a4efd;
-    --brand-blue-on-dark: #7b8aff; /* [CHANGED] contrast-safe on --panel-dark */
+    --brand-blue: #0054a8;
+    --brand-blue-on-dark: #6ea8e8; /* [CHANGED] contrast-safe on --panel-dark */
     --panel-dark: #1e1d1d;
     --border-light: #e8e8e8;
     --ink: #111111;
@@ -54,8 +54,8 @@
 
 .s_cover:not(.o_hero_light) .btn-custom:hover,
 .s_cover:not(.o_hero_light) .btn-secondary:hover {
-    background: #2d3ec9 !important;
-    border-color: #2d3ec9 !important;
+    background: #004386 !important;
+    border-color: #004386 !important;
     color: #ffffff !important;
     transform: translateY(-2px) !important;
 }
@@ -251,7 +251,7 @@
 
 /* Eyebrow */
 .s_dynamic_snippet_title p.small {
-    color: #3a4efd !important;
+    color: #0054a8 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     letter-spacing: 0.08em !important;
@@ -274,7 +274,7 @@
 /* See all */
 .s_dynamic_snippet_title a,
 .s_dynamic_snippet_title a font {
-    color: #3a4efd !important;
+    color: #0054a8 !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     letter-spacing: 0.08em !important;
@@ -391,7 +391,7 @@
     gap: 8px !important;
   }
   .product_price { flex: 1 1 auto !important; width: auto !important; min-width: 0; text-align: left !important; }
-  .product_price .fw-bold { color: #3a4efd !important; font-size: clamp(16px, calc(.55rem + .65vw), 19px) !important; font-weight: 700 !important; }
+  .product_price .fw-bold { color: #0054a8 !important; font-size: clamp(16px, calc(.55rem + .65vw), 19px) !important; font-weight: 700 !important; }
   .product_price del { color: #9aa0b4 !important; }
   .o_wsale_product_btn,
   .o_wsale_product_action_row { width: auto !important; flex: 0 0 auto !important; margin: 0 !important; }
@@ -404,7 +404,7 @@
     padding: 0 !important;
     margin: 0 !important;
     border-radius: 50% !important;
-    background: #3a4efd !important;
+    background: #0054a8 !important;
     color: #fff !important;
     display: inline-flex !important;
     align-items: center;
@@ -795,7 +795,7 @@
 }
 
 .s_allow_columns:has(> p.small:first-child) > p.small {
-    color: #3a4efd !important;
+    color: #0054a8 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     letter-spacing: 0.08em !important;
@@ -877,6 +877,15 @@
     background-color: #0d0d0d !important;
 }
 
+/* Grid rows are a fixed 50px, so a headline that wraps to three lines ran
+   under the Apply button. Let the rows grow and keep row 3 as a fixed gap. */
+@media (min-width: 992px) {
+    .s_faq_list .row.o_grid_mode {
+        grid-template-rows: minmax(50px, auto) minmax(50px, auto) 16px !important;
+        grid-auto-rows: minmax(50px, auto) !important;
+    }
+}
+
 /* Headline */
 .s_faq_list .o_grid_item p span[style*="26px"] {
     font-size: clamp(26px, 3.5vw, 38px) !important;
@@ -917,8 +926,8 @@
 
 /* Apply button */
 .s_faq_list .btn-fill-custom {
-    background-color: #3a4efd !important;
-    border: 1px solid #3a4efd !important;
+    background-color: #0054a8 !important;
+    border: 1px solid #0054a8 !important;
     color: #ffffff !important;
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -931,8 +940,8 @@
 }
 
 .s_faq_list .btn-fill-custom:hover {
-    background-color: #2d3ec9 !important;
-    border-color: #2d3ec9 !important;
+    background-color: #004386 !important;
+    border-color: #004386 !important;
     color: #ffffff !important;
 }
 
@@ -1003,7 +1012,7 @@
 
 /* ── DEALER APPLICATION FORM ────────────────────────────────── */
 #wrapwrap:has(form[data-model_name="crm.lead"]) {
-  --accent: #3a4efd;
+  --accent: #0054a8;
 
   .s_website_form > .container,
   .s_website_form > .o_container_small {
@@ -1056,7 +1065,7 @@
   .form-check-input:checked + .form-check-label {
     border-color: var(--accent);
     box-shadow: 0 0 0 1px var(--accent);
-    background: rgba(58,78,253,.06);
+    background: rgba(0,84,168,.06);
   }
 
   /* check mark when a required question is answered */
@@ -1067,7 +1076,7 @@
   .s_website_form_send {
     background: var(--accent); border: 0; border-radius: 999px; padding: .55rem 1.5rem;
     transition: transform .15s, box-shadow .15s;
-    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(58,78,253,.3); }
+    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,84,168,.3); }
   }
 }
 @keyframes ds-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -1100,8 +1109,8 @@
       display: inline-grid;
       place-items: center;
       border-radius: 50%;
-      background: rgba(58,78,253,.1);
-      color: #3a4efd;
+      background: rgba(0,84,168,.1);
+      color: #0054a8;
       font-size: .8rem;
       font-weight: 700;
     }
@@ -1118,7 +1127,7 @@
 
 /* ── HELPDESK: TEAM PICKER (/helpdesk) ──────────────────────── */
 .team_list_columns {
-  --accent: #3a4efd;
+  --accent: #0054a8;
 
   .o_page_header { text-align: center; border: 0; margin: 3rem 0 2rem !important; }
   > .row { justify-content: center; }
@@ -1128,15 +1137,15 @@
     border-radius: 14px;
     box-shadow: 0 2px 10px rgba(22,27,46,.05) !important;
     transition: transform .15s, box-shadow .15s, border-color .15s;
-    &:hover { transform: translateY(-3px); border-color: var(--accent) !important; box-shadow: 0 10px 30px rgba(58,78,253,.12) !important; }
+    &:hover { transform: translateY(-3px); border-color: var(--accent) !important; box-shadow: 0 10px 30px rgba(0,84,168,.12) !important; }
 
     img { display: none; }
     .card-body { padding: 2rem; }
     .card-body::before {
       content: "";
       width: 48px; height: 48px; border-radius: 12px;
-      background: rgba(58,78,253,.08) var(--ds-icon) center / 24px no-repeat;
-      --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a4efd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+      background: rgba(0,84,168,.08) var(--ds-icon) center / 24px no-repeat;
+      --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230054a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
     }
     h2 { font-size: 1.25rem; margin: 1.25rem 0 .35rem !important; }
     main::after { order: 2; color: #767c96; font-size: .95rem; margin-bottom: 1.25rem; }
@@ -1144,18 +1153,18 @@
   }
 
   .team_card:has(a[href*="general-inquiries"]) {
-    .card-body::before { --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a4efd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
+    .card-body::before { --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230054a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
     main::after { content: "Questions about products, orders, or your system."; }
   }
   .team_card:has(a[href*="returns"]) {
-    .card-body::before { --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a4efd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E"); }
+    .card-body::before { --ds-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230054a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E"); }
     main::after { content: "Start a return or exchange on an order."; }
   }
 }
 
 /* ── HELPDESK: TICKET FORM PAGES ────────────────────────────── */
 #wrapwrap:has(form[data-model_name="helpdesk.ticket"]) {
-  --accent: #3a4efd;
+  --accent: #0054a8;
 
   #wrap > .row > .col-md-4 { display: none; }
   #wrap > .row > .col-md-8 {
@@ -1193,7 +1202,7 @@
   .s_website_form_send {
     background: var(--accent); border: 0; border-radius: 999px; padding: .55rem 1.5rem;
     transition: transform .15s, box-shadow .15s;
-    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(58,78,253,.3); }
+    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,84,168,.3); }
   }
 
   @media (max-width: 575.98px) {
