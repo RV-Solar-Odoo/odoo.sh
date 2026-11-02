@@ -14,11 +14,11 @@
     </template>
 
     <template id="product_price_breakdown" inherit_id="website_sale.product_price"
-              name="Dealer MSRP, MAP, and dealer price">
+              name="Dealer MSRP, MAP, and dealer price" active="True">
         <xpath expr="//div[@name='product_price_container']" position="replace">
             <div name="product_price_container"
                  t-if="not combination_info.get('int_is_dealer')"
-                 class="css_editable_mode_hidden d-flex align-items-baseline justify-content-end gap-2 flex-wrap h5 mb-0 text-wrap">
+                 class="css_editable_mode_hidden d-flex align-items-baseline justify-content-start gap-2 flex-wrap h5 mb-0 text-wrap">
                 <span t-if="combination_info.get('has_discounted_price')"
                       style="text-decoration: line-through; white-space: nowrap;"
                       name="product_list_price"
@@ -33,8 +33,8 @@
         </xpath>
         <xpath expr="//div[@name='product_price_container']" position="after">
             <div t-if="combination_info.get('int_is_dealer')"
-                 class="o_int_price_breakdown h5 mb-0 text-end">
-                <table class="ms-auto">
+                 class="o_int_price_breakdown h5 mb-0 text-start">
+                <table>
                     <tr>
                         <td class="text-muted">MSRP</td>
                         <td class="text-end"
@@ -57,4 +57,8 @@
             </div>
         </xpath>
     </template>
+
+    <record id="product_price_breakdown" model="ir.ui.view">
+        <field name="active" eval="True"/>
+    </record>
 </odoo>
