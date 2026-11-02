@@ -54,9 +54,6 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertAlmostEqual(info["price"], 850.0)
         self.assertAlmostEqual(info["list_price"], 1000.0)
         self.assertTrue(info["has_discounted_price"])
-        self.assertAlmostEqual(info["int_map_price"], 850.0)
-        self.assertAlmostEqual(info["int_msrp"], 1000.0)
-        self.assertFalse(info["int_is_dealer"])
 
         with MockRequest(self.env, website=self.website, website_sale_current_pl=self.public_pl.id):
             prices = self.template._get_sales_prices(self.website)[self.template.id]
@@ -68,9 +65,6 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertAlmostEqual(info["price"], 680.0)
         self.assertAlmostEqual(info["list_price"], 1000.0)
         self.assertTrue(info["has_discounted_price"])
-        self.assertTrue(info["int_is_dealer"])
-        self.assertAlmostEqual(info["int_dealer_price"], 680.0)
-        self.assertAlmostEqual(info["int_map_price"], 850.0)
 
         with MockRequest(self.env, website=self.website, website_sale_current_pl=self.dealer_pl.id):
             prices = self.template._get_sales_prices(self.website)[self.template.id]
@@ -99,16 +93,3 @@ class TestMapWebsitePrice(TransactionCase):
             })],
         })
         self.assertAlmostEqual(dealer_order.order_line.price_unit, 680.0)
-
-    def test_product_page_lists_msrp_map_and_dealer(self):
-        info = self._info(self.dealer_pl)
-        with MockRequest(self.env, website=self.website, website_sale_current_pl=self.dealer_pl.id):
-            html = str(self.env["ir.ui.view"]._render_template("website_sale.product_price", {
-                "combination_info": info,
-                "website": self.website,
-                "product": self.template,
-                "editable": False,
-            }))
-        self.assertIn("MSRP", html)
-        self.assertIn("MAP", html)
-        self.assertIn("Dealer", html)

@@ -13,28 +13,7 @@
         </xpath>
     </template>
 
-    <template id="product_price_breakdown" inherit_id="website_sale.product_price"
-              name="MSRP, MAP, and dealer price">
-        <xpath expr="//div[@name='product_price_container']" position="after">
-            <div t-if="combination_info.get('int_show_price_breakdown')"
-                 class="o_int_price_breakdown small mt-2 text-end">
-                <div class="d-flex justify-content-end gap-3">
-                    <span class="text-muted">MSRP</span>
-                    <span t-out="combination_info['int_msrp']"
-                          t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
-                </div>
-                <div class="d-flex justify-content-end gap-3">
-                    <span class="text-muted">MAP</span>
-                    <span t-out="combination_info['int_map_price']"
-                          t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
-                </div>
-                <div t-if="combination_info.get('int_is_dealer')"
-                     class="d-flex justify-content-end gap-3 fw-semibold">
-                    <span>Dealer</span>
-                    <span t-out="combination_info['int_dealer_price']"
-                          t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
-                </div>
-            </div>
-        </xpath>
-    </template>
+    <record id="product_price_breakdown" model="ir.ui.view">
+        <field name="active" eval="False"/>
+    </record>
 </odoo>

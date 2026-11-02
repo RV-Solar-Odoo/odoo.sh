@@ -66,21 +66,15 @@ class ProductTemplate(models.Model):
             uom=uom,
             currency=currency,
         )
-        selling, msrp, map_price, dealer = template._int_website_selling_price(
+        selling, msrp, _map_price, _dealer = template._int_website_selling_price(
             pricelist_price, request.pricelist, website
         )
         taxed_selling = self._int_taxed_website_price(selling, website, product_or_template)
         taxed_msrp = self._int_taxed_website_price(msrp, website, product_or_template)
-        taxed_map = self._int_taxed_website_price(map_price, website, product_or_template)
         info.update({
             "price": taxed_selling,
             "list_price": taxed_msrp,
             "has_discounted_price": currency.compare_amounts(taxed_msrp, taxed_selling) == 1,
-            "int_msrp": taxed_msrp,
-            "int_map_price": taxed_map,
-            "int_dealer_price": taxed_selling if dealer else False,
-            "int_is_dealer": dealer,
-            "int_show_price_breakdown": True,
         })
         return info
 
