@@ -205,20 +205,6 @@
         </t>
     </template>
 
-    <!-- Shop grid card: show the tags too. Gated on the same Customize toggle as the
-         product page so the two stay in sync. -->
-    <template id="products_item_tags"
-              inherit_id="website_sale.products_item"
-              name="Show Tags on Product Card">
-        <xpath expr="//h2[hasclass('o_wsale_products_item_title')]" position="after">
-            <t t-if="is_view_active('website_sale.product_tags')">
-                <t t-call="website_sale.product_tags">
-                    <t t-set="all_product_tags" t-value="variant.all_product_tag_ids"/>
-                </t>
-            </t>
-        </xpath>
-    </template>
-
     <!-- The panel stays open while filters apply, so give it a way back to the results. -->
     <template id="offcanvas_view_results" inherit_id="website_sale.o_wsale_offcanvas" name="Filter Panel: View Results">
         <xpath expr="//div[hasclass('justify-content-between')]" position="inside">

@@ -29,37 +29,6 @@
   border-bottom: 1px solid #e6e8ef;
 }
 
-/* Shop grid card only: compact outlined tags, with a line between groups. The
-   !important rules beat stock utility classes and the badge style in rvs_website. */
-.oe_product_cart {
-  /* 12px each side of every line, here and around availability in int_victron_stock */
-  .o_product_tags {
-    gap: 12px !important;
-  }
-  .o_tag_group_row {
-    gap: 4px 6px;
-  }
-  .o_tag_group_row + .o_tag_group_row {
-    padding-top: 12px;
-    border-top: 1px solid #e6e8ef;
-  }
-  .o_tag_group_row:last-child {
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e6e8ef;
-  }
-  .o_product_tags span.position-relative {
-    padding: 1px 6px !important;
-    background: transparent !important;
-    border: 1px solid #c9cdd8;
-  }
-  .o_tag_group_label {
-    font-size: 14px;
-  }
-  .o_product_tags span.position-relative > .text-nowrap {
-    font-size: 14px !important;
-  }
-}
-
 /* ============ Product page: tag groups as a spec block ============ */
 .o_wsale_product_details_content_section .o_product_tags {
   display: block !important;

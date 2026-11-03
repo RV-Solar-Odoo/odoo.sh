@@ -471,15 +471,6 @@
     }
   }
 
-  /* tag groups take up the middle space */
-  .o_product_tags {
-    flex: 1 1 auto;
-    align-content: flex-start;
-  }
-
-  /* availability drops to the bottom, just above the price */
-  .o_int_card_availability { margin-top: auto; }
-
   /* listed price in the same blue as the carousel and product page */
   .product_price .fw-bold { color: #0054a8 !important; }
 }
@@ -541,47 +532,21 @@
 
 .o_int_card_availability_label { display: none !important; }
 
-/* ============ Shop cards: tags at the bottom, fixed-height availability box ============ */
+/* ============ Shop cards: name, line, availability, line ============ */
+/* The name's line and its 12px gap come from website_sale_tag_groups. The availability
+   rows get the same 12px below them, then the bottom line. Spare height goes below that
+   line, so the price stays at the bottom of the card. */
 #wrapwrap .o_wsale_products_grid_table .oe_product_cart {
-  /* tags sit at the bottom, right above the availability box */
-  .o_product_tags {
-    flex: 0 0 auto !important;
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
-  }
-  /* the last tag row no longer draws the line; the availability box does */
-  .o_tag_group_row:last-child { border-bottom: 0 !important; }
-
-  /* availability: fixed-height box with its own top and bottom lines */
-  .o_int_card_availability {
-    display: flex !important;
-    flex-direction: column;
-    justify-content: flex-end;          /* one row sits at the bottom */
-    box-sizing: border-box;
-    height: 62px;                        /* 2 rows (20px) + 4px gap + 8px + 8px + 2 lines */
-    margin-top: auto !important;         /* cards without tags */
-    margin-bottom: 8px !important;
-    padding: 8px 0 !important;
-    border-top: 1px solid #e6e8ef !important;
+  .o_wsale_products_item_title {
     border-bottom: 1px solid #e6e8ef !important;
   }
-  .o_int_card_availability_lines {
-    flex: 0 0 auto !important;
-    height: auto !important;
-    align-content: end !important;
+  .o_int_card_availability {
+    margin: 0 0 8px !important;
+    padding: 0 0 12px !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid #e6e8ef !important;
   }
-  .o_product_tags ~ .o_int_card_availability { margin-top: 0 !important; }
   .o_int_avail_row { line-height: 20px !important; }
-}
-
-/* Card lines: line under the name always shows (keeps rows level) */
-#wrapwrap .o_wsale_products_grid_table .oe_product_cart .o_wsale_products_item_title {
-  border-bottom: 1px solid #e6e8ef !important;
-}
-/* Only in rows where NO card has tags (card_tag_rows.js in website_sale_tag_groups):
-   drop the line above availability (no double line) */
-#wrapwrap .o_wsale_products_grid_table .oe_product.rvsb-row-notags .o_int_card_availability {
-  border-top: 0 !important;
 }
 
 /* Homepage featured products: no add-to-cart; the whole card opens the product,

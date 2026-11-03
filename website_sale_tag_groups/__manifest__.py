@@ -8,7 +8,7 @@ sidebar (desktop and mobile), tags are rendered one section per group, each
 with its own heading, collapse state and display style (checkboxes or
 dropdown). Filtering is AND across groups and OR within a group.
 """,
-    'version': '19.0.1.17.0',
+    'version': '19.0.1.18.0',
     'category': 'Website/Website',
     'author': 'Nomadiq',
     'license': 'LGPL-3',
@@ -26,7 +26,6 @@ dropdown). Filtering is AND across groups and OR within a group.
             'website_sale_tag_groups/static/src/interactions/sidebar_scroll.js',
             'website_sale_tag_groups/static/src/interactions/shop_filter_load.js',
             'website_sale_tag_groups/static/src/interactions/shop_filter_patch.js',
-            'website_sale_tag_groups/static/src/interactions/card_tag_rows.js',
         ],
     },
     'installable': True,
