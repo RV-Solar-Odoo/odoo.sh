@@ -19,6 +19,15 @@
             <div name="product_price_container"
                  t-if="not combination_info.get('int_is_dealer')"
                  class="css_editable_mode_hidden d-flex align-items-baseline justify-content-start gap-2 flex-wrap h5 mb-0 text-wrap">
+                <span t-if="combination_info.get('int_price_text')"
+                      class="oe_price o_int_retail_map"
+                      style="white-space: nowrap;"
+                      t-out="combination_info['int_price_text']"/>
+                <span t-else=""
+                      class="oe_price"
+                      style="white-space: nowrap;"
+                      t-out="combination_info['price']"
+                      t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
                 <span t-if="combination_info.get('has_discounted_price') and combination_info.get('int_list_text')"
                       style="text-decoration: line-through; white-space: nowrap;"
                       name="product_list_price"
@@ -29,15 +38,6 @@
                       name="product_list_price"
                       class="text-muted oe_default_price mb-0 h5"
                       t-out="combination_info['list_price']"
-                      t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
-                <span t-if="combination_info.get('int_price_text')"
-                      class="oe_price o_int_retail_map"
-                      style="white-space: nowrap;"
-                      t-out="combination_info['int_price_text']"/>
-                <span t-else=""
-                      class="oe_price"
-                      style="white-space: nowrap;"
-                      t-out="combination_info['price']"
                       t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
             </div>
         </xpath>

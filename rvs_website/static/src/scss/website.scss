@@ -86,12 +86,6 @@
 
 .s_cover:not(.o_hero_light) :is(.btn-custom, .btn-secondary, .btn-outline-secondary) { min-width: 240px; }
 
-/* hero logo: bigger floor on mobile, lower cap on desktop */
-.s_cover .s_allow_columns > img.o_we_custom_image {
-    min-width: 160px;
-    max-width: 280px;
-}
-
 /* ============ Homepage hero: centered, logo on top ============ */
 #wrap > section.s_cover:first-child {
   display: flex;
@@ -127,6 +121,12 @@
       height: auto !important;
       margin: 0 auto 64px !important;
       padding: 0 !important;
+
+      /* The editor sets the width (25%) inline, which beats any width here, so phones
+         get a minimum instead. Tablet and desktop keep the editor's size. */
+      @media (max-width: 767.98px) {
+        min-width: 160px !important;
+      }
     }
 
     /* "Authorized Victron dealer…" label: white outline box */
@@ -313,7 +313,10 @@
     border: 1px solid #e6e8ef !important;
     border-radius: 10px !important;
     transition: box-shadow .2s, transform .2s;
-    &:hover { box-shadow: 0 10px 28px rgba(22,27,46,.10); transform: translateY(-2px); }
+    /* a tap on a touch screen would leave the hover stuck on, so only for a mouse */
+    @media (hover: hover) {
+      &:hover { box-shadow: 0 10px 28px rgba(22,27,46,.10); transform: translateY(-2px); }
+    }
   }
   .oe_product_image {
     flex: 0 0 auto !important;
@@ -325,8 +328,10 @@
   .oe_product_image_img {
     transition: transform .3s ease !important;
   }
-  .oe_product_cart:hover .oe_product_image_img {
-    transform: scale(1.06) !important;
+  @media (hover: hover) {
+    .oe_product_cart:hover .oe_product_image_img {
+      transform: scale(1.06) !important;
+    }
   }
 
   /* details */
@@ -474,6 +479,16 @@
 
   /* availability drops to the bottom, just above the price */
   .o_int_card_availability { margin-top: auto; }
+
+  /* listed price in the same blue as the carousel and product page */
+  .product_price .fw-bold { color: #0054a8 !important; }
+}
+
+/* Slashed price: grey text with a red line, on cards and the product page. The product
+   page sets line-through inline, which resets the line colour, hence !important. */
+.product_price del,
+.oe_default_price {
+  text-decoration-color: #dc3545 !important;
 }
 
 /* ============ Card availability: label on top, status rows with a coloured dot ============ */

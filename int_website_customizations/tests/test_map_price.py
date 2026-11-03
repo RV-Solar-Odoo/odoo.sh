@@ -129,7 +129,7 @@ class TestMapWebsitePrice(TransactionCase):
         self.assertNotIn("MSRP", html)
         self.assertNotIn("MAP", html)
         self.assertNotIn("Dealer", html)
-        self.assertLess(html.find("product_list_price"), html.find("oe_price"))
+        self.assertLess(html.find("oe_price"), html.find("product_list_price"))
         self.assertNotIn("oe_default_price mb-0 h6", html)
         self.assertIn("o_int_retail_map", html)
         self.assertIn("$1,000.00", html)

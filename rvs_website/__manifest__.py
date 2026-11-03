@@ -1,6 +1,6 @@
 {
     'name': "RV Solar Website",
-    'version': "19.0.1.6.2",
+    'version': "19.0.1.7.0",
     'category': "Website",
     'summary': "RV Solar website styling and frontend customizations",
     'author': "Internal",

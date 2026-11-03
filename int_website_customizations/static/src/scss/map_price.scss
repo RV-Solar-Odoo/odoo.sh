@@ -60,7 +60,7 @@
   order: 6 !important;
 }
 
-/* Retail: struck MSRP first, then MAP, both at the main price size. */
+/* Retail: MAP first, then the struck MSRP, both at the main price size. */
 #o_wsale_product_details_content [name="product_price_container"] {
   justify-content: flex-start !important;
 }
