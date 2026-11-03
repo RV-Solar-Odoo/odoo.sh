@@ -320,6 +320,11 @@
   }
   .oe_product_image {
     flex: 0 0 auto !important;
+    /* Full card width, always. Without a set width, iPhone browsers (WebKit) work the
+       width out from the capped height and the 4:5 shape, so the box ends up narrower
+       or wider than the card and the image sits off-centre. */
+    width: 100% !important;
+    min-width: 0 !important;
     aspect-ratio: 4 / 5;
     height: auto !important;
     max-height: calc(100svh - 330px); /* svh: fixed when the phone's browser bar slides in */
