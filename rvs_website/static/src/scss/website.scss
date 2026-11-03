@@ -320,14 +320,11 @@
   }
   .oe_product_image {
     flex: 0 0 auto !important;
-    /* Full card width, always. Without a set width, iPhone browsers (WebKit) work the
-       width out from the capped height and the 4:5 shape, so the box ends up narrower
-       or wider than the card and the image sits off-centre. */
+    /* Full card width, always, so iPhone browsers (WebKit) don't work the width out from
+       the shape and leave the image off-centre. The square shape is set further down. */
     width: 100% !important;
     min-width: 0 !important;
-    aspect-ratio: 4 / 5;
     height: auto !important;
-    max-height: calc(100svh - 330px); /* svh: fixed when the phone's browser bar slides in */
   }
   .oe_product_image_link { height: 100% !important; }
   .oe_product_image_img {
@@ -339,25 +336,8 @@
     }
   }
 
-  /* details */
-  .o_wsale_product_information {
-    background: #fff !important;
-    height: auto !important;
-    padding: 14px 16px 16px !important;
-    border-top: 1px solid #eef0f5;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-    gap: 6px !important;
-    text-align: left !important;
-  }
-  .o_wsale_product_information_text {
-    text-align: left !important;
-    min-height: 67px;          /* room for a 2-line title + category bubble */
-  }
+  /* details (layout and spacing: "Product cards" further down) */
   .o_wsale_products_item_title {
-    margin: 0 !important;
-    min-height: 0 !important;
     text-align: left !important;
     a {
       color: #161b2e !important;
@@ -453,21 +433,10 @@
 }
 
 
-/* ============ Shop grid cards: aligned titles, specs in the middle, price at the bottom ============ */
+/* ============ Shop grid cards: names cut at two lines, blue price ============ */
+/* Layout and spacing: "Product cards" further down. */
 .o_wsale_products_grid_table .oe_product_cart {
-  /* text block fills the card; price/button row stays its natural height */
-  .o_wsale_product_information_text {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-  }
-  .o_wsale_product_sub { flex-grow: 0 !important; }
-
-  /* title box is always two lines tall; one-line names sit on the second line */
   .o_wsale_products_item_title {
-    display: flex;
-    align-items: flex-end;
-    min-height: calc(2.4em + 13px);
     a {
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -554,21 +523,162 @@
 
 .o_int_card_availability_label { display: none !important; }
 
-/* ============ Shop cards: name, line, availability, line ============ */
-/* The name's line and its 12px gap come from website_sale_tag_groups. The availability
-   rows get the same 12px below them, then the bottom line. Spare height goes below that
-   line, so the price stays at the bottom of the card. */
-#wrapwrap .o_wsale_products_grid_table .oe_product_cart {
+/* ============ Product cards: name above the image, image framed between two lines ============ */
+
+/* ---------- Shop grid ---------- */
+#wrapwrap .o_wsale_products_grid_table .oe_product .oe_product_cart {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  min-height: 100%;
+
+  /* let the name, image, availability and price be reordered as one column */
+  .o_wsale_product_information,
+  .o_wsale_product_info_attributes_wrapper,
+  .o_wsale_product_information_text { display: contents !important; }
+
+  /* name on top, centred in a 2-line box so the line under it is level across the row */
   .o_wsale_products_item_title {
+    order: -1;
+    display: flex !important;
+    align-items: center !important;
+    max-width: none;                  /* stock caps the name at 66ch */
+    margin: 0 !important;
+    padding: 13px 16px !important;
+    min-height: calc(2.4em + 27px) !important;
     border-bottom: 1px solid #e6e8ef !important;
   }
+
+  /* image centred between the two lines */
+  .oe_product_image {
+    order: 0;
+    flex: 0 0 auto !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    padding: 18px 0 !important;
+    box-sizing: content-box;
+  }
+
+  /* availability: fixed-height box, equal space above and below the rows */
   .o_int_card_availability {
-    margin: 0 0 8px !important;
-    padding: 0 0 12px !important;
-    border-top: 0 !important;
+    order: 2;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-end;          /* a single row sits in the bottom slot */
+    box-sizing: border-box;
+    height: 70px !important;            /* 2 rows (20px) + 4px gap + 12px + 12px + 2 lines */
+    margin: 0 16px 12px !important;
+    padding: 12px 0 !important;
+    border-top: 1px solid #e6e8ef !important;
     border-bottom: 1px solid #e6e8ef !important;
+  }
+  .o_int_card_availability_lines {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    align-content: end !important;
   }
   .o_int_avail_row { line-height: 20px !important; }
+
+  /* price + buttons at the bottom */
+  .o_wsale_product_sub {
+    order: 3;
+    flex-grow: 0 !important;
+    padding: 0 16px 16px !important;
+  }
+
+  /* phones (2 narrow cards per row): tighter sides, availability on one line */
+  @media (max-width: 575.98px) {
+    .o_wsale_products_item_title {
+      padding: 9px 10px !important;
+      min-height: calc(2.4em + 19px) !important;
+    }
+    .oe_product_image { padding: 12px 0 !important; }
+    .o_int_card_availability { margin: 0 10px 10px !important; }
+    .o_int_card_availability_lines { column-gap: 6px !important; }
+    .o_int_avail_row { font-size: 11.5px !important; }
+    .o_int_avail_text {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .o_wsale_product_sub { padding: 0 10px 10px !important; }
+  }
+}
+
+/* ---------- Laptop fit: whole card visible under the sticky search bar ---------- */
+
+/* sticky header sits just below the site header, so the search bar is never covered */
+#wrapwrap #o_wsale_products_header { top: -3px !important; }
+
+@media (min-width: 576px) {
+  #wrapwrap .o_wsale_products_grid_table .oe_product .oe_product_cart {
+    /* image area scales with screen height: ~250px on a typical laptop, max 280px */
+    .oe_product_image {
+      height: unquote("min(32vh, 280px)") !important; /* unquote: libsass rejects mixed-unit min() */
+      padding: 14px 0 !important;
+      box-sizing: content-box;
+    }
+    .oe_product_image .oe_product_image_link { height: 100% !important; }
+
+    /* slightly tighter name box */
+    .o_wsale_products_item_title {
+      padding: 11px 16px !important;
+      min-height: calc(2.4em + 23px) !important;
+    }
+  }
+}
+
+/* ---------- Featured products carousel (homepage) ---------- */
+#wrapwrap .s_dynamic_snippet_products .oe_product_cart {
+  display: flex !important;
+  flex-direction: column !important;
+
+  .o_wsale_product_information,
+  .o_wsale_product_info_attributes_wrapper,
+  .o_wsale_product_information_text { display: contents !important; }
+
+  .o_wsale_products_item_title {
+    order: -1;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    padding: 11px 16px !important;
+    height: auto !important;
+    font-size: 18.9px !important;                 /* same name size as the shop cards */
+    min-height: calc(2.4em + 22px) !important;    /* room for 2 lines */
+    border-bottom: 1px solid #e6e8ef !important;
+  }
+  .o_wsale_products_item_title a {
+    font-size: inherit !important;
+    line-height: 1.2 !important;
+  }
+
+  /* square image area with less padding = less white space */
+  .oe_product_image {
+    order: 0;
+    flex: 0 0 auto !important;
+    aspect-ratio: 1 / 1 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    box-sizing: border-box;
+    border-bottom: 1px solid #e6e8ef;
+  }
+
+  .rvsb_card_category {
+    order: 1;
+    align-self: flex-start !important;
+    margin: 12px 16px 0 !important;
+  }
+  .oe_subdescription_wrapper { display: none !important; }
+
+  .o_wsale_product_sub {
+    order: 2;
+    margin-top: auto !important;
+    padding: 10px 16px 16px !important;
+    border-top: 0 !important;
+  }
 }
 
 /* Homepage featured products: no add-to-cart; the whole card opens the product,
@@ -1443,4 +1553,59 @@
 .o_footer_logo img { min-width: 72px; max-width: 72px; }
 @media (max-width: 991.98px) {
   .o_footer_logo img { min-width: 64px; max-width: 64px; }
+}
+/* ============ Featured categories: "View All" buttons ============ */
+#wrapwrap .s_ecomm_categories_showcase .s_ecomm_categories_showcase_content .btn {
+  /* desktop & tablet: solid square button, like "Shop Products" */
+  border-radius: 0 !important;
+  background: #0054a8 !important;
+  border: 1px solid #0054a8 !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  padding: 11px 22px !important;
+  transition: filter .15s;
+  &::after { content: " \2192"; margin-left: 4px; }
+  &:hover { filter: brightness(1.12); }
+
+  /* phones: smaller underlined text link */
+  @media (max-width: 767.98px) {
+    background: none !important;
+    border: 0 !important;
+    border-bottom: 1.5px solid #fff !important;
+    padding: 0 0 3px !important;
+    font-size: 11px !important;
+    letter-spacing: .09em !important;
+    &::after { margin-left: 5px; }
+  }
+}
+
+/* ============ Featured categories: less white space above and below ============ */
+/* title block above the cards ("Featured Categories / To Start Your Next Adventure") */
+#wrapwrap section.s_title:has(+ .s_ecomm_categories_showcase) {
+  padding-top: 16px !important;
+  > .container-fluid { margin-bottom: 16px !important; }
+}
+/* the cards section itself */
+#wrapwrap .s_ecomm_categories_showcase { padding-bottom: 56px !important; }
+
+/* Hero: keep the "fixed background" scroll effect on phones and tablets too
+   (Odoo only enables it above 1200px; this version also works on iPhone Safari) */
+@media (max-width: 1199.98px) {
+  #wrapwrap .s_cover.parallax.s_parallax_is_fixed {
+    clip-path: inset(0);                       /* only show the image inside the hero */
+    > .s_parallax_bg {
+      position: fixed !important;              /* image stays put while the page scrolls */
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: auto !important;
+      height: 100lvh !important;
+      min-height: 100vh !important;
+      background-attachment: scroll !important;
+      transform: none !important;
+    }
+  }
 }

@@ -21,14 +21,6 @@
   align-items: center;
 }
 
-/* Shop grid only, not the carousels: a line under the product name. */
-#o_wsale_products_grid .o_wsale_products_item_title {
-  max-width: none;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e6e8ef;
-}
-
 /* ============ Product page: tag groups as a spec block ============ */
 .o_wsale_product_details_content_section .o_product_tags {
   display: block !important;
