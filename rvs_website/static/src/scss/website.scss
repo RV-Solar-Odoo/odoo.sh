@@ -322,7 +322,7 @@
     flex: 0 0 auto !important;
     aspect-ratio: 4 / 5;
     height: auto !important;
-    max-height: calc(100dvh - 330px);
+    max-height: calc(100svh - 330px); /* svh: fixed when the phone's browser bar slides in */
   }
   .oe_product_image_link { height: 100% !important; }
   .oe_product_image_img {
@@ -839,7 +839,7 @@
 .s_ecomm_categories_showcase .s_ecomm_categories_showcase_block {
     flex: 1 1 0 !important;
     position: relative !important;
-    min-height: 60dvh !important;
+    min-height: 60svh !important; /* svh: fixed when the phone's browser bar slides in */
     overflow: hidden !important;
     transition: flex-grow 0.3s ease !important;
 }
