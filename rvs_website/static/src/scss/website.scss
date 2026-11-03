@@ -475,11 +475,28 @@
   .product_price .fw-bold { color: #0054a8 !important; }
 }
 
-/* Slashed price: grey text with a red line, on cards and the product page. The product
-   page sets line-through inline, which resets the line colour, hence !important. */
-.product_price del,
+/* Slashed price: grey text with a red line through the middle, on cards and the product
+   page. A line-through sits where the font puts it, a little low on these digits, so the
+   line is drawn instead, halfway up the price. On cards the price is in a <small> inside
+   <del>, and the line goes on the <small> so it centres on the smaller text. The product
+   page sets line-through inline, hence !important. */
+.product_price del:has(> small),
 .oe_default_price {
-  text-decoration-color: #dc3545 !important;
+  text-decoration: none !important;
+}
+.product_price del > small,
+.oe_default_price {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: max(1px, 0.07em) solid #dc3545;
+    transform: translateY(-50%);
+  }
 }
 
 /* ============ Card availability: label on top, status rows with a coloured dot ============ */
