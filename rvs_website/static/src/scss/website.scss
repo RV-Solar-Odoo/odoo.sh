@@ -494,7 +494,7 @@
     left: 0;
     right: 0;
     top: 50%;
-    border-top: max(1px, 0.07em) solid #dc3545;
+    border-top: unquote("max(1px, 0.07em)") solid #dc3545; /* unquote: libsass would do max() itself and reject px with em */
     transform: translateY(-50%);
   }
 }
