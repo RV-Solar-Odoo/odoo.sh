@@ -23,7 +23,7 @@
                 <attribute name="invisible">int_shippo_carrier_name</attribute>
             </xpath>
             <xpath expr="//field[@name='carrier_id']" position="after">
-                <field name="int_shippo_carrier_name" invisible="not int_shippo_carrier_name"/>
+                <field name="int_shippo_carrier_name" string="Carrier" invisible="not int_shippo_carrier_name"/>
             </xpath>
             <xpath expr="//sheet" position="inside">
                 <group string="Shippo" name="int_shippo" invisible="picking_type_code != 'outgoing'">
