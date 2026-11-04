@@ -31,7 +31,7 @@ class IntVictronWebsiteSale(WebsiteSale):
             }
             for value, label in (
                 ("now", request.env._("Ships immediately")),
-                ("later", request.env._("Ships in 7-10 days")),
+                ("later", request.env._("Ships in 7 days")),
             )
         ]
         return shop_values
