@@ -33,7 +33,7 @@ class StockPicking(models.Model):
     int_shippo_transaction_id = fields.Char(string="Shippo Transaction ID", copy=False)
     int_shippo_label_url = fields.Char(string="Shippo Label URL", copy=False)
     int_shippo_tracking_url = fields.Char(string="Shippo Tracking URL", copy=False)
-    int_shippo_carrier_name = fields.Char(string="Shippo Carrier", copy=False)
+    int_shippo_carrier_name = fields.Char(string="Carrier", copy=False)
     int_shippo_box_id = fields.Many2one(
         "int.shippo.box",
         string="Shippo Box",
