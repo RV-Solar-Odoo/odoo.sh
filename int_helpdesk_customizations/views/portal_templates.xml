@@ -37,32 +37,42 @@
         <t t-call="portal.portal_layout">
             <t t-set="page_name" t-value="'int_help'"/>
             <t t-set="additional_title">Help &amp; Feedback</t>
-            <h3 class="my-3">Help &amp; Feedback</h3>
-            <div class="row g-2">
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Start a return</t>
-                    <t t-set="text">Return unused or incorrect items from an order. We'll review it and send return instructions.</t>
-                    <t t-set="url" t-value="'/my/help/return'"/>
-                    <t t-set="config_card" t-value="True"/>
-                </t>
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Start a warranty claim</t>
-                    <t t-set="text">Report a product that has failed. Include the serial number and photos so we can process it quickly.</t>
-                    <t t-set="url" t-value="'/my/help/warranty'"/>
-                    <t t-set="config_card" t-value="True"/>
-                </t>
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Website &amp; operations feedback</t>
-                    <t t-set="text">Something broken, confusing or slow — on the site, in shipping, billing or anything else? Tell us and we'll fix it.</t>
-                    <t t-set="url" t-value="'/my/help/feedback'"/>
-                    <t t-set="config_card" t-value="True"/>
-                </t>
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Request a part we don't stock</t>
-                    <t t-set="text">Need something we don't carry? Tell us what it is and roughly how many you use per year.</t>
-                    <t t-set="url" t-value="'/my/help/part'"/>
-                    <t t-set="config_card" t-value="True"/>
-                </t>
+            <div class="o_int_help_hub">
+                <h3 class="my-3">Help &amp; Feedback</h3>
+                <div class="o_int_help_hub_grid">
+                    <a class="o_int_help_hub_card" href="/my/help/return">
+                        <span class="o_int_help_hub_icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                        </span>
+                        <h2>Start a return</h2>
+                        <p>Return unused or incorrect items from an order. We'll review it and send return instructions.</p>
+                        <span class="o_int_help_hub_cta">Start a return <i class="oi oi-arrow-right"/></span>
+                    </a>
+                    <a class="o_int_help_hub_card" href="/my/help/warranty">
+                        <span class="o_int_help_hub_icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </span>
+                        <h2>Start a warranty claim</h2>
+                        <p>Report a product that has failed. Include the serial number and photos so we can process it quickly.</p>
+                        <span class="o_int_help_hub_cta">Start a claim <i class="oi oi-arrow-right"/></span>
+                    </a>
+                    <a class="o_int_help_hub_card" href="/my/help/feedback">
+                        <span class="o_int_help_hub_icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+                        </span>
+                        <h2>Website &amp; operations feedback</h2>
+                        <p>Something broken, confusing or slow — on the site, in shipping, billing or anything else? Tell us and we'll fix it.</p>
+                        <span class="o_int_help_hub_cta">Send feedback <i class="oi oi-arrow-right"/></span>
+                    </a>
+                    <a class="o_int_help_hub_card" href="/my/help/part">
+                        <span class="o_int_help_hub_icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+                        </span>
+                        <h2>Request a part we don't stock</h2>
+                        <p>Need something we don't carry? Tell us what it is and roughly how many you use per year.</p>
+                        <span class="o_int_help_hub_cta">Request a part <i class="oi oi-arrow-right"/></span>
+                    </a>
+                </div>
             </div>
         </t>
     </template>
