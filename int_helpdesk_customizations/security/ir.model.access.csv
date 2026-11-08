@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_int_helpdesk_alert_list_user,int.helpdesk.alert.list.user,model_int_helpdesk_alert_list,helpdesk.group_helpdesk_user,1,0,0,0
+access_int_helpdesk_alert_list_manager,int.helpdesk.alert.list.manager,model_int_helpdesk_alert_list,helpdesk.group_helpdesk_manager,1,1,1,1

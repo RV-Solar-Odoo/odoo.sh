@@ -5,7 +5,7 @@ import { registry } from "@web/core/registry";
 export class TaxExemptionUpload extends Interaction {
     static selector = "input[type='file'][name='x_tax_exemption_document']";
 
-    setup() {
+    start() {
         this.el.accept = ".pdf,.jpg,.jpeg,.png";
     }
 }

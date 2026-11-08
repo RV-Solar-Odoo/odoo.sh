@@ -1,4 +1,8 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+from odoo.fields import Command
+
+DEALER_TAG_NAME = "RVSB Dealer"
 
 # Utah form TC-721.
 TAX_EXEMPTION_REASONS = [
@@ -66,3 +70,31 @@ class ResPartner(models.Model):
             "x_tax_exemption_document",
             "x_tax_exemption_document_filename",
         ]
+
+    def _int_apply_dealer_pricelist_and_tag(self, pricelist, company):
+        """Set the dealer pricelist and the RVSB Dealer tag for this account.
+
+        The pricelist is stored on the commercial partner for ``company``.
+        The tag is added there and on this contact when they differ. Other tags stay.
+        """
+        self.ensure_one()
+        if pricelist.company_id and pricelist.company_id != company:
+            raise UserError(_("Choose a pricelist for %s.", company.name))
+        commercial = self.commercial_partner_id
+        commercial.with_company(company).write({
+            "specific_property_product_pricelist": pricelist.id,
+        })
+        category = self._int_rvsb_dealer_category()
+        for partner in commercial | self:
+            if category not in partner.category_id:
+                partner.write({"category_id": [Command.link(category.id)]})
+        return commercial
+
+    @api.model
+    def _int_rvsb_dealer_category(self):
+        category = self.env["res.partner.category"].sudo().search(
+            [("name", "=", DEALER_TAG_NAME)], order="id", limit=1,
+        )
+        if not category:
+            category = self.env["res.partner.category"].sudo().create({"name": DEALER_TAG_NAME})
+        return category

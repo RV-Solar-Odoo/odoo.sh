@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="tag_help_return" model="helpdesk.tag">
+        <field name="name">Return</field>
+        <field name="color">1</field>
+    </record>
+    <record id="tag_help_warranty" model="helpdesk.tag">
+        <field name="name">Warranty Claim</field>
+        <field name="color">2</field>
+    </record>
+    <record id="tag_help_feedback" model="helpdesk.tag">
+        <field name="name">Feedback</field>
+        <field name="color">4</field>
+    </record>
+    <record id="tag_help_part" model="helpdesk.tag">
+        <field name="name">Part Request</field>
+        <field name="color">10</field>
+    </record>
+
+    <record id="mail_template_help_alert" model="mail.template">
+        <field name="name">Help &amp; Feedback staff alert</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_ticket"/>
+        <field name="subject">Help &amp; Feedback: {{ object.name }}</field>
+        <field name="email_from">{{ object.company_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to" eval="False"/>
+        <field name="partner_to" eval="False"/>
+        <field name="use_default_to" eval="False"/>
+        <field name="auto_delete" eval="True"/>
+        <field name="description">Staff alert when a dealer submits Help &amp; Feedback. Recipients are filled in when the alert is sent, so this template can be edited without changing who receives it.</field>
+        <field name="body_html" type="html">
+<div>
+    <p>A dealer submitted a Help &amp; Feedback request.</p>
+    <p><strong t-out="object.name or ''">Request</strong></p>
+    <p t-if="object.partner_id">From <t t-out="object.partner_id.name or ''">Dealer</t></p>
+    <div t-out="object.description or ''"/>
+</div>
+        </field>
+    </record>
+
+    <record id="mail_template_help_received" model="mail.template">
+        <field name="name">Help &amp; Feedback received</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_ticket"/>
+        <field name="subject">We received your request ({{ object.ticket_ref or object.id }})</field>
+        <field name="email_from">{{ object.company_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.partner_email or '' }}</field>
+        <field name="partner_to" eval="False"/>
+        <field name="use_default_to" eval="False"/>
+        <field name="auto_delete" eval="True"/>
+        <field name="description">Sent when a Help &amp; Feedback ticket is created and the team's New stage has no email template. It goes to the email on the ticket.</field>
+        <field name="body_html" type="html">
+<div>
+    <p>Dear <t t-out="object.partner_name or object.partner_id.name or 'there'">there</t>,</p>
+    <p>We received your inquiry and will reply to this email.</p>
+    <p>Your reference is <strong t-out="object.ticket_ref or object.id">1</strong>.</p>
+    <p>RV Solar and Battery</p>
+</div>
+        </field>
+    </record>
+</odoo>
