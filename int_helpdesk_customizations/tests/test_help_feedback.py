@@ -73,19 +73,30 @@ class TestHelpFeedback(TransactionCase):
             "sale_ok": True,
         })
         cls.order = cls._order(cls.dealer, cls.company, cls.product, "sale")
-        cls.team = cls.env["helpdesk.team"].with_company(cls.company).create({
-            "name": "Test Dealer Support",
+        cls.returns_team = cls.env["helpdesk.team"].with_company(cls.company).create({
+            "name": "RVSB Returns",
             "company_id": cls.company.id,
             "member_ids": [Command.set([cls.env.user.id])],
         })
+        cls.general_team = cls.env["helpdesk.team"].with_company(cls.company).create({
+            "name": "General Inquiries",
+            "company_id": cls.company.id,
+            "member_ids": [Command.set([cls.env.user.id])],
+        })
+        cls.team = cls.general_team
         Tag = cls.env["helpdesk.tag"]
         cls.tag_return = Tag.create({"name": "Test Return", "color": 1})
         cls.tag_warranty = Tag.create({"name": "Test Warranty", "color": 2})
         cls.tag_feedback = Tag.create({"name": "Test Feedback", "color": 4})
         cls.tag_part = Tag.create({"name": "Test Part", "color": 10})
         cls.tags = cls.tag_return | cls.tag_warranty | cls.tag_feedback | cls.tag_part
+        cls.customer_dealer = cls.env.ref("int_helpdesk_customizations.tag_customer_dealer")
+        cls.customer_retail = cls.env.ref("int_helpdesk_customizations.tag_customer_retail")
         cls.company.write({
-            "int_help_team_id": cls.team.id,
+            "int_help_team_return_id": cls.returns_team.id,
+            "int_help_team_warranty_id": cls.returns_team.id,
+            "int_help_team_feedback_id": cls.general_team.id,
+            "int_help_team_part_id": cls.general_team.id,
             "int_help_tag_return_id": cls.tag_return.id,
             "int_help_tag_warranty_id": cls.tag_warranty.id,
             "int_help_tag_feedback_id": cls.tag_feedback.id,
@@ -171,7 +182,7 @@ class TestHelpFeedback(TransactionCase):
         self.assertTrue(self.env.user.with_company(self.company)._int_help_hub_visible())
         self.assertFalse(self.retail_user.with_company(self.company)._int_help_hub_visible())
         self.assertFalse(self.public_user.with_company(self.company)._int_help_hub_visible())
-        self.company.int_help_team_id = False
+        self.company.int_help_team_return_id = False
         self.assertFalse(self.dealer_user.with_company(self.company)._int_help_hub_visible())
 
     def test_each_kind_uses_its_tag_and_team(self):
@@ -222,8 +233,11 @@ class TestHelpFeedback(TransactionCase):
             result = self._submit(kind, data, files)
             self.assertFalse(result.get("error"), result.get("error"))
             ticket = result["ticket"]
-            self.assertEqual(ticket.team_id, self.team)
+            expected_team = self.returns_team if kind in ("return", "warranty") else self.general_team
+            self.assertEqual(ticket.team_id, expected_team)
             self.assertIn(tags[kind], ticket.tag_ids)
+            self.assertIn(self.customer_dealer, ticket.tag_ids)
+            self.assertNotIn(self.customer_retail, ticket.tag_ids)
             self.assertTrue(ticket.name.startswith(labels[kind]))
             self.assertIn("\u2013", ticket.name)
             self.assertEqual(ticket.partner_id, self.dealer)
@@ -376,24 +390,88 @@ class TestHelpFeedback(TransactionCase):
         self.assertFalse(result.get("ticket"))
         self.assertEqual(result["error"], NO_ORDERS_MESSAGE)
 
-    def test_setup_creates_team_tags_and_alerts_once(self):
+    def test_setup_uses_existing_teams_and_does_not_create_one(self):
         company = self.env["res.company"].create({"name": "Seed Help Co"})
         self.env.user.write({"company_ids": [Command.link(company.id)]})
         company._int_help_setup()
-        self.assertEqual(company.int_help_team_id.name, "Dealer Support")
-        self.assertEqual(company.int_help_team_id.company_id, company)
-        self.assertTrue(company.int_help_team_id.member_ids)
-        self.assertEqual(company.int_help_tag_return_id, self.env.ref("int_helpdesk_customizations.tag_help_return"))
+        self.assertFalse(company.int_help_team_return_id)
+        self.assertFalse(company.int_help_team_warranty_id)
+        self.assertFalse(company.int_help_team_feedback_id)
+        self.assertFalse(company.int_help_team_part_id)
+        self.assertFalse(self.env["helpdesk.team"].search([
+            ("company_id", "=", company.id),
+            ("name", "=", "Dealer Support"),
+        ]))
+        returns = self.env["helpdesk.team"].with_company(company).create({
+            "name": "RVSB Returns",
+            "company_id": company.id,
+            "member_ids": [Command.set([self.env.user.id])],
+        })
+        general = self.env["helpdesk.team"].with_company(company).create({
+            "name": "General Inquiries",
+            "company_id": company.id,
+            "member_ids": [Command.set([self.env.user.id])],
+        })
+        decoy = self.env["helpdesk.team"].with_company(company).create({
+            "name": "Dealer Support",
+            "company_id": company.id,
+            "member_ids": [Command.set([self.env.user.id])],
+        })
+        company._int_help_setup()
+        self.assertEqual(company.int_help_team_return_id, returns)
+        self.assertEqual(company.int_help_team_warranty_id, returns)
+        self.assertEqual(company.int_help_team_feedback_id, general)
+        self.assertEqual(company.int_help_team_part_id, general)
+        self.assertFalse(decoy.active)
+        self.assertEqual(
+            company.int_help_tag_return_id,
+            self.env.ref("int_helpdesk_customizations.tag_help_return"),
+        )
         self.assertTrue(company.int_help_tag_warranty_id)
         self.assertTrue(company.int_help_tag_feedback_id)
         self.assertTrue(company.int_help_tag_part_id)
         alerts = self.env["int.helpdesk.alert.list"].search([("company_id", "=", company.id)])
-        self.assertEqual(set(alerts.mapped("code")), {"help_return", "help_warranty", "help_feedback", "help_part"})
+        self.assertEqual(
+            set(alerts.mapped("code")),
+            {"help_return", "help_warranty", "help_feedback", "help_part"},
+        )
         alerts.write({"user_ids": [Command.set([self.env.user.id])]})
-        team = company.int_help_team_id
+        company.int_help_team_warranty_id = general
         company._int_help_setup()
-        self.assertEqual(company.int_help_team_id, team)
+        self.assertEqual(company.int_help_team_warranty_id, general)
+        self.assertEqual(company.int_help_team_return_id, returns)
         self.assertEqual(alerts.user_ids, self.env.user)
+
+    def test_customer_type_tag_on_ticket_create(self):
+        Ticket = self.env["helpdesk.ticket"].with_company(self.company).with_context(
+            mail_create_nolog=True,
+            mail_create_nosubscribe=True,
+            tracking_disable=True,
+        )
+        retail_ticket = Ticket.create({
+            "name": "Website question",
+            "team_id": self.general_team.id,
+            "partner_id": self.retail.id,
+            "company_id": self.company.id,
+        })
+        self.assertIn(self.customer_retail, retail_ticket.tag_ids)
+        self.assertNotIn(self.customer_dealer, retail_ticket.tag_ids)
+        preset = Ticket.create({
+            "name": "Already typed",
+            "team_id": self.general_team.id,
+            "partner_id": self.retail.id,
+            "company_id": self.company.id,
+            "tag_ids": [Command.set([self.customer_dealer.id])],
+        })
+        self.assertIn(self.customer_dealer, preset.tag_ids)
+        self.assertNotIn(self.customer_retail, preset.tag_ids)
+        bare = Ticket.create({
+            "name": "No customer",
+            "team_id": self.general_team.id,
+            "company_id": self.company.id,
+        })
+        self.assertNotIn(self.customer_dealer, bare.tag_ids)
+        self.assertNotIn(self.customer_retail, bare.tag_ids)
 
     def test_notify_assigns_the_only_recipient(self):
         ticket = self.env["helpdesk.ticket"].with_company(self.company).with_context(
@@ -428,3 +506,37 @@ class TestHelpFeedback(TransactionCase):
         ], limit=1)
         self.assertTrue(mail)
         self.assertIn(self.env.user.email, mail.email_to or "")
+
+    def test_ticket_uses_the_logged_in_dealer_and_queues_a_receipt(self):
+        stages = self.env["helpdesk.stage"].search([
+            ("team_ids", "in", self.general_team.id),
+        ])
+        stages.write({"template_id": False})
+        result = self._submit("feedback", {
+            "area": "shipping",
+            "description": "The carton arrived late",
+        })
+        self.assertFalse(result.get("error"), result.get("error"))
+        ticket = result["ticket"]
+        email = (self.dealer_user.email or self.dealer.email or "").strip()
+        self.assertEqual(ticket.partner_id, self.dealer)
+        self.assertEqual(ticket.partner_name, self.dealer.name)
+        self.assertEqual(ticket.partner_email, email)
+        mail = self.env["mail.mail"].sudo().search([
+            ("model", "=", "helpdesk.ticket"),
+            ("res_id", "=", ticket.id),
+            ("email_to", "ilike", email),
+        ])
+        self.assertTrue(mail)
+
+    def test_reply_uses_the_customer_email_when_it_differs(self):
+        ticket = self.env["helpdesk.ticket"].with_company(self.company).create({
+            "name": "Website form",
+            "team_id": self.general_team.id,
+            "partner_id": self.dealer.id,
+            "partner_email": "other@example.com",
+            "company_id": self.company.id,
+        })
+        recipients = ticket._message_get_default_recipients()[ticket.id]
+        self.assertEqual(recipients.get("email_to"), "other@example.com")
+        self.assertFalse(recipients.get("partner_ids"))

@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="portal_my_home_help" name="My Portal Help &amp; Feedback" inherit_id="portal.portal_my_home" priority="40">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_service_category_enable" t-value="True"/>
+        </xpath>
         <xpath expr="//div[@id='portal_common_category']" position="before">
-            <div t-if="request.params.get('int_help_warning')" class="col-12">
+            <div t-if="request.params.get('int_help_warning')" class="o_portal_index_card col-12">
                 <div class="alert alert-warning mb-0" role="alert">
                     Help &amp; Feedback is not available for this account.
                 </div>
             </div>
-            <div t-if="request.env.user._int_help_hub_visible()" class="o_portal_category row g-2 mt-3" id="portal_help_category">
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="icon" t-value="'/int_helpdesk_customizations/static/src/img/help_feedback.svg'"/>
-                    <t t-set="title">Help &amp; Feedback</t>
-                    <t t-set="text">Returns, warranty, feedback, and part requests</t>
-                    <t t-set="url" t-value="'/my/help'"/>
-                    <t t-set="config_card" t-value="True"/>
-                </t>
-            </div>
+        </xpath>
+        <xpath expr="//div[@id='portal_service_category']" position="inside">
+            <t t-if="request.env.user._int_help_hub_visible()" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/int_helpdesk_customizations/static/src/img/help_feedback.svg'"/>
+                <t t-set="title">Help &amp; Feedback</t>
+                <t t-set="text">Returns, warranty, feedback, and part requests</t>
+                <t t-set="url" t-value="'/my/help'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
         </xpath>
     </template>
 
@@ -44,7 +47,7 @@
                 </t>
                 <t t-call="portal.portal_docs_entry">
                     <t t-set="title">Start a warranty claim</t>
-                    <t t-set="text">Report a product that has failed. Include the serial number and photos so we can process it fast.</t>
+                    <t t-set="text">Report a product that has failed. Include the serial number and photos so we can process it quickly.</t>
                     <t t-set="url" t-value="'/my/help/warranty'"/>
                     <t t-set="config_card" t-value="True"/>
                 </t>

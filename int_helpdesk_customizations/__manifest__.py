@@ -1,6 +1,6 @@
 {
     "name": "Helpdesk Customizations",
-    "version": "19.0.1.2.1",
+    "version": "19.0.1.3.1",
     "category": "Services/Helpdesk",
     "summary": "Keep ticket email replies on the ticket, and the dealer Help & Feedback hub",
     "author": "Internal",
@@ -14,6 +14,7 @@
         "views/alert_list_views.xml",
         "views/res_config_settings_views.xml",
         "views/portal_templates.xml",
+        "views/website_templates.xml",
     ],
     "assets": {
         "web.assets_frontend": [

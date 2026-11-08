@@ -27,16 +27,16 @@ class ResUsers(models.Model):
     def _int_help_hub_visible(self):
         """Whether My Portal should show Help & Feedback for this user.
 
-        Public users never see it. Internal users see it when the company has a
-        team, so staff can test. Portal users see it only as approved dealers,
-        and only when that team is set. A missing team hides the hub and logs
-        a warning instead of raising.
+        Public users never see it. Internal users see it when every request
+        type has an existing team, so staff can test. Portal users see it only
+        as approved dealers, and only when those teams are set. A missing team
+        hides the hub and logs a warning instead of raising.
         """
         self.ensure_one()
         if self._is_public():
             return False
         company = self._int_help_request_company()
-        if not company._int_help_team_or_warn():
+        if not company._int_help_ready():
             return False
         if self.has_group("base.group_user"):
             return True

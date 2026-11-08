@@ -3,6 +3,6 @@
     <path d="M53.3 24.6L57.6 22.2V45L53.3 47.4Z" fill="#FBDBD0"/>
     <path d="M53.3 47.4L57.6 45L33.9 57.6L29.6 60Z" fill="#FBDBD0"/>
     <path d="M17.6 25.4L41.3 12.8L56.7 20.8V43.6L33 56.2L29.9 54.6L19.2 62.4L24.6 51.7L17.6 48.2Z" fill="white" stroke="#374874" stroke-width="1.15" stroke-linejoin="round"/>
-    <path d="M36.2 22.8C36.2 20.4 38.2 18.9 40.7 18.9C43.3 18.9 45.2 20.5 45.2 23C45.2 25 44 26.2 42.2 27.4C40.8 28.3 40.1 29.2 40.1 30.6" stroke="#374874" stroke-width="1.8" stroke-linecap="round"/>
-    <circle cx="40.1" cy="34.2" r="1.2" fill="#374874"/>
+    <path d="M32.6 29.4C32.6 27 34.6 25.5 37.1 25.5C39.7 25.5 41.6 27.1 41.6 29.6C41.6 31.6 40.4 32.8 38.6 34C37.2 34.9 36.5 35.8 36.5 37.2" stroke="#374874" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="36.5" cy="40.8" r="1.2" fill="#374874"/>
 </svg>

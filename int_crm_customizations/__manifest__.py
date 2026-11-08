@@ -1,11 +1,11 @@
 {
     "name": "CRM Customizations",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Sales/CRM",
     "summary": "Review dealer tax exemption claims on the lead and apply approved ones to the customer",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["crm", "account", "website_crm"],
+    "depends": ["crm", "account", "website_crm", "int_contacts_customizations"],
     "application": False,
     "data": [
         "data/website_form_fields.xml",

@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.tools import format_date
+from odoo.tools import email_normalize, format_date
 
 from .res_partner import TAX_EXEMPTION_REASONS
 
@@ -74,6 +74,52 @@ class CrmLead(models.Model):
         self.ensure_one()
         field = self._fields["x_tax_exemption_reason"]
         return dict(field._description_selection(self.env)).get(self.x_tax_exemption_reason)
+
+    def action_int_send_dealer_account_email(self):
+        """Send the account email for this application.
+
+        If the email already has a portal login, the application is linked to that
+        contact so a checkout account and a later dealer application stay one login.
+        """
+        self.ensure_one()
+        partner = self._int_account_partner()
+        if self.partner_id != partner:
+            self.partner_id = partner
+            self.message_post(
+                body=self.env._(
+                    "Linked this application to %(name)s because %(email)s already has a portal login.",
+                    name=partner.display_name,
+                    email=partner.email,
+                ),
+                subtype_xmlid="mail.mt_note",
+            )
+        return partner.action_int_send_dealer_account_email()
+
+    def _int_account_partner(self):
+        self.ensure_one()
+        email = email_normalize(self.email_from or self.partner_id.email or "")
+        if not email:
+            raise UserError(self.env._("Add an email, or link a contact, before sending the account email."))
+        partners = self.env["res.partner"].search([("email_normalized", "=", email)])
+        if self.partner_id:
+            family = self.partner_id.commercial_partner_id | self.partner_id.commercial_partner_id.child_ids
+            owned = (partners & family).filtered(
+                lambda partner: partner.with_context(active_test=False).user_ids
+            )
+            if owned:
+                return owned[:1]
+        with_login = partners.filtered(lambda partner: partner.with_context(active_test=False).user_ids)
+        if with_login:
+            return with_login[:1]
+        if self.partner_id:
+            return self.partner_id
+        if partners:
+            return partners[:1]
+        return self.env["res.partner"].create({
+            "name": self.contact_name or self.partner_name or self.name,
+            "email": email,
+            "company_id": self.company_id.id,
+        })
 
     def action_grant_tax_exemption(self):
         self._int_check_can_approve({"x_tax_exemption_approved": True})

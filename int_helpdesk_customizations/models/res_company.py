@@ -2,7 +2,6 @@ import logging
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
-from odoo.fields import Command
 
 _logger = logging.getLogger(__name__)
 
@@ -14,6 +13,22 @@ TAG_FIELDS = (
     "int_help_tag_feedback_id",
     "int_help_tag_part_id",
 )
+
+# Kind -> company field. Returns and warranty use the existing returns team.
+# Feedback and part requests use the existing general-inquiries team.
+# Nothing here creates a team.
+TEAM_FIELDS = {
+    "return": "int_help_team_return_id",
+    "warranty": "int_help_team_warranty_id",
+    "feedback": "int_help_team_feedback_id",
+    "part": "int_help_team_part_id",
+}
+TEAM_NAME_HINTS = {
+    "int_help_team_return_id": ("return",),
+    "int_help_team_warranty_id": ("return",),
+    "int_help_team_feedback_id": ("inquir", "general"),
+    "int_help_team_part_id": ("inquir", "general"),
+}
 
 TAG_XMLIDS = {
     "int_help_tag_return_id": "int_helpdesk_customizations.tag_help_return",
@@ -33,11 +48,29 @@ ALERTS = (
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    int_help_team_id = fields.Many2one(
+    int_help_team_return_id = fields.Many2one(
         "helpdesk.team",
-        string="Help & Feedback team",
+        string="Returns team",
         ondelete="set null",
-        help="Dealer Help & Feedback tickets are created on this team.",
+        help="Return requests are created on this existing team.",
+    )
+    int_help_team_warranty_id = fields.Many2one(
+        "helpdesk.team",
+        string="Warranty team",
+        ondelete="set null",
+        help="Warranty claims are created on this existing team. That is the returns team.",
+    )
+    int_help_team_feedback_id = fields.Many2one(
+        "helpdesk.team",
+        string="Feedback team",
+        ondelete="set null",
+        help="Feedback is created on this existing team.",
+    )
+    int_help_team_part_id = fields.Many2one(
+        "helpdesk.team",
+        string="Part request team",
+        ondelete="set null",
+        help="Part requests are created on this existing team.",
     )
     int_help_tag_return_id = fields.Many2one(
         "helpdesk.tag",
@@ -60,26 +93,50 @@ class ResCompany(models.Model):
         ondelete="set null",
     )
 
-    @api.constrains("int_help_team_id")
+    @api.constrains(*TEAM_FIELDS.values())
     def _check_int_help_team_company(self):
         for company in self:
-            team = company.int_help_team_id
-            if team and team.company_id and team.company_id != company:
-                raise ValidationError(_("The Help & Feedback team must belong to this company."))
+            for field_name in TEAM_FIELDS.values():
+                team = company[field_name]
+                if team and team.company_id and team.company_id != company:
+                    raise ValidationError(_("The Help & Feedback team must belong to this company."))
 
-    def _int_help_team_or_warn(self):
-        """The configured team, or an empty recordset. Warn once per company when it is missing."""
+    def _int_help_team_for(self, kind):
+        """The existing team for this kind, or an empty recordset."""
         self.ensure_one()
-        team = self.sudo().int_help_team_id
-        if team:
+        field_name = TEAM_FIELDS.get(kind)
+        team = self.sudo()[field_name] if field_name else self.env["helpdesk.team"]
+        return team or self.env["helpdesk.team"]
+
+    def _int_help_ready(self):
+        """True when every kind has an existing team. Warn once when one is missing."""
+        self.ensure_one()
+        company = self.sudo()
+        missing = [
+            field_name for field_name in TEAM_FIELDS.values() if not company[field_name]
+        ]
+        if not missing:
             _HELP_TEAM_WARNED.discard(self.id)
-            return team
+            return True
         if self.id not in _HELP_TEAM_WARNED:
             _HELP_TEAM_WARNED.add(self.id)
             _logger.warning(
-                "Help & Feedback is hidden for %s because no helpdesk team is configured.",
+                "Help & Feedback is hidden for %s because these teams are not set: %s.",
                 self.display_name,
+                ", ".join(missing),
             )
+        return False
+
+    def _int_help_find_team(self, hints):
+        """An existing team for this company whose name matches one of the hints."""
+        self.ensure_one()
+        teams = self.env["helpdesk.team"].sudo().search([
+            ("company_id", "=", self.id),
+        ])
+        for hint in hints:
+            match = teams.filtered(lambda team, hint=hint: hint in (team.name or "").lower())
+            if match:
+                return match.sorted("id")[:1]
         return self.env["helpdesk.team"]
 
     def _int_help_tags(self):
@@ -95,40 +152,19 @@ class ResCompany(models.Model):
                 tags |= tag
         return tags
 
-    def _int_help_team_member(self):
-        """An internal user who can be the first member of a new Dealer Support team."""
-        self.ensure_one()
-        user = self.env.user
-        if user.active and not user.share and user.has_group("base.group_user"):
-            return user
-        return self.env["res.users"].search([
-            ("active", "=", True),
-            ("share", "=", False),
-            ("company_ids", "in", self.id),
-        ], limit=1, order="id")
-
     def _int_help_setup(self):
-        """Fill a missing team, the four tags, and the four alert lists. Do not overwrite staff picks."""
+        """Point empty kind fields at existing teams, and fill tags and alert lists.
+
+        Does not create a helpdesk team and does not overwrite a team someone already chose.
+        """
         Alert = self.env["int.helpdesk.alert.list"].sudo()
-        Team = self.env["helpdesk.team"].sudo()
         for company in self:
-            if not company.int_help_team_id:
-                member = company._int_help_team_member()
-                if not member:
-                    _logger.warning(
-                        "Help & Feedback: no internal user to own Dealer Support for %s.",
-                        company.display_name,
-                    )
-                else:
-                    team = Team.with_company(company).with_context(
-                        mail_create_nosubscribe=True,
-                        tracking_disable=True,
-                    ).create({
-                        "name": "Dealer Support",
-                        "company_id": company.id,
-                        "member_ids": [Command.set(member.ids)],
-                    })
-                    company.int_help_team_id = team
+            for field_name, hints in TEAM_NAME_HINTS.items():
+                if company[field_name]:
+                    continue
+                team = company._int_help_find_team(hints)
+                if team:
+                    company[field_name] = team
             for field_name, xmlid in TAG_XMLIDS.items():
                 if company[field_name]:
                     continue
@@ -147,3 +183,21 @@ class ResCompany(models.Model):
                     "code": code,
                     "company_id": company.id,
                 })
+            company._int_help_archive_unused_dealer_support()
+
+    def _int_help_archive_unused_dealer_support(self):
+        """Hide an empty team this module used to create. Leave it if it already has tickets."""
+        self.ensure_one()
+        Team = self.env["helpdesk.team"].sudo()
+        if "active" not in Team._fields:
+            return
+        teams = Team.with_context(active_test=False).search([
+            ("company_id", "=", self.id),
+            ("name", "=", "Dealer Support"),
+            ("active", "=", True),
+        ])
+        Ticket = self.env["helpdesk.ticket"].sudo()
+        for team in teams:
+            if Ticket.search_count([("team_id", "=", team.id)]):
+                continue
+            team.active = False

@@ -62,8 +62,41 @@ function bind(form) {
     }
 }
 
+function splitName(full) {
+    const parts = (full || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) {
+        return ["", ""];
+    }
+    if (parts.length === 1) {
+        return [parts[0], ""];
+    }
+    return [parts[0], parts.slice(1).join(" ")];
+}
+
+function fillIfEmpty(input, value) {
+    if (input && !input.value && value) {
+        input.value = value;
+    }
+}
+
+function prefillWebsiteForms() {
+    const nameMeta = document.querySelector('meta[name="int-contact-name"]');
+    const emailMeta = document.querySelector('meta[name="int-contact-email"]');
+    if (!nameMeta && !emailMeta) {
+        return;
+    }
+    const [first, last] = splitName(nameMeta ? nameMeta.content : "");
+    const email = emailMeta ? emailMeta.content.trim() : "";
+    document.querySelectorAll('form[data-model_name="helpdesk.ticket"]').forEach((form) => {
+        fillIfEmpty(form.querySelector('input[name="First Name"]'), first);
+        fillIfEmpty(form.querySelector('input[name="Last Name"]'), last);
+        fillIfEmpty(form.querySelector('input[name="partner_email"]'), email);
+    });
+}
+
 function start() {
     document.querySelectorAll(".o_int_help_form").forEach(bind);
+    prefillWebsiteForms();
 }
 
 if (document.readyState === "loading") {

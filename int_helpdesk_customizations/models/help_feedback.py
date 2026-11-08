@@ -47,6 +47,7 @@ HELP_KINDS = {
         "title": "Start a return",
         "name": "Return",
         "tag_field": "int_help_tag_return_id",
+        "team_field": "int_help_team_return_id",
         "code": "help_return",
         "max_files": 5,
         "allow_video": False,
@@ -57,6 +58,7 @@ HELP_KINDS = {
         "title": "Start a warranty claim",
         "name": "Warranty Claim",
         "tag_field": "int_help_tag_warranty_id",
+        "team_field": "int_help_team_warranty_id",
         "code": "help_warranty",
         "max_files": 5,
         "allow_video": True,
@@ -67,6 +69,7 @@ HELP_KINDS = {
         "title": "Website & operations feedback",
         "name": "Feedback",
         "tag_field": "int_help_tag_feedback_id",
+        "team_field": "int_help_team_feedback_id",
         "code": "help_feedback",
         "max_files": 3,
         "allow_video": False,
@@ -77,6 +80,7 @@ HELP_KINDS = {
         "title": "Request a part we don't stock",
         "name": "Part Request",
         "tag_field": "int_help_tag_part_id",
+        "team_field": "int_help_team_part_id",
         "code": "help_part",
         "max_files": 0,
         "allow_video": False,
@@ -114,9 +118,9 @@ class HelpdeskTicket(models.Model):
     def _int_help_submit(self, user, company, kind, data, files=None):
         """Validate a portal submission and create the ticket.
 
-        Returns ``{"ticket": record}`` or ``{"error": message}``. The customer
-        confirmation email is the team's New stage template, not a second mail
-        from here.
+        Returns ``{"ticket": record}`` or ``{"error": message}``. Creating the
+        ticket in New sends that stage's receipt. If the stage has no template,
+        a Help & Feedback receipt is sent to the email on the ticket.
         """
         spec = self._int_help_kind(kind)
         if not spec:
@@ -138,9 +142,16 @@ class HelpdeskTicket(models.Model):
             return {"error": error}
         if self._int_help_rate_limited(user, company):
             return {"error": _("You can submit up to 10 Help & Feedback requests per hour.")}
-        team = company._int_help_team_or_warn()
+        team = company._int_help_team_for(kind)
+        if not team:
+            _logger.warning(
+                "Help & Feedback team %s is not configured for %s.",
+                spec["team_field"], company.display_name,
+            )
+            return {"error": _("This request type is not set up yet.")}
         vals = self._int_help_ticket_vals(user, company, spec, team, tag, parsed)
         ticket = self.sudo().with_company(company).create(vals)
+        self._int_help_confirm_received(ticket)
         self._int_help_store_attachments(ticket, parsed["uploads"])
         if parsed["order"] and kind in ("return", "warranty"):
             self._int_help_note_on_order(parsed["order"], ticket, user)
@@ -153,7 +164,7 @@ class HelpdeskTicket(models.Model):
     def _int_help_access_error(self, user, company):
         if not user or user._is_public():
             return _("Help & Feedback is not available for this account.")
-        if not company._int_help_team_or_warn():
+        if not company._int_help_ready():
             return _("Help & Feedback is not available right now.")
         if user.has_group("base.group_user"):
             return None
@@ -245,6 +256,41 @@ class HelpdeskTicket(models.Model):
         if tags:
             domain.append(("tag_ids", "in", tags.ids))
         return self.sudo().search(domain, limit=1)
+
+    @api.model
+    def _int_help_confirm_received(self, ticket):
+        """Send one receipt when the New stage did not send its own."""
+        if ticket.message_ids.filtered(lambda message: message.message_type == "auto_comment"):
+            return
+        email = (ticket.partner_email or "").strip()
+        if not email:
+            _logger.warning(
+                "Help ticket %s has no customer email, so no receipt was sent.", ticket.id,
+            )
+            return
+        template = ticket.stage_id.template_id
+        if not template:
+            template = self.env.ref(
+                "int_helpdesk_customizations.mail_template_help_received",
+                raise_if_not_found=False,
+            )
+        if not template:
+            _logger.warning("No receipt template for help ticket %s.", ticket.id)
+            return
+        template.sudo().send_mail(ticket.id, force_send=False)
+
+    def _message_get_default_recipients(self):
+        recipients = super()._message_get_default_recipients()
+        for ticket in self:
+            email = (ticket.partner_email or "").strip()
+            partner_email = (ticket.partner_id.email or "").strip()
+            if email and email.lower() != partner_email.lower():
+                recipients[ticket.id] = {
+                    "partner_ids": [],
+                    "email_to": email,
+                    "email_cc": False,
+                }
+        return recipients
 
     @api.model
     def _int_help_parse(self, user, company, kind, spec, data, files):
@@ -470,8 +516,10 @@ class HelpdeskTicket(models.Model):
         }
         if "company_id" in self._fields:
             vals["company_id"] = company.id
+        if "partner_name" in self._fields:
+            vals["partner_name"] = (user.partner_id.name or user.name or "").strip() or False
         if "partner_email" in self._fields:
-            vals["partner_email"] = user.email or user.partner_id.email or False
+            vals["partner_email"] = (user.email or user.partner_id.email or "").strip() or False
         if "sale_order_id" in self._fields and parsed["order"]:
             vals["sale_order_id"] = parsed["order"].id
         if "product_id" in self._fields and parsed["product"]:

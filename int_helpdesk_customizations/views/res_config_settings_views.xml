@@ -8,8 +8,17 @@
             <xpath expr="//form" position="inside">
                 <app string="Dealer Portal" name="int_helpdesk_dealer_portal" data-string="Dealer Portal">
                     <block title="Help &amp; Feedback" name="int_helpdesk_help_feedback">
-                        <setting string="Team" help="Tickets from the dealer Help &amp; Feedback hub are created on this team. The hub stays hidden until a team is set.">
-                            <field name="int_help_team_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        <setting string="Returns team" help="Return requests are created on this existing team. The hub stays hidden until every team below is set.">
+                            <field name="int_help_team_return_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        </setting>
+                        <setting string="Warranty team" help="Warranty claims are created on this existing team. Use the same team as returns.">
+                            <field name="int_help_team_warranty_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        </setting>
+                        <setting string="Feedback team" help="Feedback is created on this existing team.">
+                            <field name="int_help_team_feedback_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        </setting>
+                        <setting string="Part request team" help="Part requests are created on this existing team.">
+                            <field name="int_help_team_part_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
                         </setting>
                         <setting string="Return tag" help="Applied to return requests.">
                             <field name="int_help_tag_return_id" options="{'no_create': True}"/>

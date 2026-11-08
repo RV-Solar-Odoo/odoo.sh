@@ -292,7 +292,7 @@ New model `rvsb.alert.list` (one record per alert type, per company):
 
 | Field | Type | Meaning |
 |---|---|---|
-| `rvsb_help_team_id` | m2o `helpdesk.team` | Team receiving Help & Feedback tickets ("Dealer Support") |
+| `rvsb_help_team_id` | m2o `helpdesk.team` | Superseded by decision 20. Use the existing teams, one per kind. Do not create "Dealer Support". |
 | `rvsb_ticket_type_return_id` | m2o `helpdesk.ticket.type` | "Return" |
 | `rvsb_ticket_type_warranty_id` | m2o `helpdesk.ticket.type` | "Warranty Claim" |
 | `rvsb_ticket_type_feedback_id` | m2o `helpdesk.ticket.type` | "Feedback" |
@@ -325,7 +325,7 @@ Data file (noupdate): create the four ticket types if they don't exist.
 | Tile | Description |
 |---|---|
 | Start a return | Return unused or incorrect items from an order. We'll review it and send return instructions. |
-| Start a warranty claim | Report a product that has failed. Include the serial number and photos so we can process it fast. |
+| Start a warranty claim | Report a product that has failed. Include the serial number and photos so we can process it quickly. |
 | Website & operations feedback | Something broken, confusing or slow — on the site, in shipping, billing or anything else? Tell us and we'll fix it. |
 | Request a part we don't stock | Need something we don't carry? Tell us what it is and roughly how many you use per year. |
 
@@ -887,6 +887,8 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 17 | Installer listing shows street address | Hidden unless the dealer opts in | ☐ |
 | 18 | Where the current phase is built | Grant, 2026-11-08: no new module. Tasks 2–5 go in `int_website_customizations` (password fields, Password & Security, Become a Dealer) and `int_helpdesk_customizations` (Help & Feedback). Follow the repo `int_*` module rule. Section 3's `rvsb_*` modules stay the behavior spec for later phases until Grant says to create them. All of this work stays on `staging1`. | ☑ Grant |
 | 19 | Ticket types on Odoo 19 | This database has no `helpdesk.ticket.type` and no `ticket_type_id`. The four Help & Feedback kinds are `helpdesk.tag` records. Company settings that Section 6.1 calls ticket-type fields point at `helpdesk.tag`. | ☑ verified live 2026-11-08 |
+| 20 | Which team, and dealer vs retail | Grant, 2026-11-08: do not create a helpdesk team. Returns and warranty claims use the existing returns team (RVSB Returns). Feedback and part requests use the existing general inquiries team. Keep the four kind tags. Every ticket with a customer also gets a tag named "Customer type: Dealer" or "Customer type: Retail", from the same pricelist check as the hub. | ☑ Grant |
+| 21 | Dealer account email | Grant, 2026-11-08: retail guests can still create an account after checkout. When staff approve a dealer, **Send account setup email** sends a create-password link if they have no login. If they already created an account at checkout, keep that login and email them to sign in. Do not create a second user. | ☑ Grant |
 
 ---
 
