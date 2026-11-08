@@ -1,0 +1,30 @@
+// Fires animationstart when Chrome or Safari autofill a password input.
+@keyframes o_int_autofill_start {
+    from {
+        opacity: 0.999;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+form.oe_reset_password_form input[type="password"]:-webkit-autofill {
+    animation-name: o_int_autofill_start;
+    animation-duration: 0.01s;
+}
+
+html.o_int_approved_dealer a[href="/dealer-application"],
+html.o_int_approved_dealer a[href^="/dealer-application?"] {
+    display: none !important;
+}
+
+html.o_int_approved_dealer header li:has(> .oe_structure a[href="/dealer-application"]),
+html.o_int_approved_dealer header li:has(> .oe_structure a[href^="/dealer-application?"]),
+html.o_int_approved_dealer nav li:has(> .oe_structure a[href="/dealer-application"]),
+html.o_int_approved_dealer nav li:has(> .oe_structure a[href^="/dealer-application?"]) {
+    display: none !important;
+}
+
+html.o_int_approved_dealer a.o_int_help_link {
+    display: inline-block !important;
+}

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="int_helpdesk_alert_list_view_list" model="ir.ui.view">
+        <field name="name">int.helpdesk.alert.list.list</field>
+        <field name="model">int.helpdesk.alert.list</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="notify_mode"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="int_helpdesk_alert_list_view_form" model="ir.ui.view">
+        <field name="name">int.helpdesk.alert.list.form</field>
+        <field name="model">int.helpdesk.alert.list</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code" readonly="id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="notify_mode"/>
+                            <field name="extra_emails" placeholder="casey@example.com, shop@example.com"/>
+                        </group>
+                        <group>
+                            <field name="group_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <group string="Staff">
+                        <field name="user_ids" widget="many2many_checkboxes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_int_helpdesk_alert_list" model="ir.actions.act_window">
+        <field name="name">Help &amp; Feedback Alerts</field>
+        <field name="res_model">int.helpdesk.alert.list</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No alert lists yet</p>
+            <p>
+                Each company has one list for returns, warranty claims, feedback, and part requests.
+                Tick the internal staff who should hear about that kind of request.
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_int_helpdesk_alert_list"
+        name="Help &amp; Feedback Alerts"
+        parent="helpdesk.helpdesk_menu_config"
+        action="action_int_helpdesk_alert_list"
+        groups="helpdesk.group_helpdesk_manager"
+        sequence="80"/>
+</odoo>

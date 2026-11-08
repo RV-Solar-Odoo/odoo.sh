@@ -1,0 +1,35 @@
+# Dealer Portal — Discovery Findings
+
+Recorded 2026-11-08 from the Odoo 19.0 community source on GitHub, the live website, and this repository. Items that need the staging database are marked open.
+
+## Section 2 — Business and database facts
+
+| # | Question | Answer | Recorded by / date |
+|---|---|---|---|
+| D1 | Dealer-tier pricelists | Approved dealer means the commercial partner's pricelist is not the public website pricelist. Live tiers seen earlier: Dealer 1 (32% global) and Dealer 2 (40% global). Do not hardcode ids. Confirm the exact pricelist records on staging before any settings default. | Grant / agent, 2026-11-08 |
+| D2 | How Become a Dealer submissions are stored today | Public page `/dealer-application` ("Dealer Application"). Website form posts to `/website/form/` with `data-model_name="crm.lead"` and redirects to `/contactus-thank-you`. `int_crm_customizations` extends `crm.lead` for tax-exemption fields. Styling is in `rvs_website/static/src/scss/website.scss`. | agent, 2026-11-08 |
+| D3 | Where the Become a Dealer button lives | Not a website menu. Header snippet in the desktop nav and the mobile nav: `a.btn.btn-primary[href="/dealer-application"]` inside an `oe_structure` block. The homepage also has a "become a dealer" link, and another page has "Apply Here", both to `/dealer-application`. | agent, 2026-11-08 |
+| D4 | Company and website records | Multi-company, confirmed live. RVSB is company 1 (the www.rvsolarandbattery.com website company). Nomadiq is company 9. SupplyTrax Global, LLC is company 8. Resolve the company from `request.website.company_id`. Do not hardcode these ids in modules. | agent, 2026-11-08 |
+| D5 | Shippo add-on | Not needed for Tasks 2–5. Open. | |
+| D6 | Other custom modules | Portal and website inherits to check before editing: `int_website_customizations` (shop, MAP pricing, dealer pricelist check on `product.template._int_is_dealer_contact`), `rvs_website` (helpdesk team-card and ticket-form cleanup), `int_helpdesk_customizations` (ticket reply-to), `int_crm_customizations` (dealer application tax exemption), `int_website_form_names` (website form names, depends on `website_helpdesk`). | agent, 2026-11-08 |
+| D7 | Theme and DB-customized portal views | `rvs_website` is the website theme. The header Become a Dealer control is website-editor HTML, not a repo template. Portal "Connection & Security" was not found in repo XML; it is the standard `portal.portal_my_security` view. Re-check Technical → Views for a DB copy (`arch_fs` empty) before upgrading. | agent, 2026-11-08 |
+| D8 | Credit limit | Not needed for Tasks 2–5. Open. | |
+| D9 | Installed apps | Helpdesk is installed. RVSB teams today: General Inquiries (id 1) and RVSB Returns (id 12). There is no Dealer Support team yet. `helpdesk.team` `name`, `company_id`, and `member_ids` are required. Sign, eLearning, Loyalty, Resellers: open. | agent, 2026-11-08 |
+| D10 | Payment providers | Stripe is the provider under investigation for Task 1. Saved cards are in use. Do not change production Link settings from here. | agent, 2026-11-08 |
+| D11 | How Approved Dealer is tracked today | Pricelist on the contact, not a tag. `product.template._int_is_dealer_contact` compares the commercial partner's `property_product_pricelist` (website company) with the public user's pricelist. A pending applicant is a `crm.lead` from `/dealer-application` whose contact is still on the public pricelist, so the button stays visible. | Grant / agent, 2026-11-08 |
+
+## Section 5 — Odoo 19 API verification
+
+Source: `odoo/odoo` branch `19.0` (`addons/portal/views/portal_templates.xml`, `addons/auth_signup/views/auth_signup_login_templates.xml`), read 2026-11-08. Enterprise helpdesk models are not in that tree.
+
+| Item | Real name in Odoo 19 | File:line | Notes |
+|---|---|---|---|
+| Portal home entries | `portal.portal_my_home` calls `portal.portal_docs_entry` | `portal/views/portal_templates.xml` template `portal_my_home` | Params used by the security card: `icon`, `title`, `text`, `url`, `config_card`. Card markup is `div.o_portal_index_card` > `a`. Common category id is `portal_common_category`. |
+| Security page | `portal.portal_my_security`, route `/my/security` | same file, template `portal_my_security` | `additional_title` is `Security`. `no_breadcrumbs` is 1, so the breadcrumb bar is hidden. Visible heading is `h3` "Connection & Security". Change-password form class `oe_reset_password_form`, posts to `/my/security` with `op=password`. Fields: `id=current` `name=old` `autocomplete=current-password`; `id=new` `name=new1` `autocomplete=new-password`; `id=new2` `name=new2` `autocomplete=new-password`. No `value` attribute. |
+| Password reset | `auth_signup.reset_password` calls `auth_signup.fields` | `auth_signup/views/auth_signup_login_templates.xml` | Form class `oe_reset_password_form`. Inputs `name=password` `id=password` and `name=confirm_password` `id=confirm_password`. No autocomplete and no value. Placeholder is dots, which is not a value. |
+| Breadcrumb | `portal.portal_breadcrumbs` | `portal_templates.xml` template `portal_breadcrumbs` | Renders only when `page_name != 'home'` and `no_breadcrumbs` is false. Security does not set `page_name`. Adding a crumb means setting `page_name` to `my_security`, dropping `no_breadcrumbs`, and adding a `li` for that page name. |
+| My Orders | Open | | Not part of Tasks 2–5. |
+| Cart API | Open | | |
+| Helpdesk ticket type | Does not exist on this database | Live `fields_get` / `ir.model` search, 2026-11-08 | `helpdesk.ticket` has no `ticket_type_id`. Kinds are `helpdesk.tag` records on `tag_ids` (`name`, `color` only; tags are not per company). The ticket already has `sale_order_id` and `product_id`. Use tags for Return, Warranty Claim, Feedback, and Part Request. See SPEC decision 19. |
+| Users and groups | Open | | |
+| SQL constraints | Open | | |

@@ -1,0 +1,20 @@
+.o_int_help_card {
+    max-width: 640px;
+    margin: 0 auto 2rem;
+    background: #fff;
+    border: 1px solid #d9dee7;
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.o_int_help_card .btn-primary {
+    background-color: #0054a8;
+    border-color: #0054a8;
+}
+
+.o_int_help_card .btn-primary:hover,
+.o_int_help_card .btn-primary:focus,
+.o_int_help_card .btn-primary:active {
+    background-color: #004488;
+    border-color: #004488;
+}
