@@ -45,6 +45,19 @@
     .o_portal_index_card:has(a[href="/odoo/documents_portal"]) { order: 80 !important; }
     .o_portal_index_card:has(a[href="/my/payment_method"]) { order: 90 !important; }
     .o_portal_index_card:has(a[href="/my/purchase"]) { order: 100 !important; }
+
+    // The other portal icons are 64px SVGs. This one is a picture, so without
+    // a size it lays out at its full pixel width and fills the card.
+    a[href="/my/help"] .o_portal_icon {
+        width: 64px;
+        flex: 0 0 64px;
+
+        img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+    }
 }
 
 .o_int_help_card {
