@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import logging
 import math
 import os
@@ -13,6 +14,7 @@ from odoo.fields import Command
 _logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+DUPLICATE_WINDOW = timedelta(seconds=60)
 NO_ORDERS_MESSAGE = "No orders found \u2014 use Feedback instead."
 EN_DASH = "\u2013"
 
@@ -150,6 +152,10 @@ class HelpdeskTicket(models.Model):
             )
             return {"error": _("This request type is not set up yet.")}
         vals = self._int_help_ticket_vals(user, company, spec, team, tag, parsed)
+        self._int_help_lock_submission(user, vals["name"])
+        duplicate = self._int_help_recent_duplicate(user, vals)
+        if duplicate:
+            return {"ticket": duplicate}
         ticket = self.sudo().with_company(company).create(vals)
         self._int_help_confirm_received(ticket)
         self._int_help_store_attachments(ticket, parsed["uploads"])
@@ -225,6 +231,29 @@ class HelpdeskTicket(models.Model):
             lambda line: not line.display_type and line.product_id.id == product_id
         )
         return lines[:1].product_id
+
+    @api.model
+    def _int_help_lock_submission(self, user, name):
+        """Serialize two identical submits so the second one sees the first ticket."""
+        partner_id = user.partner_id.id or 0
+        digest = hashlib.sha256(f"int-help:{partner_id}:{name}".encode()).digest()
+        key = int.from_bytes(digest[:8], "big") & 0x7FFFFFFFFFFFFFFF
+        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s)", [key])
+
+    @api.model
+    def _int_help_recent_duplicate(self, user, vals):
+        """The same request submitted again within a minute is the first ticket."""
+        if not user.partner_id or not vals.get("name"):
+            return self.browse()
+        since = fields.Datetime.now() - DUPLICATE_WINDOW
+        domain = [
+            ("partner_id", "=", user.partner_id.id),
+            ("name", "=", vals["name"]),
+            ("create_date", ">=", since),
+        ]
+        if vals.get("team_id"):
+            domain.append(("team_id", "=", vals["team_id"]))
+        return self.sudo().search(domain, order="id desc", limit=1)
 
     @api.model
     def _int_help_rate_limited(self, user, company):

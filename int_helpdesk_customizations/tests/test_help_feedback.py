@@ -161,6 +161,26 @@ class TestHelpFeedback(TransactionCase):
             files or [],
         )
 
+    def test_second_submit_returns_the_same_ticket(self):
+        data = {
+            "product_text": "555",
+            "serial": "6666",
+            "install_date": "2026-11-03",
+            "failure": "pls help",
+        }
+        first = self._submit("warranty", data)
+        self.assertFalse(first.get("error"), first.get("error"))
+        second = self._submit("warranty", data)
+        self.assertEqual(second["ticket"], first["ticket"])
+        self.assertEqual(
+            self.env["helpdesk.ticket"].search_count([("name", "=", first["ticket"].name)]),
+            1,
+        )
+        other = dict(data, failure="A different failure")
+        third = self._submit("warranty", other)
+        self.assertFalse(third.get("error"), third.get("error"))
+        self.assertNotEqual(third["ticket"], first["ticket"])
+
     def test_approved_dealer_flag(self):
         self.assertEqual(
             self.dealer.with_company(self.company).property_product_pricelist,

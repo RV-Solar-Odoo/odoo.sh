@@ -94,8 +94,27 @@ function prefillWebsiteForms() {
     });
 }
 
+function guardSubmit(form) {
+    form.addEventListener("submit", (event) => {
+        if (form.dataset.intSubmitting === "1") {
+            event.preventDefault();
+            return;
+        }
+        form.dataset.intSubmitting = "1";
+        const button = form.querySelector('[type="submit"]');
+        if (button) {
+            window.setTimeout(() => {
+                button.disabled = true;
+            }, 0);
+        }
+    });
+}
+
 function start() {
-    document.querySelectorAll(".o_int_help_form").forEach(bind);
+    document.querySelectorAll(".o_int_help_form").forEach((form) => {
+        bind(form);
+        guardSubmit(form);
+    });
     prefillWebsiteForms();
 }
 

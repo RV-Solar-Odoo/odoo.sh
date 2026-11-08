@@ -40,5 +40,6 @@ Returns only offer confirmed orders from the last 24 months for the dealer's com
 - Kinds are helpdesk tags, not ticket types. This database has no `helpdesk.ticket.type` and no `ticket_type_id`.
 - Tickets go to the existing teams. Returns and warranty claims go to RVSB Returns. Feedback and part requests go to General Inquiries. This module does not create a team.
 - The ticket copies the contact's tags and uses the same names. It does not decide dealer or retail from the pricelist. Tickets with no customer are left untagged. Existing tickets are not backfilled.
+- A second submit of the same request within a minute returns the ticket already created. The submit button also locks after the first click.
 - Approved dealer means the pricelist check above. It is duplicated here and does not import the website customizations module.
 - The work lives in `int_helpdesk_customizations`. No new module was added.
