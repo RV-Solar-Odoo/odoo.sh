@@ -75,6 +75,24 @@ class CrmLead(models.Model):
         field = self._fields["x_tax_exemption_reason"]
         return dict(field._description_selection(self.env)).get(self.x_tax_exemption_reason)
 
+    def action_int_open_dealer_invite(self):
+        """Ask for the pricelist, then set it, tag the contact, and email the login."""
+        self.ensure_one()
+        if not email_normalize(self.email_from or self.partner_id.email or ""):
+            raise UserError(self.env._("Add an email, or link a contact, before creating the dealer account."))
+        company = self.company_id or self.env.company
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Create Dealer Account"),
+            "res_model": "int.dealer.invite",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_lead_id": self.id,
+                "default_company_id": company.id,
+            },
+        }
+
     def action_int_send_dealer_account_email(self):
         """Send the account email for this application.
 

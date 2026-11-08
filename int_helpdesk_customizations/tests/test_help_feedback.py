@@ -90,8 +90,8 @@ class TestHelpFeedback(TransactionCase):
         cls.tag_feedback = Tag.create({"name": "Test Feedback", "color": 4})
         cls.tag_part = Tag.create({"name": "Test Part", "color": 10})
         cls.tags = cls.tag_return | cls.tag_warranty | cls.tag_feedback | cls.tag_part
-        cls.customer_dealer = cls.env.ref("int_helpdesk_customizations.tag_customer_dealer")
-        cls.customer_retail = cls.env.ref("int_helpdesk_customizations.tag_customer_retail")
+        cls.dealer_category = cls.env["res.partner.category"].create({"name": "RVSB Dealer"})
+        cls.dealer.write({"category_id": [Command.link(cls.dealer_category.id)]})
         cls.company.write({
             "int_help_team_return_id": cls.returns_team.id,
             "int_help_team_warranty_id": cls.returns_team.id,
@@ -236,8 +236,7 @@ class TestHelpFeedback(TransactionCase):
             expected_team = self.returns_team if kind in ("return", "warranty") else self.general_team
             self.assertEqual(ticket.team_id, expected_team)
             self.assertIn(tags[kind], ticket.tag_ids)
-            self.assertIn(self.customer_dealer, ticket.tag_ids)
-            self.assertNotIn(self.customer_retail, ticket.tag_ids)
+            self.assertIn("RVSB Dealer", ticket.tag_ids.mapped("name"))
             self.assertTrue(ticket.name.startswith(labels[kind]))
             self.assertIn("\u2013", ticket.name)
             self.assertEqual(ticket.partner_id, self.dealer)
@@ -442,36 +441,46 @@ class TestHelpFeedback(TransactionCase):
         self.assertEqual(company.int_help_team_return_id, returns)
         self.assertEqual(alerts.user_ids, self.env.user)
 
-    def test_customer_type_tag_on_ticket_create(self):
+    def test_ticket_tags_copy_the_contact_tags(self):
         Ticket = self.env["helpdesk.ticket"].with_company(self.company).with_context(
             mail_create_nolog=True,
             mail_create_nosubscribe=True,
             tracking_disable=True,
         )
+        priced_only = self.env["res.partner"].create({
+            "name": "Pricelist Only",
+            "email": "pricelist-only@example.com",
+        })
+        self._set_pricelist(priced_only, self.dealer_pl)
+        priced_ticket = Ticket.create({
+            "name": "Pricelist does not tag the ticket",
+            "team_id": self.general_team.id,
+            "partner_id": priced_only.id,
+            "company_id": self.company.id,
+        })
+        self.assertNotIn("RVSB Dealer", priced_ticket.tag_ids.mapped("name"))
+        dealer_ticket = Ticket.create({
+            "name": "Dealer contact",
+            "team_id": self.general_team.id,
+            "partner_id": self.dealer.id,
+            "company_id": self.company.id,
+            "tag_ids": [Command.set([self.tag_feedback.id])],
+        })
+        self.assertIn(self.tag_feedback, dealer_ticket.tag_ids)
+        self.assertIn("RVSB Dealer", dealer_ticket.tag_ids.mapped("name"))
         retail_ticket = Ticket.create({
             "name": "Website question",
             "team_id": self.general_team.id,
             "partner_id": self.retail.id,
             "company_id": self.company.id,
         })
-        self.assertIn(self.customer_retail, retail_ticket.tag_ids)
-        self.assertNotIn(self.customer_dealer, retail_ticket.tag_ids)
-        preset = Ticket.create({
-            "name": "Already typed",
-            "team_id": self.general_team.id,
-            "partner_id": self.retail.id,
-            "company_id": self.company.id,
-            "tag_ids": [Command.set([self.customer_dealer.id])],
-        })
-        self.assertIn(self.customer_dealer, preset.tag_ids)
-        self.assertNotIn(self.customer_retail, preset.tag_ids)
+        self.assertNotIn("RVSB Dealer", retail_ticket.tag_ids.mapped("name"))
         bare = Ticket.create({
             "name": "No customer",
             "team_id": self.general_team.id,
             "company_id": self.company.id,
         })
-        self.assertNotIn(self.customer_dealer, bare.tag_ids)
-        self.assertNotIn(self.customer_retail, bare.tag_ids)
+        self.assertNotIn("RVSB Dealer", bare.tag_ids.mapped("name"))
 
     def test_notify_assigns_the_only_recipient(self):
         ticket = self.env["helpdesk.ticket"].with_company(self.company).with_context(

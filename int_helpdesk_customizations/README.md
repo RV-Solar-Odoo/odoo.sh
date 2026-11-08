@@ -1,6 +1,6 @@
 # Help & Feedback
 
-Approved dealers open Help & Feedback from My Portal. The hub at `/my/help` leads to four forms: a return, a warranty claim, website and operations feedback, and a request for a part we do not stock. Each submission becomes a private helpdesk ticket on an existing team, tagged for that kind, with the dealer's contact as the customer so replies reach them. Returns and warranty claims use the returns team. Feedback and part requests use the general inquiries team. Every ticket that has a customer also gets a tag named **Customer type: Dealer** or **Customer type: Retail**.
+Approved dealers open Help & Feedback from My Portal. The hub at `/my/help` leads to four forms: a return, a warranty claim, website and operations feedback, and a request for a part we do not stock. Each submission becomes a private helpdesk ticket on an existing team, tagged for that kind, with the dealer's contact as the customer so replies reach them. Returns and warranty claims use the returns team. Feedback and part requests use the general inquiries team. A ticket copies the tags already on that contact, with the same names. A contact tagged RVSB Dealer gets an RVSB Dealer tag on the ticket. A contact with no tags adds none.
 
 The header link to `/my/help` is added by the website customizations. This module owns the My Portal tile, the hub, the forms, the tickets, the tags, and the staff alerts. It does not create a helpdesk team.
 
@@ -39,6 +39,6 @@ Returns only offer confirmed orders from the last 24 months for the dealer's com
 
 - Kinds are helpdesk tags, not ticket types. This database has no `helpdesk.ticket.type` and no `ticket_type_id`.
 - Tickets go to the existing teams. Returns and warranty claims go to RVSB Returns. Feedback and part requests go to General Inquiries. This module does not create a team.
-- Dealer or retail is a second tag, **Customer type: Dealer** or **Customer type: Retail**, added when a ticket is created with a customer. It uses the same pricelist check as the hub. Tickets with no customer are left untagged. Existing tickets are not backfilled.
+- The ticket copies the contact's tags and uses the same names. It does not decide dealer or retail from the pricelist. Tickets with no customer are left untagged. Existing tickets are not backfilled.
 - Approved dealer means the pricelist check above. It is duplicated here and does not import the website customizations module.
 - The work lives in `int_helpdesk_customizations`. No new module was added.

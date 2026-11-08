@@ -6,7 +6,8 @@
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header/field[@name='stage_id']" position="before">
-                <button name="action_int_send_dealer_account_email" string="Send account setup email" type="object"
+                <button name="action_int_open_dealer_invite" string="Create Dealer Account" type="object"
+                        class="btn-primary"
                         groups="sales_team.group_sale_salesman"/>
                 <button name="action_grant_tax_exemption" string="Grant Tax Exemption" type="object"
                         groups="sales_team.group_sale_manager,account.group_account_invoice"

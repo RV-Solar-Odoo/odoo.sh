@@ -16,14 +16,6 @@
         <field name="name">Part Request</field>
         <field name="color">10</field>
     </record>
-    <record id="tag_customer_dealer" model="helpdesk.tag">
-        <field name="name">Customer type: Dealer</field>
-        <field name="color">9</field>
-    </record>
-    <record id="tag_customer_retail" model="helpdesk.tag">
-        <field name="name">Customer type: Retail</field>
-        <field name="color">8</field>
-    </record>
 
     <record id="mail_template_help_alert" model="mail.template">
         <field name="name">Help &amp; Feedback staff alert</field>

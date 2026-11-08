@@ -1,6 +1,6 @@
 # Contacts Customizations
 
-Sales sends a dealer a portal account email from the contact, or from the dealer application once this module is installed.
+Sales sends a dealer a portal account email from the contact. On the opportunity, CRM Customizations opens a wizard first so the same email also sets the pricelist and the RVSB Dealer tag.
 
 ## Send account setup email
 
