@@ -816,13 +816,9 @@ Dealer-only enforcement:
 
 ---
 
-## 7. Configuration-only task (Task 1: Stripe Link)
+## 7. Stripe Link on My Payments
 
-No module. Opening My Payments sends a Link verification text because Stripe Link auto-prompts on the saved email.
-1. Reproduce on production with a test customer.
-2. In the Stripe dashboard → Settings → Payment methods, select the payment method configuration Odoo uses and turn **Link** off.
-3. In Odoo, open the Stripe payment provider's payment methods and make sure Link is not enabled.
-4. Re-test My Payments (no text) and a card checkout (still works).
+Opening My Payments builds Stripe's card form with the customer's saved email. Link then texts a verification code before the customer asks to pay. `int_website_customizations` turns that prompt off (`wallets.link` = `never`) when the card form is created. Card payments and saved cards stay. Link is not a separate payment method on the Stripe provider.
 
 ---
 
