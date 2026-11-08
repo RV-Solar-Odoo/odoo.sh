@@ -1,0 +1,58 @@
+// My Account > Payment methods: saved cards as rows like the Help & Feedback returns
+// list. Stock's form draws the rows; this only restyles them on that page.
+.o_int_paymethods {
+    // Our page heading replaces stock's "Your payment methods".
+    #o_payment_tokens_heading {
+        display: none;
+    }
+
+    #o_payment_form_options > div > .list-group {
+        gap: 0.75rem;
+        border-radius: 0;
+
+        > .list-group-item {
+            padding: 1rem 1.25rem !important;
+            background: #fff;
+            border: 1px solid #e3e6f3 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 2px 10px rgba(22, 27, 46, 0.05);
+        }
+    }
+
+    // The card number and expiry are what people look for.
+    .list-group-item p.fw-bold {
+        font-size: 0.95rem;
+    }
+
+    [name="o_payment_delete_token"] {
+        color: #767c96;
+
+        &:hover {
+            color: #dc3545;
+        }
+    }
+}
+
+.o_int_paymethods_empty {
+    padding: 1.5rem;
+    border: 1px dashed #d9dee7;
+    border-radius: 14px;
+    color: #767c96;
+    text-align: center;
+}
+
+// The pop-up's card list: no outer border, the card form sits on its own.
+#o_int_add_payment_method {
+    .modal-content {
+        border: 0;
+        border-radius: 14px;
+    }
+
+    .modal-body > #o_payment_methods > p:first-child {
+        display: none;  // "Payment method" title; the pop-up has its own
+    }
+
+    .modal-footer [name="o_payment_submit_button"] {
+        width: 100%;
+    }
+}
