@@ -24,4 +24,13 @@
             </nav>
         </xpath>
     </template>
+
+    <!-- Account dropdown: "My Portal", the same name the portal page uses. -->
+    <template id="my_portal_link" inherit_id="portal.my_account_link" name="My Portal link">
+        <xpath expr="//a[@href='/my/home']" position="replace">
+            <a href="/my/home" role="menuitem" class="dropdown-item ps-3">
+                <i class="fa fa-fw fa-id-card-o me-1 small text-primary-emphasis"/> My Portal
+            </a>
+        </xpath>
+    </template>
 </odoo>

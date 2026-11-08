@@ -1609,3 +1609,16 @@
     }
   }
 }
+
+/* ============ Header cart ============ */
+/* White number on the blue badge. The editor's header CSS makes every header badge black
+   with #wrapwrap:not(.o_header_overlay) header .badge, so this needs the extra #top to win. */
+#wrapwrap header#top .badge.my_cart_quantity {
+  color: #fff !important;
+}
+/* With "Show Empty" off, the icon starts hidden. Adding to the cart shows the number, but
+   stock's script only unhides the first of the two headers' cart icons (desktop), so the
+   phone header's icon follows the number instead. */
+#wrapwrap header li.o_wsale_my_cart.d-none:has(.my_cart_quantity:not(.d-none)) {
+  display: list-item !important;
+}
