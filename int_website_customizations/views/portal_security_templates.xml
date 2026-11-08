@@ -23,14 +23,20 @@
         </xpath>
         <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='current']" position="attributes">
             <attribute name="autocomplete">current-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
         <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='new']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
         <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='new2']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
     </template>
@@ -46,10 +52,14 @@
               name="Blank reset password fields">
         <xpath expr="//input[@id='password']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
         <xpath expr="//input[@id='confirm_password']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
     </template>

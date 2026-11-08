@@ -64,9 +64,12 @@ class TestPortalSecurity(TransactionCase):
             field = arch.xpath(f"//input[@id='{element_id}']")[0]
             self.assertEqual(field.get("autocomplete"), autocomplete)
             self.assertEqual(field.get("t-att-value"), "''")
+            self.assertEqual(field.get("readonly"), "readonly")
+            self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
         deactivate = arch.xpath("//form[@id='portal_deactivate_account_form']//input[@name='password']")[0]
         self.assertIsNone(deactivate.get("t-att-value"))
         self.assertIsNone(deactivate.get("autocomplete"))
+        self.assertIsNone(deactivate.get("readonly"))
 
         crumbs = etree.fromstring(self._arch("portal.portal_breadcrumbs"))
         crumb = crumbs.xpath("//li[@t-if=\"page_name == 'my_security'\"]")[0]
@@ -95,6 +98,8 @@ class TestPortalSecurity(TransactionCase):
             field = tree.xpath(f"//input[@id='{element_id}']")[0]
             self.assertEqual(field.get("value"), "")
             self.assertEqual(field.get("autocomplete"), autocomplete)
+            self.assertIsNotNone(field.get("readonly"))
+            self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
             self.assertIn('value=""', html.tostring(field, encoding="unicode"))
 
     def test_reset_password_fields_are_blank(self):
@@ -103,6 +108,8 @@ class TestPortalSecurity(TransactionCase):
             field = arch.xpath(f"//input[@id='{element_id}']")[0]
             self.assertEqual(field.get("autocomplete"), "new-password")
             self.assertEqual(field.get("t-att-value"), "''")
+            self.assertEqual(field.get("readonly"), "readonly")
+            self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
 
         rendered = self._render("auth_signup.fields")
         # The template is two sibling divs, not a full document.
@@ -112,6 +119,8 @@ class TestPortalSecurity(TransactionCase):
             self.assertEqual(field.get("type"), "password")
             self.assertEqual(field.get("value"), "")
             self.assertEqual(field.get("autocomplete"), "new-password")
+            self.assertIsNotNone(field.get("readonly"))
+            self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
             self.assertIn('value=""', html.tostring(field, encoding="unicode"))
 
     def test_layout_marks_approved_dealers(self):
