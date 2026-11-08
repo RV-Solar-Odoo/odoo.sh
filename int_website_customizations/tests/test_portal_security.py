@@ -110,6 +110,7 @@ class TestPortalSecurity(TransactionCase):
             self.assertEqual(field.get("t-att-value"), "''")
             self.assertEqual(field.get("readonly"), "readonly")
             self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
+            self.assertFalse(field.get("placeholder"))
 
         rendered = self._render("auth_signup.fields")
         # The template is two sibling divs, not a full document.
@@ -121,6 +122,8 @@ class TestPortalSecurity(TransactionCase):
             self.assertEqual(field.get("autocomplete"), "new-password")
             self.assertIsNotNone(field.get("readonly"))
             self.assertEqual(field.get("onfocus"), "this.removeAttribute('readonly')")
+            self.assertFalse(field.get("placeholder"))
+            self.assertNotIn("••••", html.tostring(field, encoding="unicode"))
             self.assertIn('value=""', html.tostring(field, encoding="unicode"))
 
     def test_layout_marks_approved_dealers(self):

@@ -52,12 +52,14 @@
               name="Blank reset password fields">
         <xpath expr="//input[@id='password']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="placeholder"/>
             <attribute name="readonly">readonly</attribute>
             <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
         </xpath>
         <xpath expr="//input[@id='confirm_password']" position="attributes">
             <attribute name="autocomplete">new-password</attribute>
+            <attribute name="placeholder"/>
             <attribute name="readonly">readonly</attribute>
             <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
             <attribute name="t-att-value">''</attribute>
