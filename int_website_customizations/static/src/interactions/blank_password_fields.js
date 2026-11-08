@@ -11,23 +11,26 @@ const AUTOFILL_ANIMATION = "o_int_autofill_start";
 export class BlankPasswordFields extends Interaction {
     static selector = "form.oe_reset_password_form";
     static selectorHas = 'input[type="password"]';
+    dynamicContent = {
+        'input[type="password"]': {
+            "t-on-pointerdown.capture.noUpdate.withTarget": (ev, input) => this.unlock(input),
+            "t-on-keydown.noUpdate.withTarget": (ev, input) => this.unlock(input),
+            "t-on-focus.noUpdate.withTarget": (ev, input) => this.unlock(input),
+            "t-on-animationstart.noUpdate.withTarget": this.onAutofill,
+        },
+    };
 
     setup() {
-        this.passwordInputs = [...this.el.querySelectorAll('input[type="password"]')];
         this.unlocked = new WeakSet();
         this.clearing = new WeakSet();
-        for (const input of this.passwordInputs) {
-            input.readOnly = true;
-            input.setAttribute("readonly", "readonly");
-            const unlock = () => this.unlock(input);
-            this.addListener(input, "pointerdown", unlock, { capture: true });
-            this.addListener(input, "keydown", unlock);
-            this.addListener(input, "focus", unlock);
-            this.addListener(input, "animationstart", (ev) => this.onAutofill(ev, input));
-        }
     }
 
     start() {
+        this.passwordInputs = [...this.el.querySelectorAll('input[type="password"]')];
+        for (const input of this.passwordInputs) {
+            input.readOnly = true;
+            input.setAttribute("readonly", "readonly");
+        }
         this.clearLocked();
         for (const delay of CLEAR_DELAYS) {
             this.waitForTimeout(() => this.clearLocked(), delay);
