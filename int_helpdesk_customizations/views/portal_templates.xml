@@ -13,7 +13,7 @@
         </xpath>
         <xpath expr="//div[@id='portal_service_category']" position="inside">
             <t t-if="request.env.user._int_help_hub_visible()" t-call="portal.portal_docs_entry">
-                <t t-set="icon" t-value="'/int_helpdesk_customizations/static/src/img/help_feedback.svg?v=3'"/>
+                <t t-set="icon" t-value="'/int_helpdesk_customizations/static/src/img/help_feedback.png?v=4'"/>
                 <t t-set="title">Help &amp; Feedback</t>
                 <t t-set="text">Returns, warranty, feedback, and part requests</t>
                 <t t-set="url" t-value="'/my/help'"/>

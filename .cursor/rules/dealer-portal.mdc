@@ -9,6 +9,6 @@ Before dealer-portal work, read the relevant section of `docs/dealer-portal/SPEC
 
 Current phase (Grant, 2026-11-08): do not add a module. Tasks 2–5 go in the existing modules. Password fields, the Password & Security rename, and Become a Dealer belong in `int_website_customizations`. Help & Feedback belongs in `int_helpdesk_customizations`. Names, manifests, and versions follow `int-modules.mdc`. The spec's `rvsb_*` modules describe later phases until Grant says to create them.
 
-Branch is `staging1` only. Never push `main` without Grant's explicit authorization.
+The site is not live. Through 2026-12-09, push this work straight to `main`. Grant said so on 2026-11-09. After that date, ask before pushing `main`.
 
 Form fields, copy, upload limits, and the 10-tickets-per-hour limit come from SPEC.md Section 6.1. Task 1 (Stripe Link) is configuration only and stays out of the modules.

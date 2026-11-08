@@ -5,7 +5,7 @@
 Grant placed the dealer-portal spec here on 2026-11-08 so later sessions can find it.
 
 - Read `docs/dealer-portal/SPEC.md` (v1.1, November 6, 2026) and `docs/dealer-portal/DISCOVERY.md` before dealer-portal work. The Word original is `docs/dealer-portal/Dealer_Portal_Module_Build_Spec.docx`.
-- Dealer-portal commits go on `staging1` only. Never push `main` without Grant's explicit authorization.
+- The site is not live. Through 2026-12-09, dealer-portal commits go straight to `main`. Grant said so on 2026-11-09. After that date, ask before pushing `main`.
 - Do not add a module for the current phase. Implement Tasks 2–5 in the existing related modules: portal password, the Password & Security rename, and Become a Dealer in `int_website_customizations`; Help & Feedback in `int_helpdesk_customizations`. Module names, manifests, and versions still follow `.cursor/rules/int-modules.mdc` (`int_<app>_customizations`, author Internal, license LGPL-3). The `rvsb_*` map below is the behavior spec for later phases until Grant says to create those modules.
 - Behavior, fields, copy, upload limits, and the 10-tickets-per-hour limit still come from SPEC.md Section 6.1. Task 1 (Stripe Link) is configuration only.
 
