@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="layout_help_contact" inherit_id="website.layout" name="Helpdesk contact prefill">
+        <xpath expr="//head" position="inside">
+            <t t-if="not request.env.user._is_public()">
+                <meta name="int-contact-name" t-att-content="request.env.user.partner_id.name or ''"/>
+                <meta name="int-contact-email" t-att-content="request.env.user.partner_id.email or request.env.user.email or ''"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

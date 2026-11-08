@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_password_security" inherit_id="portal.portal_my_home"
+              name="Password and Security card">
+        <xpath expr="//t[@t-call='portal.portal_docs_entry'][t[@t-set='url' and @t-value=&quot;'/my/security'&quot;]]/t[@t-set='title']" position="replace">
+            <t t-set="title">Password &amp; Security</t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_security_password" inherit_id="portal.portal_my_security"
+              name="Password and Security page">
+        <!-- These have to be direct children of the t-call. QWeb only copies t-set
+             values into the layout when a direct child sets one, and the layout
+             reads them before it draws the title and the breadcrumb. -->
+        <xpath expr="//div[hasclass('o_portal_security_body')]//t[@t-set='additional_title']" position="replace"/>
+        <xpath expr="//div[hasclass('o_portal_security_body')]//t[@t-set='no_breadcrumbs']" position="replace"/>
+        <xpath expr="//div[hasclass('o_portal_security_body')]" position="before">
+            <t t-set="additional_title">Password &amp; Security</t>
+            <t t-set="page_name" t-value="'my_security'"/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_portal_security_body')]/div[hasclass('d-flex')]/h3" position="replace">
+            <h3 class="my-0">Password &amp; Security</h3>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='current']" position="attributes">
+            <attribute name="autocomplete">current-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
+            <attribute name="t-att-value">''</attribute>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='new']" position="attributes">
+            <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
+            <attribute name="t-att-value">''</attribute>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_reset_password_form')]//input[@id='new2']" position="attributes">
+            <attribute name="autocomplete">new-password</attribute>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
+            <attribute name="t-att-value">''</attribute>
+        </xpath>
+    </template>
+
+    <template id="portal_breadcrumbs_my_security" inherit_id="portal.portal_breadcrumbs"
+              name="Password and Security breadcrumb">
+        <xpath expr="//a[@href='/my/home']/parent::li" position="after">
+            <li t-if="page_name == 'my_security'" class="breadcrumb-item">Password &amp; Security</li>
+        </xpath>
+    </template>
+
+    <template id="auth_signup_blank_passwords" inherit_id="auth_signup.fields"
+              name="Blank reset password fields">
+        <xpath expr="//input[@id='password']" position="attributes">
+            <attribute name="autocomplete">new-password</attribute>
+            <attribute name="placeholder"/>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
+            <attribute name="t-att-value">''</attribute>
+        </xpath>
+        <xpath expr="//input[@id='confirm_password']" position="attributes">
+            <attribute name="autocomplete">new-password</attribute>
+            <attribute name="placeholder"/>
+            <attribute name="readonly">readonly</attribute>
+            <attribute name="onfocus">this.removeAttribute('readonly')</attribute>
+            <attribute name="t-att-value">''</attribute>
+        </xpath>
+    </template>
+
+    <!-- The header button is website-editor HTML, so it cannot be xpathed.
+         The class is on the document element before the body is parsed. -->
+    <template id="layout_approved_dealer" inherit_id="website.layout" name="Approved dealer">
+        <xpath expr="//head" position="inside">
+            <t t-if="website and request.env['product.template'].sudo()._int_is_dealer_contact(request.env.user.partner_id, website)">
+                <script>
+                    document.documentElement.classList.add('o_int_approved_dealer');
+                </script>
+            </t>
+        </xpath>
+    </template>
+</odoo>

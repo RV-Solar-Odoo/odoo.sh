@@ -1,0 +1,14 @@
+---
+description: Where the dealer portal spec lives and how to apply it in this repo
+alwaysApply: true
+---
+
+# Dealer portal
+
+Before dealer-portal work, read the relevant section of `docs/dealer-portal/SPEC.md` and `docs/dealer-portal/DISCOVERY.md`. `CLAUDE.md` is the working guide. The Word original is `docs/dealer-portal/Dealer_Portal_Module_Build_Spec.docx` (v1.1, November 6, 2026). Record new Odoo 19 findings in `DISCOVERY.md`.
+
+Current phase (Grant, 2026-11-08): do not add a module. Tasks 2–5 go in the existing modules. Password fields, the Password & Security rename, and Become a Dealer belong in `int_website_customizations`. Help & Feedback belongs in `int_helpdesk_customizations`. Names, manifests, and versions follow `int-modules.mdc`. The spec's `rvsb_*` modules describe later phases until Grant says to create them.
+
+Branch is `staging1` only. Never push `main` without Grant's explicit authorization.
+
+Form fields, copy, upload limits, and the 10-tickets-per-hour limit come from SPEC.md Section 6.1. Task 1 (Stripe Link) is configuration only and stays out of the modules.

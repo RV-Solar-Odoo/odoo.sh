@@ -1,0 +1,69 @@
+// My Portal cards sit in one category row each, so a category with a single
+// card leaves an empty cell. Flatten the categories into one grid and keep
+// related cards next to each other.
+.o_portal_my_home .o_portal_docs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+
+    @media (min-width: 768px) {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    > .o_portal_category {
+        display: contents;
+    }
+
+    > .o_portal_doc_spinner {
+        display: none;
+    }
+
+    > .col-12,
+    .o_portal_index_card.col-12 {
+        grid-column: 1 / -1;
+        order: 0 !important;
+    }
+
+    .o_portal_index_card {
+        width: auto !important;
+        max-width: none !important;
+        margin-top: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        order: 200 !important;
+    }
+
+    .o_portal_index_card:has(a[href="/my/orders"]) { order: 10 !important; }
+    .o_portal_index_card:has(a[href="/my/invoices?filterby=invoices"]) { order: 20 !important; }
+    .o_portal_index_card:has(a[href="/my/tickets"]) { order: 30 !important; }
+    .o_portal_index_card:has(a[href="/my/help"]) { order: 40 !important; }
+    .o_portal_index_card:has(a[href="/my/addresses"]) { order: 50 !important; }
+    .o_portal_index_card:has(a[href="/my/security"]) { order: 60 !important; }
+    .o_portal_index_card:has(a[href="/knowledge/home"]) { order: 70 !important; }
+    .o_portal_index_card:has(a[href="/odoo/documents_portal"]) { order: 80 !important; }
+    .o_portal_index_card:has(a[href="/my/payment_method"]) { order: 90 !important; }
+    .o_portal_index_card:has(a[href="/my/purchase"]) { order: 100 !important; }
+}
+
+.o_int_help_card {
+    max-width: 640px;
+    margin: 0 auto 2rem;
+    background: #fff;
+    border: 1px solid #d9dee7;
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.o_int_help_card .btn-primary {
+    background-color: #0054a8;
+    border-color: #0054a8;
+}
+
+.o_int_help_card .btn-primary:hover,
+.o_int_help_card .btn-primary:focus,
+.o_int_help_card .btn-primary:active {
+    background-color: #004488;
+    border-color: #004488;
+}
