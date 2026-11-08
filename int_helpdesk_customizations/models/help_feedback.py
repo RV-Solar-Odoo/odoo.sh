@@ -15,7 +15,9 @@ _logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 DUPLICATE_WINDOW = timedelta(seconds=60)
-NO_ORDERS_MESSAGE = "No orders found \u2014 use Feedback instead."
+# Picked in the return form's order list, or sent when the dealer has no orders:
+# the order number and product are typed instead of chosen.
+TYPED_ORDER = "typed"
 EN_DASH = "\u2013"
 
 IMAGE_TYPES = {
@@ -101,14 +103,15 @@ class HelpdeskTicket(models.Model):
 
     @api.model
     def _int_help_prepare(self, user, company, kind):
-        """Values the form needs. A return with no orders explains that, instead of a broken form."""
+        """Values the form needs."""
         spec = HELP_KINDS[kind]
         orders = self._int_help_orders(user, company)
         return {
             "kind": kind,
             "title": spec["title"],
             "orders": orders,
-            "notice": NO_ORDERS_MESSAGE if kind == "return" and not orders else False,
+            "typed_order": TYPED_ORDER,
+            "notice": False,
             "reasons": RETURN_REASONS,
             "areas": FEEDBACK_AREAS,
             "max_files": spec["max_files"],
@@ -130,8 +133,6 @@ class HelpdeskTicket(models.Model):
         access_error = self._int_help_access_error(user, company)
         if access_error:
             return {"error": access_error}
-        if kind == "return" and not self._int_help_orders(user, company):
-            return {"error": NO_ORDERS_MESSAGE, "notice": NO_ORDERS_MESSAGE}
         tag = company.sudo()[spec["tag_field"]]
         if not tag:
             _logger.warning(
@@ -269,6 +270,27 @@ class HelpdeskTicket(models.Model):
         return count >= 10
 
     @api.model
+    def _int_help_open_returns(self, user, company):
+        """Open returns for everyone at the dealer's company, from either return form.
+
+        Warranty claims go to the same team, so their tag keeps them out. A ticket
+        in a folded stage is closed.
+        """
+        team = company._int_help_team_for("return")
+        commercial = user.partner_id.sudo().commercial_partner_id
+        if not team or not commercial:
+            return self.sudo().browse()
+        domain = [
+            ("team_id", "=", team.id),
+            ("partner_id", "child_of", commercial.id),
+            ("stage_id.fold", "=", False),
+        ]
+        warranty_tag = company.sudo().int_help_tag_warranty_id
+        if warranty_tag:
+            domain.append(("tag_ids", "not in", warranty_tag.ids))
+        return self.sudo().search(domain, order="create_date desc, id desc")
+
+    @api.model
     def _int_help_reference(self, ticket):
         ticket.ensure_one()
         if "ticket_ref" in ticket._fields and ticket.ticket_ref:
@@ -346,17 +368,30 @@ class HelpdeskTicket(models.Model):
 
     @api.model
     def _int_help_parse_return(self, user, company, data, errors):
-        order, order_error = self._int_help_checked_order(user, company, data.get("order_id"), required=True)
-        if order_error:
-            errors.append(order_error)
+        order = self.env["sale.order"]
         product = self.env["product.product"]
-        product_id = self._int_help_int(data.get("product_id"))
-        if order and not order_error:
-            product = self._int_help_order_product(order, product_id)
-            if not product:
+        typed = (data.get("order_id") or "").strip() == TYPED_ORDER
+        if typed:
+            # Guest checkouts, older orders, or anything else not on their account.
+            order_label = (data.get("order_ref") or "").strip()
+            product_label = (data.get("product_text") or "").strip()
+            if not order_label:
+                errors.append(_("Order number is required."))
+            if not product_label:
+                errors.append(_("Product / SKU is required."))
+        else:
+            order, order_error = self._int_help_checked_order(user, company, data.get("order_id"), required=True)
+            if order_error:
+                errors.append(order_error)
+            product_id = self._int_help_int(data.get("product_id"))
+            if order and not order_error:
+                product = self._int_help_order_product(order, product_id)
+                if not product:
+                    errors.append(_("Choose a product from that order."))
+            elif not order_error and not product_id:
                 errors.append(_("Choose a product from that order."))
-        elif not order_error and not product_id:
-            errors.append(_("Choose a product from that order."))
+            order_label = order.name if order else ""
+            product_label = product.display_name if product else ""
         quantity = self._int_help_number(data.get("quantity"))
         if quantity is None or quantity <= 0:
             errors.append(_("Quantity must be a number greater than zero."))
@@ -367,8 +402,8 @@ class HelpdeskTicket(models.Model):
         serial = (data.get("serial") or "").strip()
         details = (data.get("details") or "").strip()
         rows = [
-            (_("Order"), order.name if order else ""),
-            (_("Product"), product.display_name if product else ""),
+            (_("Order (typed, not linked)") if typed else _("Order"), order_label),
+            (_("Product"), product_label),
             (_("Serial number"), serial or "\u2014"),
             (_("Quantity"), "" if quantity is None else self._int_help_qty(quantity)),
             (_("Reason"), reasons.get(reason, "")),
@@ -378,8 +413,8 @@ class HelpdeskTicket(models.Model):
             "order": order,
             "product": product,
             "rows": rows,
-            "name_left": order.name if order else "",
-            "name_right": product.name if product else "",
+            "name_left": order_label,
+            "name_right": product.name if product else product_label,
         }
 
     @api.model

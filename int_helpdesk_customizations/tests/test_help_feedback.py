@@ -8,7 +8,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.int_helpdesk_customizations.models.help_feedback import (
     MAX_UPLOAD_BYTES,
-    NO_ORDERS_MESSAGE,
+    TYPED_ORDER,
 )
 
 
@@ -388,7 +388,7 @@ class TestHelpFeedback(TransactionCase):
         self.assertIn("10", result["error"])
         self.assertEqual(self.env["helpdesk.ticket"].search_count(domain), 10)
 
-    def test_return_with_no_orders_explains_that(self):
+    def test_return_with_no_orders_takes_a_typed_order(self):
         partner = self.env["res.partner"].create({
             "name": "Dealer With No Orders",
             "email": "no-orders@example.com",
@@ -397,17 +397,81 @@ class TestHelpFeedback(TransactionCase):
         user = self._portal_user(partner, "int.help.no.orders", "no-orders-user@example.com")
         prepared = self.env["helpdesk.ticket"]._int_help_prepare(user, self.company, "return")
         self.assertFalse(prepared["orders"])
-        self.assertEqual(prepared["notice"], NO_ORDERS_MESSAGE)
-        self.assertIn("No orders found", prepared["notice"])
-        self.assertIn("Feedback", prepared["notice"])
+        self.assertFalse(prepared["notice"])
         result = self._submit("return", {
+            "order_id": TYPED_ORDER,
+            "order_ref": "GUEST-1042",
+            "product_text": "SmartSolar 100/30",
+            "quantity": "1",
+            "reason": "ordered_error",
+        }, user=user)
+        self.assertFalse(result.get("error"), result.get("error"))
+        ticket = result["ticket"]
+        self.assertEqual(ticket.team_id, self.returns_team)
+        self.assertIn(self.tag_return, ticket.tag_ids)
+        self.assertIn("GUEST-1042", ticket.name)
+        self.assertIn("SmartSolar 100/30", ticket.name)
+        self.assertIn("GUEST-1042", str(ticket.description))
+        if "sale_order_id" in ticket._fields:
+            self.assertFalse(ticket.sale_order_id)
+
+    def test_typed_return_needs_the_order_number_and_product(self):
+        result = self._submit("return", {
+            "order_id": TYPED_ORDER,
+            "quantity": "1",
+            "reason": "other",
+        })
+        self.assertFalse(result.get("ticket"))
+        self.assertIn("Order number", result["error"])
+        self.assertIn("Product", result["error"])
+
+    def test_open_returns_list(self):
+        Ticket = self.env["helpdesk.ticket"]
+        returned = self._submit("return", {
             "order_id": str(self.order.id),
             "product_id": str(self.product.id),
             "quantity": "1",
-            "reason": "other",
-        }, user=user)
-        self.assertFalse(result.get("ticket"))
-        self.assertEqual(result["error"], NO_ORDERS_MESSAGE)
+            "reason": "damaged",
+        })["ticket"]
+        warranty = self._submit("warranty", {
+            "product_text": "Victron MultiPlus",
+            "serial": "SN-2",
+            "install_date": "2024-05-01",
+            "failure": "No output",
+        })["ticket"]
+        colleague = self.env["res.partner"].create({
+            "name": "Dealer Colleague",
+            "parent_id": self.dealer.id,
+            "email": "colleague@example.com",
+        })
+        # The public Returns form makes tickets like this one, without the Help & Feedback tag.
+        public_form = Ticket.create({
+            "name": "Return from the website form",
+            "team_id": self.returns_team.id,
+            "partner_id": colleague.id,
+        })
+        stranger = Ticket.create({
+            "name": "Someone else's return",
+            "team_id": self.returns_team.id,
+            "partner_id": self.retail.id,
+        })
+        closed = Ticket.create({
+            "name": "Finished return",
+            "team_id": self.returns_team.id,
+            "partner_id": self.dealer.id,
+        })
+        done = self.env["helpdesk.stage"].create({
+            "name": "Done",
+            "fold": True,
+            "team_ids": [Command.link(self.returns_team.id)],
+        })
+        closed.stage_id = done
+        listed = Ticket._int_help_open_returns(self.dealer_user, self.company)
+        self.assertIn(returned, listed)
+        self.assertIn(public_form, listed)
+        self.assertNotIn(warranty, listed)
+        self.assertNotIn(stranger, listed)
+        self.assertNotIn(closed, listed)
 
     def test_setup_uses_existing_teams_and_does_not_create_one(self):
         company = self.env["res.company"].create({"name": "Seed Help Co"})

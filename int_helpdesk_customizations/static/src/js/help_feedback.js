@@ -27,9 +27,25 @@ function bind(form) {
     if (!order || !product) {
         return;
     }
+    // Return form: "My order isn't listed" swaps the product list for typed fields.
+    const picked = form.querySelector(".js-int-help-picked");
+    const typed = form.querySelector(".js-int-help-typed");
+    const showTyped = (on) => {
+        if (!picked || !typed) {
+            return;
+        }
+        picked.classList.toggle("d-none", on);
+        typed.classList.toggle("d-none", !on);
+        product.required = !on;
+        typed.querySelectorAll("input").forEach((input) => {
+            input.required = on;
+        });
+    };
     const load = () => {
         const orderId = order.value;
-        if (!orderId) {
+        const isTyped = Boolean(order.dataset.typed) && orderId === order.dataset.typed;
+        showTyped(isTyped);
+        if (!orderId || isTyped) {
             fillProducts(product, [], "");
             return;
         }
@@ -49,7 +65,8 @@ function bind(form) {
         load();
     });
     product.addEventListener("change", () => {
-        if (!productText || !product.value) {
+        // Warranty copies the picked product into its text field; the return's typed field stays as typed.
+        if (!productText || !product.value || productText.closest(".js-int-help-typed")) {
             return;
         }
         const option = product.selectedOptions[0];

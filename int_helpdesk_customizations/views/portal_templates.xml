@@ -25,8 +25,12 @@
     <template id="portal_help_breadcrumbs" name="Help &amp; Feedback breadcrumbs" inherit_id="portal.portal_breadcrumbs">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
             <li t-if="page_name == 'int_help'" class="breadcrumb-item">Help &amp; Feedback</li>
-            <li t-if="page_name in ('int_help_form', 'int_help_done')" class="breadcrumb-item">
+            <li t-if="page_name in ('int_help_form', 'int_help_done', 'int_help_returns')" class="breadcrumb-item">
                 <a href="/my/help">Help &amp; Feedback</a>
+            </li>
+            <li t-if="page_name == 'int_help_returns'" class="breadcrumb-item">Returns</li>
+            <li t-if="page_name == 'int_help_form' and kind == 'return'" class="breadcrumb-item">
+                <a href="/my/help/return">Returns</a>
             </li>
             <li t-if="page_name == 'int_help_form'" class="breadcrumb-item" t-out="int_help_title"/>
             <li t-if="page_name == 'int_help_done'" class="breadcrumb-item">Request received</li>
@@ -44,9 +48,9 @@
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
                         </span>
-                        <h2>Start a return</h2>
-                        <p>Return unused or incorrect items from an order. We'll review it and send return instructions.</p>
-                        <span class="o_int_help_hub_cta">Start a return <i class="oi oi-arrow-right"/></span>
+                        <h2>Returns</h2>
+                        <p>Start a return for unused or incorrect items, or check on one you've already sent.</p>
+                        <span class="o_int_help_hub_cta">Start or view returns <i class="oi oi-arrow-right"/></span>
                     </a>
                     <a class="o_int_help_hub_card" href="/my/help/warranty">
                         <span class="o_int_help_hub_icon">
@@ -77,6 +81,32 @@
         </t>
     </template>
 
+    <template id="portal_help_returns" name="Help &amp; Feedback returns">
+        <t t-call="portal.portal_layout">
+            <t t-set="page_name" t-value="'int_help_returns'"/>
+            <t t-set="additional_title">Returns</t>
+            <div class="o_int_help_hub">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 my-3">
+                    <h3 class="my-0">Your returns</h3>
+                    <a href="/my/help/return/new" class="btn btn-primary">Start a new return</a>
+                </div>
+                <div t-if="tickets" class="o_int_help_returns">
+                    <a t-foreach="tickets" t-as="ticket" class="o_int_help_return_row" t-att-href="ticket.get_portal_url()">
+                        <span class="o_int_help_return_main">
+                            <span class="o_int_help_return_name" t-out="ticket.name"/>
+                            <span class="o_int_help_return_meta">
+                                #<t t-out="ticket._int_help_reference(ticket)"/> · opened
+                                <t t-out="ticket.create_date" t-options="{'widget': 'date'}"/>
+                            </span>
+                        </span>
+                        <span class="o_int_help_return_stage" t-out="ticket.stage_id.name"/>
+                    </a>
+                </div>
+                <p t-else="" class="o_int_help_returns_empty">No open returns.</p>
+            </div>
+        </t>
+    </template>
+
     <template id="portal_help_form" name="Help &amp; Feedback form">
         <t t-call="portal.portal_layout">
             <t t-set="page_name" t-value="'int_help_form'"/>
@@ -87,13 +117,48 @@
                 <h3 class="mb-3" t-out="title"/>
                 <div t-if="error" class="alert alert-danger" role="alert" t-out="error"/>
                 <p t-if="notice" class="mb-0" t-out="notice"/>
-                <form t-if="not notice" t-attf-action="/my/help/{{ kind }}" method="post" enctype="multipart/form-data" class="o_int_help_form">
+                <form t-if="not notice" t-att-action="'/my/help/return/new' if kind == 'return' else '/my/help/%s' % kind" method="post" enctype="multipart/form-data" class="o_int_help_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
-                    <t t-if="kind in ('return', 'warranty')">
+                    <t t-if="kind == 'return'">
+                        <!-- No orders on the account, or "My order isn't listed": type them instead. -->
+                        <t t-set="int_typed" t-value="not orders or values.get('order_id') == typed_order"/>
+                        <div t-if="orders" class="mb-3">
+                            <label class="form-label" for="int_help_order">Order<span class="text-danger">*</span></label>
+                            <select id="int_help_order" name="order_id" class="form-select js-int-help-order" required="required" t-att-data-typed="typed_order">
+                                <option value="">Select an order</option>
+                                <t t-foreach="orders" t-as="order">
+                                    <option t-att-value="order.id" t-att-selected="(values.get('order_id') or '') == str(order.id) and 'selected' or None" t-out="order.name"/>
+                                </t>
+                                <option t-att-value="typed_order" t-att-selected="int_typed and 'selected' or None">My order isn't listed</option>
+                            </select>
+                        </div>
+                        <input t-else="" type="hidden" name="order_id" t-att-value="typed_order"/>
+                        <div t-attf-class="mb-3 js-int-help-picked #{'d-none' if int_typed else ''}">
+                            <label class="form-label" for="int_help_product">Product / SKU<span class="text-danger">*</span></label>
+                            <select id="int_help_product" name="product_id" class="form-select js-int-help-product" t-att-required="not int_typed and 'required' or None" t-att-data-selected="values.get('product_id') or ''">
+                                <option value="">Select a product</option>
+                            </select>
+                        </div>
+                        <div t-attf-class="js-int-help-typed #{'' if int_typed else 'd-none'}">
+                            <p t-if="not orders" class="form-text mt-0 mb-3">
+                                We couldn't find any orders on your account. Type the order number and product instead.
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label" for="int_help_order_ref">Order number<span class="text-danger">*</span></label>
+                                <input id="int_help_order_ref" type="text" name="order_ref" class="form-control" t-att-required="int_typed and 'required' or None" t-att-value="values.get('order_ref') or ''"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="int_help_return_product">Product / SKU<span class="text-danger">*</span></label>
+                                <input id="int_help_return_product" type="text" name="product_text" class="form-control" t-att-required="int_typed and 'required' or None" t-att-value="values.get('product_text') or ''"/>
+                            </div>
+                        </div>
+                    </t>
+
+                    <t t-if="kind == 'warranty'">
                         <div class="mb-3">
-                            <label class="form-label" for="int_help_order">Order<t t-if="kind == 'return'"><span class="text-danger">*</span></t></label>
-                            <select id="int_help_order" name="order_id" class="form-select js-int-help-order" t-att-required="kind == 'return' and 'required' or None">
+                            <label class="form-label" for="int_help_order">Order</label>
+                            <select id="int_help_order" name="order_id" class="form-select js-int-help-order">
                                 <option value="">Select an order</option>
                                 <t t-foreach="orders" t-as="order">
                                     <option t-att-value="order.id" t-att-selected="(values.get('order_id') or '') == str(order.id) and 'selected' or None" t-out="order.name"/>
@@ -101,11 +166,8 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="int_help_product">
-                                <t t-if="kind == 'return'">Product / SKU<span class="text-danger">*</span></t>
-                                <t t-else="">Product from this order</t>
-                            </label>
-                            <select id="int_help_product" name="product_id" class="form-select js-int-help-product" t-att-required="kind == 'return' and 'required' or None" t-att-data-selected="values.get('product_id') or ''">
+                            <label class="form-label" for="int_help_product">Product from this order</label>
+                            <select id="int_help_product" name="product_id" class="form-select js-int-help-product" t-att-data-selected="values.get('product_id') or ''">
                                 <option value="">Select a product</option>
                             </select>
                         </div>

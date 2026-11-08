@@ -60,6 +60,28 @@ class IntHelpdeskHelp(http.Controller):
             "ticket_reference": Ticket._int_help_reference(ticket),
         })
 
+    @http.route("/my/help/return", type="http", auth="user", website=True, methods=["GET"], sitemap=False)
+    def returns(self, **kwargs):
+        """Open returns, with a button to start a new one."""
+        hidden = self._hidden_redirect()
+        if hidden:
+            return hidden
+        tickets = request.env["helpdesk.ticket"]._int_help_open_returns(request.env.user, self._company())
+        return request.render("int_helpdesk_customizations.portal_help_returns", {
+            "tickets": tickets,
+        })
+
+    @http.route(
+        "/my/help/return/new",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET", "POST"],
+        sitemap=False,
+    )
+    def return_form(self, **post):
+        return self._form("return", post)
+
     @http.route(
         "/my/help/<string:kind>",
         type="http",
@@ -69,8 +91,13 @@ class IntHelpdeskHelp(http.Controller):
         sitemap=False,
     )
     def form(self, kind, **post):
+        if kind == "return":
+            return request.redirect("/my/help/return/new")
         if kind not in HELP_KINDS:
             raise NotFound()
+        return self._form(kind, post)
+
+    def _form(self, kind, post):
         hidden = self._hidden_redirect()
         if hidden:
             return hidden
