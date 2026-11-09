@@ -77,6 +77,9 @@
                         <span class="o_int_help_hub_cta">Request a part <i class="oi oi-arrow-right"/></span>
                     </a>
                 </div>
+                <div class="o_int_help_rep">
+                    <t t-call="int_contacts_customizations.portal_sales_rep_card"/>
+                </div>
             </div>
         </t>
     </template>

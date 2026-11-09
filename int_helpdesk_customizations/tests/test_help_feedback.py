@@ -6,6 +6,8 @@ from odoo import fields
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.website.tools import MockRequest
+
 from odoo.addons.int_helpdesk_customizations.models.help_feedback import (
     MAX_UPLOAD_BYTES,
     TYPED_ORDER,
@@ -633,3 +635,30 @@ class TestHelpFeedback(TransactionCase):
         recipients = ticket._message_get_default_recipients()[ticket.id]
         self.assertEqual(recipients.get("email_to"), "other@example.com")
         self.assertFalse(recipients.get("partner_ids"))
+
+    def _render_rep_card(self, user):
+        env = self.env(user=user)
+        with MockRequest(env, website=self.env["website"].search([], limit=1)):
+            return str(env["ir.qweb"]._render("int_contacts_customizations.portal_sales_rep_card", {}))
+
+    def test_hub_shows_the_sales_rep_card(self):
+        arch = self.env.ref("int_helpdesk_customizations.portal_help_hub").get_combined_arch()
+        self.assertIn("int_contacts_customizations.portal_sales_rep_card", arch)
+
+        self.assertNotIn("Your Sales Rep", self._render_rep_card(self.dealer_user))
+
+        rep = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Help Hub Rep",
+            "login": "help-hub-rep@example.com",
+            "email": "help-hub-rep@example.com",
+            "company_id": self.company.id,
+            "company_ids": [Command.set([self.company.id])],
+            "group_ids": [Command.set([self.env.ref("base.group_user").id])],
+        })
+        rep.partner_id.phone = "555-0142"
+        self.dealer.user_id = rep
+        rendered = self._render_rep_card(self.dealer_user)
+        self.assertIn("Your Sales Rep", rendered)
+        self.assertIn("Help Hub Rep", rendered)
+        self.assertIn('href="mailto:help-hub-rep@example.com"', rendered)
+        self.assertIn('href="tel:5550142"', rendered)

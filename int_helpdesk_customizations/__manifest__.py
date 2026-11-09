@@ -1,11 +1,11 @@
 {
     "name": "Helpdesk Customizations",
-    "version": "19.0.1.10.0",
+    "version": "19.0.1.11.0",
     "category": "Services/Helpdesk",
     "summary": "Keep ticket email replies on the ticket, and the dealer Help & Feedback hub",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["helpdesk", "portal", "website", "sale"],
+    "depends": ["helpdesk", "portal", "website", "sale", "int_contacts_customizations"],
     "application": False,
     "data": [
         "security/ir.model.access.csv",
