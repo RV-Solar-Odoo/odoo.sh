@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_account_summary" name="My Portal sales rep and credit">
+        <t t-set="int_sales_rep" t-value="show_rep and request.env.user._int_portal_sales_rep()"/>
+        <t t-set="int_credit" t-value="request.env.user._int_portal_credit()"/>
+        <div class="o_int_portal_summary">
+            <div t-if="int_sales_rep" class="o_int_summary_card o_int_rep_card">
+                <h3>Your sales rep</h3>
+                <div class="o_int_rep_body">
+                    <img t-if="int_sales_rep['image']" class="o_int_rep_photo" t-att-src="int_sales_rep['image']" t-att-alt="int_sales_rep['name']"/>
+                    <div>
+                        <div class="o_int_rep_name" t-out="int_sales_rep['name']"/>
+                        <a t-if="int_sales_rep['email']" class="o_int_rep_link" t-attf-href="mailto:{{ int_sales_rep['email'] }}" t-out="int_sales_rep['email']"/>
+                        <a t-if="int_sales_rep['phone_href']" class="o_int_rep_link" t-att-href="int_sales_rep['phone_href']" t-out="int_sales_rep['phone']"/>
+                    </div>
+                </div>
+            </div>
+            <div t-if="int_credit" class="o_int_summary_card o_int_credit_card">
+                <h3>Credit</h3>
+                <div class="o_int_credit_figures">
+                    <div>
+                        <span>Limit</span>
+                        <strong t-out="int_credit['limit']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                    </div>
+                    <div>
+                        <span>Used</span>
+                        <strong t-out="int_credit['used']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                    </div>
+                    <div>
+                        <span>Available</span>
+                        <strong t-out="int_credit['available']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                    </div>
+                </div>
+                <div t-attf-class="o_int_credit_bar o_int_credit_#{int_credit['level']}" role="progressbar"
+                     t-att-aria-valuenow="int_credit['percent']" aria-valuemin="0" aria-valuemax="100">
+                    <span t-attf-style="width: {{ int_credit['percent'] }}%;"/>
+                </div>
+                <p t-if="int_credit['over']" class="o_int_credit_over_text">
+                    Over limit by
+                    <t t-out="int_credit['over']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                </p>
+                <p t-if="int_credit['credit_on_account']" class="o_int_credit_note">
+                    Credit on account:
+                    <t t-out="int_credit['credit_on_account']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                </p>
+                <p t-if="int_credit['other_currency']" class="o_int_credit_note">
+                    Amounts are shown in <t t-out="int_credit['currency'].name"/>.
+                </p>
+                <p class="o_int_credit_caption">Includes open invoices and confirmed orders not yet invoiced. Updated in real time.</p>
+            </div>
+            <div id="rvsb_account_cards" class="o_int_account_cards"/>
+        </div>
+    </template>
+
+    <template id="portal_tracking_links" name="Shipment tracking links">
+        <t t-foreach="links" t-as="link">
+            <a t-if="link['url']" t-att-href="link['url']" target="_blank" rel="noopener noreferrer" t-out="link['number']"/>
+            <span t-else="" t-out="link['number']"/>
+        </t>
+    </template>
+
+    <template id="portal_my_home_account" name="My Portal sales rep and credit cards" inherit_id="portal.portal_my_home">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="show_rep" t-value="True"/>
+            <t t-call="int_portal_customizations.portal_account_summary"/>
+        </xpath>
+    </template>
+
+    <template id="portal_my_invoices_credit" name="Invoices credit card" inherit_id="account.portal_my_invoices">
+        <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
+            <t t-set="show_rep" t-value="False"/>
+            <t t-call="int_portal_customizations.portal_account_summary"/>
+        </xpath>
+    </template>
+
+    <template id="portal_my_orders_tracking" name="My Orders tracking column" inherit_id="sale.portal_my_orders">
+        <xpath expr="//thead" position="before">
+            <t t-set="int_tracking" t-value="orders._int_portal_shipments()"/>
+        </xpath>
+        <xpath expr="//th[@name='order_total']" position="before">
+            <th class="text-end">Tracking</th>
+        </xpath>
+        <xpath expr="//td[@name='order_amount_total']" position="before">
+            <td class="text-end o_int_tracking">
+                <t t-set="shipment" t-value="int_tracking.get(order.id)"/>
+                <t t-if="shipment and (shipment['links'] or shipment['partial'])">
+                    <span t-if="shipment['partial']" class="o_int_partial">Partial</span>
+                    <t t-if="shipment['links']" t-call="int_portal_customizations.portal_tracking_links">
+                        <t t-set="links" t-value="shipment['links']"/>
+                    </t>
+                    <span t-if="not shipment['links']">—</span>
+                </t>
+                <span t-else="">—</span>
+            </td>
+        </xpath>
+    </template>
+
+    <template id="sale_order_portal_shipments" name="Order shipments" inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//div[@id='introduction']" position="after">
+            <t t-set="int_shipment" t-value="sale_order._int_portal_shipments()[sale_order.id]"/>
+            <div t-if="int_shipment['shipments'] or sale_order.state == 'sale'" class="o_int_order_shipments">
+                <h5>
+                    Shipments
+                    <span t-if="int_shipment['partial']" class="o_int_partial">Partial</span>
+                </h5>
+                <div t-if="not int_shipment['shipments']" class="text-muted">No shipments yet.</div>
+                <div t-foreach="int_shipment['shipments']" t-as="shipment" class="o_int_shipment">
+                    <strong t-out="shipment['name']"/>
+                    <span t-if="shipment['done']" class="text-muted">Shipped</span>
+                    <span t-else="" class="text-muted">Not shipped yet</span>
+                    <t t-if="shipment['links']" t-call="int_portal_customizations.portal_tracking_links">
+                        <t t-set="links" t-value="shipment['links']"/>
+                    </t>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

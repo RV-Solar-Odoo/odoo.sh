@@ -365,6 +365,8 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 ### 6.2 `rvsb_portal_account_info` (Tasks 6–8)
 
+**Built in `int_portal_customizations`.** The `rvsb_*` module is not created. The store-credit slot keeps the id `rvsb_account_cards`. Portal role is `res.partner.int_portal_role` (default Owner). Owner and Accountant see credit. Buyer and Viewer do not.
+
 **Purpose.** Tracking links in My Orders, assigned sales rep, and credit limit/usage on My Portal.
 
 **Depends:** `rvsb_dealer_base`, `sale_stock`, `stock_delivery` (verify name; earlier `delivery`), `account`.
@@ -886,6 +888,7 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 20 | Which team, and dealer vs retail | Grant, 2026-11-08: do not create a helpdesk team. Returns and warranty claims use the existing returns team (RVSB Returns). Feedback and part requests use the existing general inquiries team. Keep the four kind tags. The ticket copies the contact's Tags field and uses the same names. It does not invent a Customer type from the pricelist. | ☑ Grant |
 | 21 | Dealer account email | Grant, 2026-11-08: retail guests can still create an account after checkout. When staff approve a dealer, the account email sends a create-password link if they have no login. If they already created an account at checkout, keep that login and email them to sign in. Do not create a second user. | ☑ Grant |
 | 22 | Dealer invite on the opportunity | Grant, 2026-11-08: **Create Dealer Account** on the CRM opportunity opens a wizard. Staff pick the pricelist. Confirm sets that pricelist on the commercial partner, adds the contact tag **RVSB Dealer** (create the tag by that name if it is missing; do not hardcode an id), then sends the account email from decision 21. A later helpdesk ticket copies that contact tag onto the ticket. | ☑ Grant |
+| 23 | Where Tasks 6–8 are built | Grant asked for tracking, the sales rep card, and the credit card on 2026-11-09. They are built in `int_portal_customizations` so `rvsb_portal_account_info` is not created. The empty store-credit slot id stays `rvsb_account_cards`. Credit uses Odoo's `credit` plus `credit_to_invoice` on the commercial partner. Buyer and Viewer do not receive the figures. Existing contacts stay Owner. | ☑ |
 
 ---
 

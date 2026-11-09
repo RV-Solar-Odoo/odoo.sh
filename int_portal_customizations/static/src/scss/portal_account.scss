@@ -1,0 +1,138 @@
+.o_int_portal_summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    &:not(:has(.o_int_summary_card, .o_int_account_cards:not(:empty))) {
+        display: none;
+    }
+}
+
+.o_int_summary_card,
+.o_int_account_cards:not(:empty) {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.o_int_account_cards:empty {
+    display: none;
+}
+
+.o_int_summary_card {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+
+    h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1.15rem;
+        font-weight: 500;
+    }
+}
+
+.o_int_rep_body {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.o_int_rep_photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 48px;
+}
+
+.o_int_rep_name {
+    font-weight: 600;
+}
+
+.o_int_rep_link {
+    display: block;
+    padding: 0.35rem 0;
+    overflow-wrap: anywhere;
+}
+
+.o_int_credit_figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 0.75rem;
+
+    span {
+        display: block;
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+}
+
+.o_int_credit_bar {
+    height: 0.5rem;
+    background: #e6e8ef;
+    border-radius: 999px;
+    overflow: hidden;
+
+    > span {
+        display: block;
+        height: 100%;
+        background: #2f9e44;
+    }
+}
+
+.o_int_credit_warn > span {
+    background: #e0a100;
+}
+
+.o_int_credit_over > span {
+    background: #d94841;
+}
+
+.o_int_credit_over_text {
+    margin: 0.5rem 0 0;
+    color: #d94841;
+    font-weight: 600;
+}
+
+.o_int_credit_note,
+.o_int_credit_caption {
+    margin: 0.35rem 0 0;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.o_int_tracking {
+    white-space: normal;
+
+    a, span {
+        display: block;
+    }
+}
+
+.o_int_partial {
+    display: inline-block;
+    margin-bottom: 0.15rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #e0a100;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.o_int_order_shipments {
+    margin: 0 0 1.5rem;
+
+    h5 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.o_int_shipment {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    align-items: baseline;
+    padding: 0.35rem 0;
+}
