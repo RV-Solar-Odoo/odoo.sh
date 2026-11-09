@@ -1,5 +1,6 @@
 from odoo.fields import Command
 from odoo.tests import HttpCase, tagged
+from odoo.tools import file_open
 
 
 @tagged("-at_install", "post_install")
@@ -59,6 +60,13 @@ class TestDealerSections(HttpCase):
         self.assertIn(self.SECTION, page)
         self.assertIn("Your Dealer Support Center", page)
         self.assertIn('href="/my/help"', page)
+
+    def test_only_the_bottom_dealer_section_is_hidden(self):
+        # The hero also has a Become a Dealer button. Hiding every section with
+        # that link hid the hero for dealers.
+        scss = file_open("int_website_customizations/static/src/scss/dealer_home.scss").read()
+        self.assertIn("#wrap > section.s_faq_list:has(", scss)
+        self.assertNotIn("#wrap > section:has(", scss)
 
     def test_dealer_support_section_is_home_page_only(self):
         self.authenticate("sections-dealer", "sections-dealer-pass")

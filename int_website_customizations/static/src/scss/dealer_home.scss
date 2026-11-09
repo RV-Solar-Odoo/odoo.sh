@@ -1,6 +1,8 @@
 // The dealer support section is only rendered for approved dealers on the home
-// page. When it is there, hide the home page section with the Become a Dealer
-// button. Both are in the HTML from the server, so nothing swaps after load.
-main:has(> .o_int_dealer_support) #wrap > section:has(a[href="/dealer-application"], a[href^="/dealer-application?"]) {
+// page. When it is there, hide the "become a dealer" section at the bottom (the
+// FAQ List snippet with the Apply button). Only that snippet: the hero also has a
+// Become a Dealer button, and stays. Both are in the HTML from the server, so
+// nothing swaps after load.
+main:has(> .o_int_dealer_support) #wrap > section.s_faq_list:has(a[href="/dealer-application"], a[href^="/dealer-application?"]) {
     display: none !important;
 }
