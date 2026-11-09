@@ -6,3 +6,16 @@
 main:has(> .o_int_dealer_support) #wrap > section.s_faq_list:has(a[href="/dealer-application"], a[href^="/dealer-application?"]) {
     display: none !important;
 }
+
+// Help & Feedback button: same hover as the hero's Shop products button
+// (rvs_website: darker blue, 2px lift, soft shadow).
+.o_int_dealer_support .btn-fill-custom {
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
+
+    &:hover,
+    &:focus-visible {
+        filter: none !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    }
+}
