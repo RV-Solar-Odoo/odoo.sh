@@ -19,15 +19,18 @@
     display: none;
 }
 
+// Same card as the Help & Feedback hub and the Contact page team boxes.
 .o_int_summary_card {
-    background: #f8f9fa;
-    border-radius: 0.5rem;
+    background: #fff;
+    border: 1px solid #e3e6f3;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(22, 27, 46, 0.05);
     padding: 1rem 1.25rem;
 
     h3 {
         margin: 0 0 0.75rem;
         font-size: 1.15rem;
-        font-weight: 500;
+        font-weight: 600;
     }
 }
 
@@ -52,5 +55,6 @@
 .o_int_rep_link {
     display: block;
     padding: 0.35rem 0;
+    color: #0054a8;
     overflow-wrap: anywhere;
 }

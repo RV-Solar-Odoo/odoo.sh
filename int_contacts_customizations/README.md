@@ -19,4 +19,4 @@ The button is limited to sales users. An internal user's email is refused.
 
 **Portal role** is on the contact, under Sales. Owner and Accountant can see credit. Buyer and Viewer cannot. Existing contacts stay Owner.
 
-**Your sales rep** is at the top of My Portal. It uses the salesperson on the company contact, so an extra login sees the same person. Email and phone are links. The card is hidden when no salesperson is set. Phone uses `work_phone` when that field exists, otherwise phone, otherwise mobile.
+**Your Sales Rep** is at the top of My Portal. It uses the salesperson on the company contact, so an extra login sees the same person. Email and phone are links. The card is hidden when no salesperson is set. Phone uses `work_phone` when that field exists, otherwise phone, otherwise mobile.

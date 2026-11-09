@@ -380,7 +380,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 **Task 7 — Sales rep card**
 - Source: `commercial_partner_id.user_id` (salesperson on the company contact).
-- Card on My Portal home (top of page, above the tiles): "Your sales rep", name, email (`mailto:`), phone (`tel:`), from the user's related partner (`work_phone`/`phone`, `email`). Avatar if available.
+- Card on My Portal home (top of page, above the tiles): "Your Sales Rep", name, email (`mailto:`), phone (`tel:`), from the user's related partner (`work_phone`/`phone`, `email`). Avatar if available.
 - Hidden when no salesperson is set.
 
 **Task 8 — Credit card**

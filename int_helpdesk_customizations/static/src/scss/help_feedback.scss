@@ -46,6 +46,37 @@
     .o_portal_index_card:has(a[href="/my/payment_method"]) { order: 90 !important; }
     .o_portal_index_card:has(a[href="/my/purchase"]) { order: 100 !important; }
 
+    // Same frame and hover as the Help & Feedback hub cards. Padding and icon
+    // size stay stock, so the cards keep their size.
+    .o_portal_index_card > a {
+        border: 1px solid #e3e6f3;
+        border-radius: 14px !important;
+        box-shadow: 0 2px 10px rgba(22, 27, 46, 0.05);
+        color: #212529;
+        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+
+        &.bg-100 {
+            background: #fff !important;
+        }
+
+        // Stock has no left padding on phones, which puts the icon on the border.
+        @media (max-width: 767.98px) {
+            padding-left: 0.75rem !important;
+        }
+
+        &:hover,
+        &:focus-visible {
+            color: #212529;
+            transform: translateY(-3px);
+            border-color: #0054a8;
+            box-shadow: 0 10px 30px rgba(0, 84, 168, 0.12);
+        }
+
+        .fs-5 {
+            font-weight: 600 !important;
+        }
+    }
+
     // The other portal icons are 64px SVGs. This one is a picture, so without
     // a size it lays out at its full pixel width and fills the card.
     a[href="/my/help"] .o_portal_icon {

@@ -5,7 +5,7 @@
             <t t-set="int_sales_rep" t-value="request.env.user._int_portal_sales_rep()"/>
             <div class="o_int_portal_summary" id="int_portal_summary">
                 <div t-if="int_sales_rep" class="o_int_summary_card o_int_rep_card">
-                    <h3>Your sales rep</h3>
+                    <h3>Your Sales Rep</h3>
                     <div class="o_int_rep_body">
                         <img t-if="int_sales_rep['image']" class="o_int_rep_photo" t-att-src="int_sales_rep['image']" t-att-alt="int_sales_rep['name']"/>
                         <div>
