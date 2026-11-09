@@ -29,23 +29,25 @@
         </xpath>
     </template>
 
-    <template id="sale_order_portal_shipments" name="Order shipments" inherit_id="sale.sale_order_portal_content">
-        <xpath expr="//div[@id='introduction']" position="after">
-            <t t-set="int_shipment" t-value="sale_order._int_portal_shipments()[sale_order.id]"/>
-            <div t-if="int_shipment['shipments'] or sale_order.state == 'sale'" class="o_int_order_shipments">
-                <h5>
-                    Shipments
-                    <span t-if="int_shipment['partial']" class="o_int_partial">Partial</span>
-                </h5>
-                <div t-if="not int_shipment['shipments']" class="text-muted">No shipments yet.</div>
-                <div t-foreach="int_shipment['shipments']" t-as="shipment" class="o_int_shipment">
-                    <strong t-out="shipment['name']"/>
-                    <span t-if="shipment['done']" class="text-muted">Shipped</span>
-                    <span t-else="" class="text-muted">Not shipped yet</span>
-                    <t t-if="shipment['links']" t-call="int_sale_customizations.portal_tracking_links">
-                        <t t-set="links" t-value="shipment['links']"/>
-                    </t>
-                </div>
+    <template id="portal_delivery_orders_all" name="All delivery orders on the order page" inherit_id="sale_stock.sale_order_portal_content_inherit_sale_stock">
+        <xpath expr="//t[@t-set='latest_delivery_orders']" position="attributes">
+            <attribute name="t-value">delivery_orders.sorted('create_date', reverse=True)</attribute>
+        </xpath>
+        <xpath expr="//h5[@class='mb-1']" position="replace">
+            <h5 class="mb-1">
+                Delivery Orders
+                <span t-if="sale_order._int_portal_shipments()[sale_order.id]['partial']" class="o_int_partial">Partial</span>
+            </h5>
+        </xpath>
+    </template>
+
+    <template id="portal_delivery_tracking_links" name="Delivery tracking links" inherit_id="stock_delivery.sale_order_portal_content_inherit_sale_stock_inherit_website_sale">
+        <xpath expr="//div[@t-if='picking.carrier_tracking_ref']" position="replace">
+            <div t-if="picking.carrier_tracking_ref" class="small o_int_delivery_tracking">
+                Tracking:
+                <t t-call="int_sale_customizations.portal_tracking_links">
+                    <t t-set="links" t-value="picking._int_portal_tracking_links()"/>
+                </t>
             </div>
         </xpath>
     </template>

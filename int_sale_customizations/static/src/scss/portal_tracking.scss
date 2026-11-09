@@ -18,18 +18,7 @@
     font-weight: 600;
 }
 
-.o_int_order_shipments {
-    margin: 0 0 1.5rem;
-
-    h5 {
-        margin-bottom: 0.5rem;
-    }
-}
-
-.o_int_shipment {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.75rem;
-    align-items: baseline;
-    padding: 0.35rem 0;
+.o_int_delivery_tracking a,
+.o_int_delivery_tracking span {
+    margin-right: 0.35rem;
 }

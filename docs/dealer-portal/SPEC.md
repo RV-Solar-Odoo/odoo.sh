@@ -372,7 +372,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 **Depends:** `rvsb_dealer_base`, `sale_stock`, `stock_delivery` (verify name; earlier `delivery`), `account`.
 
 **Task 6 — Tracking column**
-- Add a "Tracking" column to the My Orders list (and the order detail page header).
+- Add a "Tracking" column to the My Orders list. On the order page, use Odoo's delivery list instead of a second shipments block. Show every outgoing delivery, not only the latest 3, and render tracking numbers there with the same link rules. A Partial pill sits on that heading when some deliveries are still open.
 - For each order: outgoing pickings (`picking_ids` filtered to `picking_type_code == 'outgoing'`, state `done`) that have `carrier_tracking_ref`. Render one link per picking: text = tracking number, href = `carrier_tracking_url` (open in new tab, `rel="noopener"`). If the URL is empty, show the number as plain text.
 - An order with tracking refs separated by commas in one picking: split and render each.
 - Unshipped: "—". Partially shipped: links for shipped pickings plus a "Partial" pill.
