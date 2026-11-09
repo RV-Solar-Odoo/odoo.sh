@@ -1,6 +1,6 @@
 {
     "name": "Website Customizations",
-    "version": "19.0.1.20.1",
+    "version": "19.0.1.21.0",
     "category": "Website/Website",
     "summary": "Checkout delivery rules, MAP pricing on the shop, and a Google check on public address forms",
     "author": "Internal",
@@ -15,6 +15,7 @@
         "views/website_sale_templates.xml",
         "views/portal_security_templates.xml",
         "views/portal_payment_templates.xml",
+        "views/dealer_home_templates.xml",
     ],
     "assets": {
         "web.assets_frontend": [
@@ -29,7 +30,7 @@
             "int_website_customizations/static/src/interactions/dealer_help_link.js",
             "int_website_customizations/static/src/interactions/stripe_disable_link.js",
             "int_website_customizations/static/src/scss/payment_methods.scss",
-            "int_website_customizations/static/src/scss/dealer_sections.scss",
+            "int_website_customizations/static/src/scss/dealer_home.scss",
         ],
     },
     "post_init_hook": "post_init_hook",

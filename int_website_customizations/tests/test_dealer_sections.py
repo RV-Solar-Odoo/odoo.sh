@@ -4,9 +4,10 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("-at_install", "post_install")
 class TestDealerSections(HttpCase):
-    """html.o_int_approved_dealer drives the dealer-only home page sections."""
+    """Approved dealers get the dealer class and the dealer support section on the home page."""
 
     MARKER = "classList.add('o_int_approved_dealer')"
+    SECTION = "o_int_dealer_support"
 
     @classmethod
     def setUpClass(cls):
@@ -41,13 +42,26 @@ class TestDealerSections(HttpCase):
         return response.text
 
     def test_public_visitor_has_no_dealer_class(self):
-        self.assertNotIn(self.MARKER, self._home())
+        page = self._home()
+        self.assertNotIn(self.MARKER, page)
+        self.assertNotIn(self.SECTION, page)
 
     def test_retail_and_pending_users_have_no_dealer_class(self):
-        self.assertNotIn(self.MARKER, self._home("retail"))
-        self.assertNotIn(self.MARKER, self._home("pending"))
+        for key in ("retail", "pending"):
+            page = self._home(key)
+            self.assertNotIn(self.MARKER, page)
+            self.assertNotIn(self.SECTION, page)
 
     def test_approved_dealer_has_the_class_in_the_head(self):
         page = self._home("dealer")
         self.assertIn(self.MARKER, page)
         self.assertLess(page.index(self.MARKER), page.index("<body"))
+        self.assertIn(self.SECTION, page)
+        self.assertIn("Your Dealer Support Center", page)
+        self.assertIn('href="/my/help"', page)
+
+    def test_dealer_support_section_is_home_page_only(self):
+        self.authenticate("sections-dealer", "sections-dealer-pass")
+        response = self.url_open("/contactus")
+        if response.status_code == 200:
+            self.assertNotIn(self.SECTION, response.text)
