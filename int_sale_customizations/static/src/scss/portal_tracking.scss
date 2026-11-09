@@ -1,7 +1,8 @@
 .o_int_tracking {
     white-space: normal;
 
-    a, span {
+    a,
+    span:not(.o_int_partial) {
         display: block;
     }
 }
