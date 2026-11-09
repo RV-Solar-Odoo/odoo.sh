@@ -1,4 +1,4 @@
-from odoo import _, models
+from odoo import _, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import email_normalize
 
@@ -8,6 +8,19 @@ SET_PASSWORD_TEMPLATE = "auth_signup.portal_set_password_email"
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+
+    int_portal_role = fields.Selection(
+        [
+            ("owner", "Owner"),
+            ("buyer", "Buyer"),
+            ("accountant", "Accountant"),
+            ("viewer", "Viewer"),
+        ],
+        string="Portal role",
+        default="owner",
+        groups="base.group_user",
+        help="What this contact can see in My Portal. Owner and Accountant can see the credit limit. Buyer and Viewer cannot.",
+    )
 
     def action_int_send_dealer_account_email(self):
         """Email this contact a create-password link, or a sign-in note if they already have one."""

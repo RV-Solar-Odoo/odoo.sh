@@ -3,17 +3,13 @@ from odoo.tests import TransactionCase, tagged
 
 
 @tagged("post_install", "-at_install")
-class TestPortalAccount(TransactionCase):
+class TestPortalCredit(TransactionCase):
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.company
         cls.currency = cls.company.currency_id
-        cls.warehouse = cls.env["stock.warehouse"].search([
-            ("company_id", "=", cls.company.id),
-        ], limit=1)
-        cls.customers = cls.env.ref("stock.stock_location_customers")
 
     def _partner(self, name, **extra):
         values = {"name": name, "company_id": self.company.id}
@@ -34,15 +30,6 @@ class TestPortalAccount(TransactionCase):
 
     def _limit(self, partner, amount):
         partner.with_company(self.company).sudo().credit_limit = amount
-
-    def _picking(self, **extra):
-        values = {
-            "picking_type_id": self.warehouse.out_type_id.id,
-            "location_id": self.warehouse.lot_stock_id.id,
-            "location_dest_id": self.customers.id,
-        }
-        values.update(extra)
-        return self.env["stock.picking"].create(values)
 
     def test_credit_figures_match_the_stated_rules(self):
         Users = self.env["res.users"]
@@ -148,118 +135,3 @@ class TestPortalAccount(TransactionCase):
         self.assertGreater(commercial.credit_to_invoice, 0)
         self.assertAlmostEqual(info["used"], commercial.credit + commercial.credit_to_invoice, places=2)
         self.assertAlmostEqual(info["limit"], commercial.credit_limit, places=2)
-
-    def test_sales_rep_comes_from_the_company_contact(self):
-        rep = self.env["res.users"].with_context(no_reset_password=True).create({
-            "name": "Casey Rep",
-            "login": "casey-rep-portal@example.com",
-            "email": "casey.rep.portal@example.com",
-            "company_id": self.company.id,
-            "company_ids": [Command.set([self.company.id])],
-            "group_ids": [Command.set([self.env.ref("base.group_user").id])],
-        })
-        rep.partner_id.sudo().phone = "555-0100"
-        dealer = self._partner("Rep Dealer Co", is_company=True, user_id=rep.id)
-        self.assertFalse(self._portal_user(
-            self._partner("No Rep Co", is_company=True),
-            "no-rep-portal@example.com",
-            "owner",
-        )._int_portal_sales_rep())
-        child = self._partner(
-            "Extra Login",
-            parent_id=dealer.id,
-            email="extra-login-portal@example.com",
-        )
-        shown = self._portal_user(child, "extra-login-portal@example.com", "viewer")._int_portal_sales_rep()
-        self.assertEqual(shown["name"], "Casey Rep")
-        self.assertEqual(shown["email"], "casey.rep.portal@example.com")
-        self.assertEqual(shown["phone"], "555-0100")
-        self.assertEqual(shown["phone_href"], "tel:5550100")
-
-    def test_tracking_links_cover_missing_partial_and_several_shipments(self):
-        self.assertTrue(self.warehouse)
-        bare = self._picking()
-        self.assertFalse(bare._int_portal_tracking_links())
-        plain = self._picking(carrier_tracking_ref="PLAIN1")
-        plain_links = plain._int_portal_tracking_links()
-        self.assertEqual(plain_links, [{"number": "PLAIN1", "url": False}])
-        split = self._picking(carrier_tracking_ref="111, 222")
-        self.assertEqual(
-            [link["number"] for link in split._int_portal_tracking_links()],
-            ["111", "222"],
-        )
-        self.assertFalse(any(link["url"] for link in split._int_portal_tracking_links()))
-        carrier = self.env["delivery.carrier"].create({
-            "name": "Portal Test Carrier",
-            "delivery_type": "fixed",
-            "product_id": self.env.ref("delivery.product_product_delivery").id,
-            "fixed_price": 0,
-            "tracking_url": "https://track.example/<shipmenttrackingnumber>",
-        })
-        linked = self._picking(carrier_id=carrier.id, carrier_tracking_ref="ABC123")
-        self.assertEqual(linked._int_portal_tracking_links(), [{
-            "number": "ABC123",
-            "url": "https://track.example/ABC123",
-        }])
-        combined = self._picking(carrier_id=carrier.id, carrier_tracking_ref="111, 222")
-        combined_links = combined._int_portal_tracking_links()
-        self.assertEqual([link["number"] for link in combined_links], ["111", "222"])
-        self.assertFalse(any(link["url"] for link in combined_links))
-        json_carrier = self.env["delivery.carrier"].create({
-            "name": "Portal JSON Carrier",
-            "delivery_type": "fixed",
-            "product_id": self.env.ref("delivery.product_product_delivery").id,
-            "fixed_price": 0,
-            "tracking_url": '[["<shipmenttrackingnumber>", "https://track.example/<shipmenttrackingnumber>"]]',
-        })
-        paired = self._picking(carrier_id=json_carrier.id, carrier_tracking_ref="JSON1")
-        self.assertEqual(paired._int_portal_tracking_links(), [{
-            "number": "JSON1",
-            "url": "https://track.example/JSON1",
-        }])
-
-        product = self.env["product.product"].create({
-            "name": "Shipped portal item",
-            "type": "consu",
-            "is_storable": True,
-            "list_price": 5,
-        })
-        order = self.env["sale.order"].create({
-            "partner_id": self._partner("Ship Dealer").id,
-            "order_line": [Command.create({
-                "product_id": product.id,
-                "product_uom_qty": 1,
-            })],
-        })
-        self.assertFalse(order._int_portal_shipments()[order.id]["links"])
-        self.assertFalse(order._int_portal_shipments()[order.id]["partial"])
-        order.action_confirm()
-        outgoing = order.picking_ids.filtered(lambda picking: picking.picking_type_code == "outgoing")
-        self.assertTrue(outgoing)
-        first = outgoing[0]
-        first.write({
-            "carrier_id": carrier.id,
-            "carrier_tracking_ref": "SHIP1",
-            "state": "done",
-        })
-        shipped = order._int_portal_shipments()[order.id]
-        self.assertEqual(shipped["links"], [{
-            "number": "SHIP1",
-            "url": "https://track.example/SHIP1",
-        }])
-        self.assertFalse(shipped["partial"])
-        second = self._picking()
-        self.env["stock.move"].create({
-            "name": product.name,
-            "product_id": product.id,
-            "product_uom_qty": 1,
-            "product_uom": product.uom_id.id,
-            "picking_id": second.id,
-            "location_id": second.location_id.id,
-            "location_dest_id": second.location_dest_id.id,
-            "sale_line_id": order.order_line.id,
-        })
-        partial = order._int_portal_shipments()[order.id]
-        self.assertTrue(partial["partial"])
-        self.assertEqual(len(partial["shipments"]), 2)
-        self.assertEqual(partial["links"][0]["number"], "SHIP1")

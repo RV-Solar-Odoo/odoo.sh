@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_credit_card" name="Credit card">
+        <t t-set="int_credit" t-value="request.env.user._int_portal_credit()"/>
+        <div t-if="int_credit" class="o_int_summary_card o_int_credit_card">
+            <h3>Credit</h3>
+            <div class="o_int_credit_figures">
+                <div>
+                    <span>Limit</span>
+                    <strong t-out="int_credit['limit']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                </div>
+                <div>
+                    <span>Used</span>
+                    <strong t-out="int_credit['used']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                </div>
+                <div>
+                    <span>Available</span>
+                    <strong t-out="int_credit['available']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+                </div>
+            </div>
+            <div t-attf-class="o_int_credit_bar o_int_credit_#{int_credit['level']}" role="progressbar"
+                 t-att-aria-valuenow="int_credit['percent']" aria-valuemin="0" aria-valuemax="100">
+                <span t-attf-style="width: {{ int_credit['percent'] }}%;"/>
+            </div>
+            <p t-if="int_credit['over']" class="o_int_credit_over_text">
+                Over limit by
+                <t t-out="int_credit['over']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+            </p>
+            <p t-if="int_credit['credit_on_account']" class="o_int_credit_note">
+                Credit on account:
+                <t t-out="int_credit['credit_on_account']" t-options="{'widget': 'monetary', 'display_currency': int_credit['currency']}"/>
+            </p>
+            <p t-if="int_credit['other_currency']" class="o_int_credit_note">
+                Amounts are shown in <t t-out="int_credit['currency'].name"/>.
+            </p>
+            <p class="o_int_credit_caption">Includes open invoices and confirmed orders not yet invoiced. Updated in real time.</p>
+        </div>
+        <div id="int_account_cards" class="o_int_account_cards"/>
+    </template>
+
+    <template id="portal_my_home_credit" name="My Portal credit card" inherit_id="int_contacts_customizations.portal_my_home_sales_rep">
+        <xpath expr="//div[@id='int_portal_summary']" position="inside">
+            <t t-call="int_account_customizations.portal_credit_card"/>
+        </xpath>
+    </template>
+
+    <template id="portal_my_invoices_credit" name="Invoices credit card" inherit_id="account.portal_my_invoices">
+        <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
+            <div class="o_int_portal_summary">
+                <t t-call="int_account_customizations.portal_credit_card"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

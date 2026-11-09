@@ -1,0 +1,34 @@
+.o_int_tracking {
+    white-space: normal;
+
+    a, span {
+        display: block;
+    }
+}
+
+.o_int_partial {
+    display: inline-block;
+    margin-bottom: 0.15rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #e0a100;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.o_int_order_shipments {
+    margin: 0 0 1.5rem;
+
+    h5 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.o_int_shipment {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    align-items: baseline;
+    padding: 0.35rem 0;
+}

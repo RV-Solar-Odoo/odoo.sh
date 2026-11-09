@@ -365,7 +365,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 ### 6.2 `rvsb_portal_account_info` (Tasks 6–8)
 
-**Built in `int_portal_customizations`.** The `rvsb_*` module is not created. The store-credit slot keeps the id `rvsb_account_cards`. Portal role is `res.partner.int_portal_role` (default Owner). Owner and Accountant see credit. Buyer and Viewer do not.
+**Built in the existing app modules.** Tracking is `int_sale_customizations`. The sales rep and `res.partner.int_portal_role` are `int_contacts_customizations`. Credit is `int_account_customizations`. The `rvsb_*` module is not created. The store-credit slot id is `int_account_cards`. Portal role defaults to Owner. Owner and Accountant see credit. Buyer and Viewer do not.
 
 **Purpose.** Tracking links in My Orders, assigned sales rep, and credit limit/usage on My Portal.
 
@@ -395,7 +395,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 **Security.** All values computed server-side for the user's own commercial partner. No new routes.
 
-**Interactions.** Phase 3 adds store credit display beside the credit card (orders module renders it into a slot this module provides: an empty `<div id="rvsb_account_cards"/>` container with a `t-call` hook other modules can xpath into). Phase 7 hides the credit card for Buyers and Viewers.
+**Interactions.** Phase 3 adds store credit display beside the credit card (orders module renders it into a slot Accounting Customizations provides: an empty `<div id="int_account_cards"/>` container other modules can xpath into). Phase 7 hides the credit card for Buyers and Viewers.
 
 **Edge cases.** Multi-currency: if the partner trades in another currency, show the company-currency figures and a note. Negative receivable (customer has credit): treat as 0 used plus a "Credit on account: $X" line.
 
@@ -483,7 +483,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 *Deny:* wizard with a required note. Sets `denied`, emails the dealer (template `mail_cancel_denied`) with the note, closes the activities. The order continues normally. The dealer may request again later (state `denied` allows it).
 
-*Store credit display:* a "Store credit" card in the `rvsb_account_cards` slot showing the eWallet balance (users with `view_store_credit`). The eWallet must be configured to be usable at checkout (sale_loyalty handles application at checkout).
+*Store credit display:* a "Store credit" card in the `int_account_cards` slot showing the eWallet balance (users with `view_store_credit`). The eWallet must be configured to be usable at checkout (sale_loyalty handles application at checkout).
 
 *Shipping race condition:* if staff start picking an order with a pending cancel request, show a warning banner on the picking ("Cancellation requested by customer") so the warehouse holds it. Add a related field on `stock.picking` for this.
 
@@ -888,7 +888,7 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 20 | Which team, and dealer vs retail | Grant, 2026-11-08: do not create a helpdesk team. Returns and warranty claims use the existing returns team (RVSB Returns). Feedback and part requests use the existing general inquiries team. Keep the four kind tags. The ticket copies the contact's Tags field and uses the same names. It does not invent a Customer type from the pricelist. | ☑ Grant |
 | 21 | Dealer account email | Grant, 2026-11-08: retail guests can still create an account after checkout. When staff approve a dealer, the account email sends a create-password link if they have no login. If they already created an account at checkout, keep that login and email them to sign in. Do not create a second user. | ☑ Grant |
 | 22 | Dealer invite on the opportunity | Grant, 2026-11-08: **Create Dealer Account** on the CRM opportunity opens a wizard. Staff pick the pricelist. Confirm sets that pricelist on the commercial partner, adds the contact tag **RVSB Dealer** (create the tag by that name if it is missing; do not hardcode an id), then sends the account email from decision 21. A later helpdesk ticket copies that contact tag onto the ticket. | ☑ Grant |
-| 23 | Where Tasks 6–8 are built | Grant asked for tracking, the sales rep card, and the credit card on 2026-11-09. They are built in `int_portal_customizations` so `rvsb_portal_account_info` is not created. The empty store-credit slot id stays `rvsb_account_cards`. Credit uses Odoo's `credit` plus `credit_to_invoice` on the commercial partner. Buyer and Viewer do not receive the figures. Existing contacts stay Owner. | ☑ |
+| 23 | Where Tasks 6–8 are built | Grant asked for tracking, the sales rep card, and the credit card on 2026-11-09, and to follow the one-app module names. Tracking is in `int_sale_customizations`. The sales rep and portal role are in `int_contacts_customizations`. Credit is in `int_account_customizations`. `rvsb_portal_account_info` is not created. The empty store-credit slot id is `int_account_cards`. Credit uses Odoo's `credit` plus `credit_to_invoice` on the commercial partner. Buyer and Viewer do not receive the figures. Existing contacts stay Owner. | ☑ |
 
 ---
 
@@ -953,7 +953,7 @@ Read CLAUDE.md, SPEC.md sections 4, 5 and 6.2, and DISCOVERY.md.
 Plan first (include the exact My Orders template and controller you will extend,
 and how you avoid per-row queries). Wait for my OK.
 Build per section 6.2: tracking column, sales rep card, credit card with bar and
-color thresholds, and the rvsb_account_cards slot for later modules.
+color thresholds, and the int_account_cards slot for later modules.
 Write and run the 6.2 tests, including a check that portal credit figures equal
 the backend partner figures.
 ```

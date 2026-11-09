@@ -14,3 +14,9 @@ On a contact, **Send account setup email**:
 Retail guests still create an account from the order confirmation page. That is `rvsb_checkout_account`, and this button does not change it.
 
 The button is limited to sales users. An internal user's email is refused.
+
+## Portal role and sales rep
+
+**Portal role** is on the contact, under Sales. Owner and Accountant can see credit. Buyer and Viewer cannot. Existing contacts stay Owner.
+
+**Your sales rep** is at the top of My Portal. It uses the salesperson on the company contact, so an extra login sees the same person. Email and phone are links. The card is hidden when no salesperson is set. Phone uses `work_phone` when that field exists, otherwise phone, otherwise mobile.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_sales_rep" name="My Portal sales rep" inherit_id="portal.portal_my_home">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="int_sales_rep" t-value="request.env.user._int_portal_sales_rep()"/>
+            <div class="o_int_portal_summary" id="int_portal_summary">
+                <div t-if="int_sales_rep" class="o_int_summary_card o_int_rep_card">
+                    <h3>Your sales rep</h3>
+                    <div class="o_int_rep_body">
+                        <img t-if="int_sales_rep['image']" class="o_int_rep_photo" t-att-src="int_sales_rep['image']" t-att-alt="int_sales_rep['name']"/>
+                        <div>
+                            <div class="o_int_rep_name" t-out="int_sales_rep['name']"/>
+                            <a t-if="int_sales_rep['email']" class="o_int_rep_link" t-attf-href="mailto:{{ int_sales_rep['email'] }}" t-out="int_sales_rep['email']"/>
+                            <a t-if="int_sales_rep['phone_href']" class="o_int_rep_link" t-att-href="int_sales_rep['phone_href']" t-out="int_sales_rep['phone']"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
