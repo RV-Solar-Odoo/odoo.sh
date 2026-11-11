@@ -20,9 +20,10 @@ class IntHelpdeskAlertList(models.Model):
             ("help_warranty", "Warranty claim"),
             ("help_feedback", "Feedback"),
             ("help_part", "Part request"),
+            ("help_general", "General inquiry"),
         ],
         required=True,
-        help="Used by the portal when a dealer submits this kind of request. Leave the value that was created for the company.",
+        help="Used by Help & Feedback when someone submits this kind of request. Leave the value that was created for the company.",
     )
     company_id = fields.Many2one(
         "res.company",

@@ -850,3 +850,12 @@ class TestHelpFeedback(TransactionCase):
         from odoo.addons.int_helpdesk_customizations.models.help_feedback import RETURN_REASONS
 
         self.assertNotIn("defective", dict(RETURN_REASONS))
+
+    def test_every_request_type_has_an_alert_code(self):
+        # A code missing from the selection fails the module update (Nov 11 build).
+        from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
+        from odoo.addons.int_helpdesk_customizations.models.res_company import ALERTS
+
+        allowed = {value for value, _label in self.env["int.helpdesk.alert.list"]._fields["code"].selection}
+        self.assertLessEqual({code for code, _name in ALERTS}, allowed)
+        self.assertLessEqual({spec["code"] for spec in HELP_KINDS.values()}, allowed)
