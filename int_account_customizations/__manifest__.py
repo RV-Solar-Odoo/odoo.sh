@@ -1,7 +1,7 @@
 {
     "name": "Accounting Customizations",
     "summary": "Sales tax threshold emails, and the credit card on My Portal",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.1.1",
     "category": "Accounting/Accounting",
     "author": "Internal",
     "license": "LGPL-3",

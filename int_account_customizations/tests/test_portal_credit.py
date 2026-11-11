@@ -10,6 +10,12 @@ class TestPortalCredit(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.company
         cls.currency = cls.company.currency_id
+        public = cls.env.ref("base.public_user").partner_id.commercial_partner_id
+        cls.public_pl = public.with_company(cls.company).property_product_pricelist
+        if not cls.public_pl:
+            cls.public_pl = cls.env["product.pricelist"].create({"name": "Credit Public"})
+            public.with_company(cls.company).specific_property_product_pricelist = cls.public_pl
+        cls.dealer_pl = cls.env["product.pricelist"].create({"name": "Credit Dealer"})
 
     def _partner(self, name, **extra):
         values = {"name": name, "company_id": self.company.id}
@@ -27,6 +33,10 @@ class TestPortalCredit(TransactionCase):
             "company_ids": [Command.set([self.company.id])],
             "group_ids": [Command.set([self.env.ref("base.group_portal").id])],
         })
+
+    def _dealer(self, partner):
+        partner.with_company(self.company).sudo().specific_property_product_pricelist = self.dealer_pl
+        return partner
 
     def _limit(self, partner, amount):
         partner.with_company(self.company).sudo().credit_limit = amount
@@ -51,7 +61,7 @@ class TestPortalCredit(TransactionCase):
 
     def test_credit_card_follows_the_role_and_the_company_switch(self):
         self.company.account_use_credit_limit = True
-        dealer = self._partner("Credit Dealer Co", is_company=True)
+        dealer = self._dealer(self._partner("Credit Dealer Co", is_company=True))
         self._limit(dealer, 1000)
         owner = self._portal_user(dealer, "owner-credit-portal@example.com", "owner")
         self.assertTrue(owner._int_portal_credit())
@@ -69,6 +79,24 @@ class TestPortalCredit(TransactionCase):
         self._limit(dealer, 1000)
         self.company.account_use_credit_limit = False
         self.assertFalse(owner._int_portal_credit())
+
+    def test_credit_card_is_for_dealer_companies_only(self):
+        self.company.account_use_credit_limit = True
+        retail = self._partner("Credit Retail Co", is_company=True)
+        retail.with_company(self.company).sudo().specific_property_product_pricelist = self.public_pl
+        self._limit(retail, 1000)
+        user = self._portal_user(retail, "retail-credit-portal@example.com", "owner")
+        self.assertFalse(user._int_portal_credit())
+        self._dealer(retail)
+        self.assertTrue(user._int_portal_credit())
+
+    def test_bar_levels_at_the_thresholds(self):
+        figures = self.env["res.users"]._int_portal_credit_figures
+        self.assertEqual(figures(749, 0, 1000, self.currency)["level"], "ok")
+        self.assertEqual(figures(750, 0, 1000, self.currency)["level"], "warn")
+        self.assertEqual(figures(900, 0, 1000, self.currency)["level"], "warn")
+        self.assertEqual(figures(901, 0, 1000, self.currency)["level"], "over")
+        self.assertEqual(figures(1200, 0, 1000, self.currency)["over"], 200)
 
     def test_internal_user_can_see_credit_whatever_the_role(self):
         self.company.account_use_credit_limit = True
@@ -88,7 +116,7 @@ class TestPortalCredit(TransactionCase):
 
     def test_credit_matches_an_open_invoice_and_an_uninvoiced_order(self):
         self.company.account_use_credit_limit = True
-        partner = self._partner("Invoiced Dealer", is_company=True)
+        partner = self._dealer(self._partner("Invoiced Dealer", is_company=True))
         self._limit(partner, 1000)
         user = self._portal_user(partner, "invoiced-dealer-portal@example.com", "owner")
         income = self.env["account.account"].search([

@@ -16,15 +16,34 @@ class ResUsers(models.Model):
                 return website.company_id
         return self.env.company
 
-    def _int_portal_can_view_credit(self):
-        """Owner, Accountant, and internal users. Buyer and Viewer cannot."""
+    def _int_portal_can_view_credit(self, company=None):
+        """Who may see the credit card. The one place to extend for portal roles.
+
+        Internal users always can, so staff can check the card. Portal users must
+        belong to an approved dealer company, with the Owner or Accountant role.
+        """
         self.ensure_one()
         if self._is_public():
             return False
         if self.has_group("base.group_user"):
             return True
+        if not self._int_portal_is_dealer(company or self._int_portal_company()):
+            return False
         role = self.partner_id.sudo().int_portal_role or "owner"
         return role in CREDIT_ROLES
+
+    def _int_portal_is_dealer(self, company):
+        """Same rule as the shop's dealer pricing: the company contact's pricelist
+        is set and is not the public user's. Pending applicants and retail
+        customers stay on the public pricelist."""
+        self.ensure_one()
+        commercial = self.partner_id.sudo().commercial_partner_id
+        public = self.env.ref("base.public_user").sudo().partner_id.commercial_partner_id
+        if not commercial or commercial == public:
+            return False
+        pricelist = commercial.with_company(company).property_product_pricelist
+        public_pricelist = public.with_company(company).property_product_pricelist
+        return bool(pricelist) and bool(public_pricelist) and pricelist != public_pricelist
 
     def _int_portal_credit(self):
         """Credit snapshot for this user's company, or False when it must stay hidden.
@@ -34,9 +53,9 @@ class ResUsers(models.Model):
         A negative receivable is money on account, not negative usage.
         """
         self.ensure_one()
-        if not self._int_portal_can_view_credit():
-            return False
         company = self._int_portal_company()
+        if not self._int_portal_can_view_credit(company):
+            return False
         if not company.sudo().account_use_credit_limit:
             return False
         commercial = self.partner_id.commercial_partner_id.sudo().with_company(company)

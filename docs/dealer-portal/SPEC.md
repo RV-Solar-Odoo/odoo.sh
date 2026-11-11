@@ -365,7 +365,7 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 
 ### 6.2 `rvsb_portal_account_info` (Tasks 6–8)
 
-**Built in the existing app modules.** Tracking is `int_sale_customizations`. The sales rep and `res.partner.int_portal_role` are `int_contacts_customizations`. Credit is `int_account_customizations`. The `rvsb_*` module is not created. The store-credit slot id is `int_account_cards`. Portal role defaults to Owner. Owner and Accountant see credit. Buyer and Viewer do not.
+**Built in the existing app modules.** Tracking is `int_sale_customizations`. The sales rep and `res.partner.int_portal_role` are `int_contacts_customizations`. Credit is `int_account_customizations`. The `rvsb_*` module is not created. The store-credit slot id is `int_account_cards`. Portal role defaults to Owner. Owner and Accountant see credit. Buyer and Viewer do not. Credit (Task 8) is shown only to approved dealer companies (the shop's pricelist rule, see D11). Internal users always see it. The visibility check is `res.users._int_portal_can_view_credit` in `int_account_customizations`, the one place to extend for roles.
 
 **Purpose.** Tracking links in My Orders, assigned sales rep, and credit limit/usage on My Portal.
 

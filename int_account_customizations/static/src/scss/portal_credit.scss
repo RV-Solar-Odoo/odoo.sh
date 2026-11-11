@@ -1,3 +1,9 @@
+// Brand: text #161b2e, muted #767c96, lines #e6e8ef. Card frame is
+// .o_int_summary_card in Contacts Customizations.
+.o_int_credit_card {
+    color: #161b2e;
+}
+
 .o_int_credit_figures {
     display: flex;
     flex-wrap: wrap;
@@ -6,7 +12,7 @@
 
     span {
         display: block;
-        color: #6c757d;
+        color: #767c96;
         font-size: 0.8rem;
     }
 }
@@ -41,6 +47,6 @@
 .o_int_credit_note,
 .o_int_credit_caption {
     margin: 0.35rem 0 0;
-    color: #6c757d;
+    color: #767c96;
     font-size: 0.85rem;
 }
