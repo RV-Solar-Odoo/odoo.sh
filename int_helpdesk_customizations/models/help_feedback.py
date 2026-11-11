@@ -216,7 +216,7 @@ class HelpdeskTicket(models.Model):
         options = []
         for line in order.order_line:
             product = line.product_id
-            if line.display_type or not product or product.id in seen:
+            if not self._int_help_returnable_line(line) or product.id in seen:
                 continue
             seen.add(product.id)
             sku = product.default_code
@@ -229,9 +229,23 @@ class HelpdeskTicket(models.Model):
         if not order or not product_id:
             return self.env["product.product"]
         lines = order.order_line.filtered(
-            lambda line: not line.display_type and line.product_id.id == product_id
+            lambda line: self._int_help_returnable_line(line) and line.product_id.id == product_id
         )
         return lines[:1].product_id
+
+    @api.model
+    def _int_help_returnable_line(self, line):
+        """A physical item the dealer received. Delivery, coupon and discount,
+        down payment, section and note lines, services and combo headers are not."""
+        product = line.product_id
+        if line.display_type or not product or product.type != "consu":
+            return False
+        if line.is_downpayment or line._is_delivery():
+            return False
+        # A free-product reward is a real item; a discount or coupon line is not.
+        if "reward_id" in line._fields and line.reward_id and line.reward_id.reward_type != "product":
+            return False
+        return True
 
     @api.model
     def _int_help_lock_submission(self, user, name):

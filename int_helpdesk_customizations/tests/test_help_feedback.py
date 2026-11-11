@@ -329,6 +329,27 @@ class TestHelpFeedback(TransactionCase):
             [],
         )
 
+    def test_return_lists_only_physical_items(self):
+        Ticket = self.env["helpdesk.ticket"]
+        order = self._order(self.dealer, self.company, self.product, "draft")
+        shipping = self.env["product.product"].create({"name": "Pickup in store", "type": "service"})
+        discount = self.env["product.product"].create({"name": "100% off your order", "type": "service"})
+        delivery_line = {"product_id": shipping.id, "product_uom_qty": 1, "price_unit": 0.0}
+        if "is_delivery" in self.env["sale.order.line"]._fields:
+            # A delivery line can be a goods-type product too; is_delivery still drops it.
+            goods_shipping = self.env["product.product"].create({"name": "Freight", "type": "consu"})
+            delivery_line = {"product_id": goods_shipping.id, "product_uom_qty": 1, "price_unit": 0.0, "is_delivery": True}
+        order.write({"order_line": [
+            Command.create(delivery_line),
+            Command.create({"product_id": discount.id, "product_uom_qty": 1, "price_unit": -100.0}),
+            Command.create({"display_type": "line_note", "name": "Leave at the door"}),
+        ]})
+        order.action_confirm()
+        options = Ticket._int_help_order_line_options(self.dealer_user, self.company, order.id)
+        self.assertEqual([line["product_id"] for line in options], [self.product.id])
+        self.assertFalse(Ticket._int_help_order_product(order, discount.id))
+        self.assertEqual(Ticket._int_help_order_product(order, self.product.id), self.product)
+
     def test_attachment_rules(self):
         good = self._submit("return", {
             "order_id": str(self.order.id),
