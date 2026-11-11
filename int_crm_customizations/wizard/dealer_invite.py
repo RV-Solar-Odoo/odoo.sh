@@ -1,5 +1,17 @@
 from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 from odoo.tools import email_normalize
+
+# Credit limit choices on Create Dealer Account. Edit this list to change them:
+# (key, label, amount). "none" leaves the contact alone; "other" asks for an amount.
+CREDIT_LIMIT_CHOICES = [
+    ("none", "No limit", 0.0),
+    ("1000", "$1,000", 1000.0),
+    ("3000", "$3,000", 3000.0),
+    ("5000", "$5,000", 5000.0),
+    ("10000", "$10,000", 10000.0),
+    ("other", "Other", 0.0),
+]
 
 
 class IntDealerInvite(models.TransientModel):
@@ -16,6 +28,28 @@ class IntDealerInvite(models.TransientModel):
         required=True,
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
+    credit_limit_choice = fields.Selection(
+        [(key, label) for key, label, _amount in CREDIT_LIMIT_CHOICES],
+        string="Credit limit",
+        required=True,
+        default="none",
+    )
+    credit_limit_other = fields.Monetary(string="Credit limit amount", currency_field="currency_id")
+    currency_id = fields.Many2one(related="company_id.currency_id")
+
+    @api.constrains("credit_limit_choice", "credit_limit_other")
+    def _check_credit_limit_other(self):
+        for wizard in self:
+            if wizard.credit_limit_choice == "other" and (wizard.credit_limit_other or 0.0) <= 0:
+                raise ValidationError(_("Enter a credit limit amount greater than zero."))
+
+    def _credit_limit_amount(self):
+        """The chosen limit, or 0.0 for No limit."""
+        self.ensure_one()
+        if self.credit_limit_choice == "other":
+            return self.credit_limit_other or 0.0
+        amounts = {key: amount for key, _label, amount in CREDIT_LIMIT_CHOICES}
+        return amounts.get(self.credit_limit_choice, 0.0)
 
     @api.depends("lead_id.contact_name", "lead_id.partner_name", "lead_id.partner_id", "lead_id.name")
     def _compute_who(self):
@@ -53,6 +87,12 @@ class IntDealerInvite(models.TransientModel):
         partner._int_check_dealer_account_email_access()
         code, user, owner = partner._int_send_dealer_account_email()
         commercial = owner._int_apply_dealer_pricelist_and_tag(self.pricelist_id, self.company_id)
+        limit = self._credit_limit_amount()
+        if limit > 0:
+            commercial.sudo().with_company(self.company_id).write({
+                "credit_limit": limit,
+                "use_partner_credit_limit": True,
+            })
         _title, message, level = partner._int_dealer_account_email_notice(code, user, owner)
         notice = _(
             "%(message)s Pricelist on %(name)s is now %(pricelist)s. Tagged RVSB Dealer.",
@@ -60,6 +100,12 @@ class IntDealerInvite(models.TransientModel):
             name=commercial.display_name,
             pricelist=self.pricelist_id.display_name,
         )
+        if limit > 0:
+            notice = _(
+                "%(notice)s Credit limit set to %(limit)s.",
+                notice=notice,
+                limit=self.company_id.currency_id.format(limit),
+            )
         noted = self.env["res.partner"]
         for record in (commercial, owner, partner):
             if record not in noted:

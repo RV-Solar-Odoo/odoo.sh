@@ -1,13 +1,15 @@
 import { Interaction } from "@web/public/interaction";
 import { registry } from "@web/core/registry";
 
-// Homepage and "Apply Here" links are the same URL without .btn in the header,
-// so they stay hidden by CSS. Only the header button becomes Help & Feedback.
+// Any logged-in user (retail or dealer) gets Help & Feedback in the header in
+// place of Become a Dealer. Public visitors keep Become a Dealer. Homepage and
+// "Apply Here" links are not .btn in the header, so they are left alone here;
+// for dealers they are hidden by CSS.
 const DEALER_BUTTON = [
-    "html.o_int_approved_dealer header a.btn[href='/dealer-application']",
-    "html.o_int_approved_dealer header a.btn[href^='/dealer-application?']",
-    "html.o_int_approved_dealer nav a.btn[href='/dealer-application']",
-    "html.o_int_approved_dealer nav a.btn[href^='/dealer-application?']",
+    "html.o_int_logged_in header a.btn[href='/dealer-application']",
+    "html.o_int_logged_in header a.btn[href^='/dealer-application?']",
+    "html.o_int_logged_in nav a.btn[href='/dealer-application']",
+    "html.o_int_logged_in nav a.btn[href^='/dealer-application?']",
 ].join(", ");
 
 export class DealerHelpLink extends Interaction {

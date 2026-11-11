@@ -27,10 +27,9 @@ class ResUsers(models.Model):
     def _int_help_hub_visible(self):
         """Whether My Portal should show Help & Feedback for this user.
 
-        Public users never see it. Internal users see it when every request
-        type has an existing team, so staff can test. Portal users see it only
-        as approved dealers, and only when those teams are set. A missing team
-        hides the hub and logs a warning instead of raising.
+        Any logged-in user (staff, dealer or retail) sees it once every request
+        type has an existing team. Public users never do. A missing team hides
+        the hub and logs a warning instead of raising.
         """
         self.ensure_one()
         if self._is_public():
@@ -38,9 +37,23 @@ class ResUsers(models.Model):
         company = self._int_help_request_company()
         if not company._int_help_ready():
             return False
+        return bool(self.has_group("base.group_user") or self.has_group("base.group_portal"))
+
+    def _int_help_kind_allowed(self, kind, company=None):
+        """Whether this user may use one Help & Feedback form.
+
+        Staff and dealers get every form. Retail users get a form when its
+        ``retail`` flag in HELP_KINDS is True, so one form can be hidden from
+        retail by flipping that flag.
+        """
+        from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
+
+        self.ensure_one()
+        spec = HELP_KINDS.get(kind)
+        if not spec or not self._int_help_hub_visible():
+            return False
         if self.has_group("base.group_user"):
             return True
-        return bool(
-            self.has_group("base.group_portal")
-            and self._int_help_is_approved_dealer(company)
-        )
+        if self._int_help_is_approved_dealer(company):
+            return True
+        return bool(spec.get("retail"))

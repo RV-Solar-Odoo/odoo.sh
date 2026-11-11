@@ -115,3 +115,19 @@ class TestPortalTracking(TransactionCase):
         self.assertTrue(partial["partial"])
         self.assertEqual(len(partial["shipments"]), 2)
         self.assertEqual(partial["links"][0]["number"], "SHIP1")
+
+    def test_tracking_links_open_in_a_new_tab(self):
+        from lxml import etree
+
+        arch = etree.fromstring(self.env.ref("int_sale_customizations.portal_tracking_links").get_combined_arch())
+        links = arch.xpath("//a")
+        self.assertTrue(links)
+        for link in links:
+            self.assertEqual(link.get("target"), "_blank")
+            self.assertIn("noopener", link.get("rel") or "")
+        # My Orders and the order page both draw their links with that template.
+        for xmlid in (
+            "int_sale_customizations.portal_my_orders_tracking",
+            "int_sale_customizations.portal_delivery_tracking_links",
+        ):
+            self.assertIn("int_sale_customizations.portal_tracking_links", self.env.ref(xmlid).arch)

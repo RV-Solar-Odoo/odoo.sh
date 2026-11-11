@@ -262,3 +262,19 @@
     color: #767c96;
     text-align: center;
 }
+
+// Note at the top of the return form, pointing to warranty claims.
+.o_int_help_note {
+    padding: 0.75rem 1rem;
+    background: rgba(0, 84, 168, 0.06);
+    border: 1px solid #e6e8ef;
+    border-left: 4px solid #0054a8;
+    border-radius: 10px;
+    color: #161b2e;
+    font-size: 0.95rem;
+
+    a {
+        color: #0054a8;
+        font-weight: 600;
+    }
+}

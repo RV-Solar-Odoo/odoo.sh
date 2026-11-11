@@ -44,7 +44,7 @@
             <div class="o_int_help_hub">
                 <h3 class="my-3">Help &amp; Feedback</h3>
                 <div class="o_int_help_hub_grid">
-                    <a class="o_int_help_hub_card" href="/my/help/return">
+                    <a t-if="request.env.user._int_help_kind_allowed('return')" class="o_int_help_hub_card" href="/my/help/return">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
                         </span>
@@ -52,7 +52,7 @@
                         <p>Start a return for unused or incorrect items, or check on one you've already sent.</p>
                         <span class="o_int_help_hub_cta">Start or view returns <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a class="o_int_help_hub_card" href="/my/help/warranty">
+                    <a t-if="request.env.user._int_help_kind_allowed('warranty')" class="o_int_help_hub_card" href="/my/help/warranty">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                         </span>
@@ -60,7 +60,7 @@
                         <p>Report a product that has failed. Include the serial number and photos so we can process it quickly.</p>
                         <span class="o_int_help_hub_cta">Start a claim <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a class="o_int_help_hub_card" href="/my/help/feedback">
+                    <a t-if="request.env.user._int_help_kind_allowed('feedback')" class="o_int_help_hub_card" href="/my/help/feedback">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
                         </span>
@@ -68,7 +68,7 @@
                         <p>Something broken, confusing or slow — on the site, in shipping, billing or anything else? Tell us and we'll fix it.</p>
                         <span class="o_int_help_hub_cta">Send feedback <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a class="o_int_help_hub_card" href="/my/help/part">
+                    <a t-if="request.env.user._int_help_kind_allowed('part')" class="o_int_help_hub_card" href="/my/help/part">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
                         </span>
@@ -122,6 +122,36 @@
                 <p t-if="notice" class="mb-0" t-out="notice"/>
                 <form t-if="not notice" t-att-action="'/my/help/return/new' if kind == 'return' else '/my/help/%s' % kind" method="post" enctype="multipart/form-data" class="o_int_help_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <div t-if="kind == 'return'" class="o_int_help_note mb-3">
+                        Returns are for items that work but aren't needed or were ordered by mistake.
+                        Product not working? <a href="/my/help/warranty">Start a warranty claim instead.</a>
+                    </div>
+
+                    <!-- Retail only: where the product was bought. Dealers are not asked. -->
+                    <t t-if="ask_purchase">
+                        <fieldset class="mb-3 js-int-help-purchase">
+                            <legend class="form-label fs-6">Where did you buy it?<span class="text-danger">*</span></legend>
+                            <t t-foreach="purchase_sources" t-as="source">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="purchase_source" required="required"
+                                           t-attf-id="int_help_purchase_#{source[0]}" t-att-value="source[0]"
+                                           t-att-checked="(values.get('purchase_source') or '') == source[0] and 'checked' or None"/>
+                                    <label class="form-check-label" t-attf-for="int_help_purchase_#{source[0]}" t-out="source[1]"/>
+                                </div>
+                            </t>
+                        </fieldset>
+                        <div t-attf-class="mb-3 js-int-help-dealer #{'' if values.get('purchase_source') == 'dealer' else 'd-none'}">
+                            <label class="form-label" for="int_help_purchase_dealer">Which dealer?<span class="text-danger">*</span></label>
+                            <select id="int_help_purchase_dealer" name="purchase_dealer_id" class="form-select"
+                                    t-att-required="values.get('purchase_source') == 'dealer' and 'required' or None">
+                                <option value="">Select a dealer</option>
+                                <t t-foreach="dealers" t-as="dealer">
+                                    <option t-att-value="dealer.id" t-att-selected="(values.get('purchase_dealer_id') or '') == str(dealer.id) and 'selected' or None" t-out="dealer.name"/>
+                                </t>
+                            </select>
+                        </div>
+                    </t>
 
                     <t t-if="kind == 'return'">
                         <!-- No orders on the account, or "My order isn't listed": type them instead. -->
@@ -181,9 +211,12 @@
                         <input id="int_help_product_text" type="text" name="product_text" class="form-control" required="required" t-att-value="values.get('product_text') or ''"/>
                     </div>
 
-                    <div t-if="kind in ('return', 'warranty')" class="mb-3">
+                    <!-- Filled from the order's delivered serials: one is prefilled, several
+                         become a dropdown, none leaves the text box. -->
+                    <div t-if="kind in ('return', 'warranty')" class="mb-3 js-int-help-serial">
                         <label class="form-label" for="int_help_serial">Serial number<t t-if="kind == 'warranty'"><span class="text-danger">*</span></t></label>
-                        <input id="int_help_serial" type="text" name="serial" class="form-control" t-att-required="kind == 'warranty' and 'required' or None" t-att-value="values.get('serial') or ''"/>
+                        <input id="int_help_serial" type="text" name="serial" class="form-control js-int-help-serial-text" t-att-required="kind == 'warranty' and 'required' or None" t-att-value="values.get('serial') or ''"/>
+                        <select name="serial" class="form-select d-none js-int-help-serial-pick" disabled="disabled" t-att-required="kind == 'warranty' and 'required' or None" aria-label="Serial number"/>
                     </div>
 
                     <div t-if="kind == 'return'" class="mb-3">
@@ -191,20 +224,59 @@
                         <input id="int_help_quantity" type="number" name="quantity" class="form-control" required="required" min="0.01" step="any" t-att-value="values.get('quantity') or ''"/>
                     </div>
 
-                    <div t-if="kind == 'return'" class="mb-3">
-                        <label class="form-label" for="int_help_reason">Reason<span class="text-danger">*</span></label>
-                        <select id="int_help_reason" name="reason" class="form-select" required="required">
-                            <option value="">Select a reason</option>
-                            <t t-foreach="reasons" t-as="reason">
-                                <option t-att-value="reason[0]" t-att-selected="(values.get('reason') or '') == reason[0] and 'selected' or None" t-out="reason[1]"/>
+                    <!-- Same questions as the public returns form. -->
+                    <t t-if="kind == 'return'">
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_reason">Reason for return<span class="text-danger">*</span></label>
+                            <select id="int_help_reason" name="reason" class="form-select js-int-help-other" data-other="#int_help_reason_other_wrap" required="required">
+                                <option value="">Select a reason</option>
+                                <t t-foreach="reasons" t-as="reason">
+                                    <option t-att-value="reason[0]" t-att-selected="(values.get('reason') or '') == reason[0] and 'selected' or None" t-out="reason[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div id="int_help_reason_other_wrap" t-attf-class="mb-3 #{'' if values.get('reason') == 'other' else 'd-none'}">
+                            <label class="form-label" for="int_help_reason_other">Other</label>
+                            <input id="int_help_reason_other" type="text" name="reason_other" class="form-control" t-att-value="values.get('reason_other') or ''"/>
+                        </div>
+                        <fieldset class="mb-3">
+                            <legend class="form-label fs-6">Is the product in its original packaging?<span class="text-danger">*</span></legend>
+                            <t t-foreach="packaging" t-as="option">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="packaging" required="required"
+                                           t-attf-id="int_help_packaging_#{option[0]}" t-att-value="option[0]"
+                                           t-att-checked="(values.get('packaging') or '') == option[0] and 'checked' or None"/>
+                                    <label class="form-check-label" t-attf-for="int_help_packaging_#{option[0]}" t-out="option[1]"/>
+                                </div>
                             </t>
-                        </select>
-                    </div>
-
-                    <div t-if="kind == 'return'" class="mb-3">
-                        <label class="form-label" for="int_help_details">Details</label>
-                        <textarea id="int_help_details" name="details" class="form-control" rows="4"><t t-out="values.get('details') or ''"/></textarea>
-                    </div>
+                        </fieldset>
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_condition">Product condition<span class="text-danger">*</span></label>
+                            <select id="int_help_condition" name="condition" class="form-select" required="required">
+                                <option value="">Select a condition</option>
+                                <t t-foreach="conditions" t-as="option">
+                                    <option t-att-value="option[0]" t-att-selected="(values.get('condition') or '') == option[0] and 'selected' or None" t-out="option[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_outcome">Desired outcome</label>
+                            <select id="int_help_outcome" name="outcome" class="form-select js-int-help-other" data-other="#int_help_outcome_other_wrap">
+                                <option value="">Select an outcome</option>
+                                <t t-foreach="outcomes" t-as="option">
+                                    <option t-att-value="option[0]" t-att-selected="(values.get('outcome') or '') == option[0] and 'selected' or None" t-out="option[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div id="int_help_outcome_other_wrap" t-attf-class="mb-3 #{'' if values.get('outcome') == 'other' else 'd-none'}">
+                            <label class="form-label" for="int_help_outcome_other">Other</label>
+                            <input id="int_help_outcome_other" type="text" name="outcome_other" class="form-control" t-att-value="values.get('outcome_other') or ''"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_details">Additional information</label>
+                            <textarea id="int_help_details" name="details" class="form-control" rows="4"><t t-out="values.get('details') or ''"/></textarea>
+                        </div>
+                    </t>
 
                     <div t-if="kind == 'warranty'" class="mb-3">
                         <label class="form-label" for="int_help_install">Install date<span class="text-danger">*</span></label>
@@ -234,12 +306,12 @@
 
                     <t t-if="kind == 'part'">
                         <div class="mb-3">
-                            <label class="form-label" for="int_help_manufacturer">Manufacturer<span class="text-danger">*</span></label>
-                            <input id="int_help_manufacturer" type="text" name="manufacturer" class="form-control" required="required" t-att-value="values.get('manufacturer') or ''"/>
+                            <label class="form-label" for="int_help_manufacturer">Manufacturer</label>
+                            <input id="int_help_manufacturer" type="text" name="manufacturer" class="form-control" t-att-value="values.get('manufacturer') or ''"/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="int_help_part">Part number or description<span class="text-danger">*</span></label>
-                            <input id="int_help_part" type="text" name="part" class="form-control" required="required" t-att-value="values.get('part') or ''"/>
+                            <textarea id="int_help_part" name="part" class="form-control" rows="3" required="required"><t t-out="values.get('part') or ''"/></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="int_help_qty_year">Estimated quantity per year</label>
@@ -248,6 +320,10 @@
                         <div class="mb-3">
                             <label class="form-label" for="int_help_link">Link</label>
                             <input id="int_help_link" type="url" name="link" class="form-control" placeholder="https://" t-att-value="values.get('link') or ''"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_comments">Comments</label>
+                            <textarea id="int_help_comments" name="comments" class="form-control" rows="3" placeholder="Tell us why you need it or how you'd use it"><t t-out="values.get('comments') or ''"/></textarea>
                         </div>
                     </t>
 

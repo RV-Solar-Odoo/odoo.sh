@@ -11,9 +11,14 @@
                     <field name="email" readonly="1"/>
                     <field name="company_id" readonly="1"/>
                     <field name="pricelist_id" options="{'no_create': True, 'no_open': True}"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="credit_limit_choice"/>
+                    <field name="credit_limit_other"
+                           invisible="credit_limit_choice != 'other'"
+                           required="credit_limit_choice == 'other'"/>
                 </group>
                 <p class="text-muted">
-                    This sets the pricelist and the RVSB Dealer tag, then emails a link to create a password.
+                    This sets the pricelist, the credit limit (if one is chosen) and the RVSB Dealer tag, then emails a link to create a password.
                     An existing login is kept.
                 </p>
                 <footer>

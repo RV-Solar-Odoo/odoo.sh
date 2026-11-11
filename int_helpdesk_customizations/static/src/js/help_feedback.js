@@ -20,7 +20,77 @@ function fillProducts(select, lines, selected) {
     }
 }
 
+// One serial on the delivered order is prefilled, several become a dropdown,
+// none leaves the text box. Only one of the two inputs is enabled, so only
+// that one is submitted.
+function applySerials(form, serials) {
+    const text = form.querySelector(".js-int-help-serial-text");
+    const pick = form.querySelector(".js-int-help-serial-pick");
+    if (!text || !pick) {
+        return;
+    }
+    const list = serials || [];
+    const several = list.length > 1;
+    // Clear a serial we filled for the previous product; keep one the person typed.
+    if (text.dataset.intPrefilled && text.value === text.dataset.intPrefilled) {
+        text.value = "";
+    }
+    text.dataset.intPrefilled = "";
+    pick.classList.toggle("d-none", !several);
+    pick.disabled = !several;
+    text.classList.toggle("d-none", several);
+    text.disabled = several;
+    while (pick.firstChild) {
+        pick.removeChild(pick.firstChild);
+    }
+    if (several) {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Select a serial number";
+        pick.appendChild(placeholder);
+        for (const serial of list) {
+            const option = document.createElement("option");
+            option.value = serial;
+            option.textContent = serial;
+            option.selected = serial === text.value;
+            pick.appendChild(option);
+        }
+    } else if (list.length === 1) {
+        text.value = list[0];
+        text.dataset.intPrefilled = list[0];
+    }
+}
+
+function bindToggles(form) {
+    // "Other" boxes under the reason and outcome lists.
+    form.querySelectorAll(".js-int-help-other").forEach((select) => {
+        const wrap = form.querySelector(select.dataset.other);
+        if (!wrap) {
+            return;
+        }
+        const sync = () => wrap.classList.toggle("d-none", select.value !== "other");
+        select.addEventListener("change", sync);
+        sync();
+    });
+    // "Where did you buy it?": the dealer list is required only for "From one of our dealers".
+    const dealerWrap = form.querySelector(".js-int-help-dealer");
+    if (dealerWrap) {
+        const dealer = dealerWrap.querySelector("select");
+        const sync = () => {
+            const picked = form.querySelector("input[name='purchase_source']:checked");
+            const fromDealer = Boolean(picked) && picked.value === "dealer";
+            dealerWrap.classList.toggle("d-none", !fromDealer);
+            dealer.required = fromDealer;
+        };
+        form.querySelectorAll("input[name='purchase_source']").forEach((input) => {
+            input.addEventListener("change", sync);
+        });
+        sync();
+    }
+}
+
 function bind(form) {
+    bindToggles(form);
     const order = form.querySelector(".js-int-help-order");
     const product = form.querySelector(".js-int-help-product");
     const productText = form.querySelector("[name='product_text']");
@@ -41,12 +111,18 @@ function bind(form) {
             input.required = on;
         });
     };
+    let serialsByProduct = {};
+    const syncSerials = () => {
+        applySerials(form, serialsByProduct[product.value] || []);
+    };
     const load = () => {
         const orderId = order.value;
         const isTyped = Boolean(order.dataset.typed) && orderId === order.dataset.typed;
         showTyped(isTyped);
+        serialsByProduct = {};
         if (!orderId || isTyped) {
             fillProducts(product, [], "");
+            syncSerials();
             return;
         }
         fetch(`/my/help/order-lines/${orderId}`, {
@@ -55,15 +131,25 @@ function bind(form) {
         })
             .then((response) => (response.ok ? response.json() : {lines: []}))
             .then((payload) => {
-                fillProducts(product, payload.lines || [], product.dataset.selected || "");
+                const lines = payload.lines || [];
+                serialsByProduct = {};
+                for (const line of lines) {
+                    serialsByProduct[String(line.product_id)] = line.serials || [];
+                }
+                fillProducts(product, lines, product.dataset.selected || "");
                 product.dataset.selected = "";
+                syncSerials();
             })
-            .catch(() => fillProducts(product, [], ""));
+            .catch(() => {
+                fillProducts(product, [], "");
+                syncSerials();
+            });
     };
     order.addEventListener("change", () => {
         product.dataset.selected = "";
         load();
     });
+    product.addEventListener("change", syncSerials);
     product.addEventListener("change", () => {
         // Warranty copies the picked product into its text field; the return's typed field stays as typed.
         if (!productText || !product.value || productText.closest(".js-int-help-typed")) {

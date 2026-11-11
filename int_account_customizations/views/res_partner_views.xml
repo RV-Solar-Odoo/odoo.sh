@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Label only: the field is still use_partner_credit_limit. -->
+    <record id="view_partner_property_form_credit_limit_label" model="ir.ui.view">
+        <field name="name">res.partner.form.int.credit.limit.label</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="account.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//label[@for='use_partner_credit_limit']" position="attributes">
+                <attribute name="string">Credit Limit</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

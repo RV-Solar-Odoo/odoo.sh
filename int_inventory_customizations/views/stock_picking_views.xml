@@ -12,4 +12,27 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Label only: the field is still carrier_tracking_ref. -->
+    <record id="view_picking_form_tracking_number_label" model="ir.ui.view">
+        <field name="name">stock.picking.form.int.tracking.number</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_delivery.view_picking_withcarrier_out_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//label[@for='carrier_tracking_ref']" position="attributes">
+                <attribute name="string">Tracking Number</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="vpicktree_tracking_number_label" model="ir.ui.view">
+        <field name="name">stock.picking.list.int.tracking.number</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_delivery.vpicktree_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='carrier_tracking_ref']" position="attributes">
+                <attribute name="string">Tracking Number</attribute>
+            </xpath>
+        </field>
+    </record>
 </odoo>

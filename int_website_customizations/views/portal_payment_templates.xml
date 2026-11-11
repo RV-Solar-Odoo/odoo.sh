@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- The notice at the top of My Portal > Payment methods. Edit the wording here. -->
+    <template id="portal_payment_methods_notice" name="Payment methods: notice">
+        <div class="o_int_paymethods_notice" role="note">
+            Saved cards appear below. For your security, we don't store bank accounts or other
+            payment methods like PayPal on our site; you can choose those at checkout.
+        </div>
+    </template>
+
     <!-- My Account > Payment methods: saved cards as a list with an "Add a payment method"
          button, like the Help & Feedback returns page. Stock's payment form still does the
          saving and deleting; only its layout changes, and only on this page. -->
@@ -7,6 +15,7 @@
               name="Payment methods: list and add button">
         <xpath expr="//t[@t-call='payment.form']" position="replace">
             <div class="o_int_paymethods">
+                <t t-call="int_website_customizations.portal_payment_methods_notice"/>
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 my-3">
                     <h3 class="my-0">Payment methods</h3>
                     <button t-if="payment_methods_sudo and tokens_sudo" type="button" class="btn btn-primary"

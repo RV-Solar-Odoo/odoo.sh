@@ -56,3 +56,16 @@
         width: 100%;
     }
 }
+
+// Info box at the top of the page, text in portal_payment_methods_notice.
+.o_int_paymethods_notice {
+    margin: 1rem 0 0.5rem;
+    padding: 0.875rem 1.125rem;
+    background: rgba(0, 84, 168, 0.06);
+    border: 1px solid #e6e8ef;
+    border-left: 4px solid #0054a8;
+    border-radius: 14px;
+    color: #161b2e;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}

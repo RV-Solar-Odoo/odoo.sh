@@ -32,11 +32,34 @@ VIDEO_TYPES = {
     "mov": {"video/quicktime"},
 }
 
+# Return choices are copied from the public returns form (/helpdesk, RVSB Returns)
+# so both forms ask the same questions.
 RETURN_REASONS = (
-    ("wrong_item", "wrong item"),
-    ("damaged", "damaged in shipping"),
-    ("ordered_error", "ordered in error"),
-    ("other", "other"),
+    ("wrong_product", "Ordered the wrong product"),
+    ("not_needed", "No longer need it"),
+    ("defective", "Product is defective"),
+    ("other", "Other"),
+)
+RETURN_PACKAGING = (
+    ("yes", "Yes"),
+    ("no", "No"),
+)
+RETURN_CONDITIONS = (
+    ("unopened", "Unopened"),
+    ("opened", "Opened"),
+    ("installed", "Installed"),
+)
+RETURN_OUTCOMES = (
+    ("refund", "Refund to Payment Method"),
+    ("store_credit", "Store credit"),
+    ("replacement", "Replacement"),
+    ("different", "Replace with different product"),
+    ("other", "Other"),
+)
+# "Where did you buy it?" for retail returns and warranty claims.
+PURCHASE_SOURCES = (
+    ("direct", "Directly from RV Solar & Battery"),
+    ("dealer", "From one of our dealers"),
 )
 FEEDBACK_AREAS = (
     ("website", "website"),
@@ -53,6 +76,8 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_return_id",
         "team_field": "int_help_team_return_id",
         "code": "help_return",
+        # Retail (non-dealer) users can use this form. Set False to hide it from them.
+        "retail": True,
         "max_files": 5,
         "allow_video": False,
         "upload_label": "Photos",
@@ -64,6 +89,8 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_warranty_id",
         "team_field": "int_help_team_warranty_id",
         "code": "help_warranty",
+        # Retail (non-dealer) users can use this form. Set False to hide it from them.
+        "retail": True,
         "max_files": 5,
         "allow_video": True,
         "upload_label": "Photos or video",
@@ -75,6 +102,8 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_feedback_id",
         "team_field": "int_help_team_feedback_id",
         "code": "help_feedback",
+        # Retail (non-dealer) users can use this form. Set False to hide it from them.
+        "retail": True,
         "max_files": 3,
         "allow_video": False,
         "upload_label": "Screenshot",
@@ -86,6 +115,8 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_part_id",
         "team_field": "int_help_team_part_id",
         "code": "help_part",
+        # Retail (non-dealer) users can use this form. Set False to hide it from them.
+        "retail": True,
         "max_files": 0,
         "allow_video": False,
         "upload_label": "",
@@ -96,6 +127,13 @@ HELP_KINDS = {
 
 class HelpdeskTicket(models.Model):
     _inherit = "helpdesk.ticket"
+
+    int_help_purchase_source = fields.Selection(
+        list(PURCHASE_SOURCES), string="Where did you buy it?", copy=False,
+    )
+    int_help_purchase_dealer_id = fields.Many2one(
+        "res.partner", string="Bought from dealer", copy=False, ondelete="set null",
+    )
 
     @api.model
     def _int_help_kind(self, kind):
@@ -113,7 +151,15 @@ class HelpdeskTicket(models.Model):
             "typed_order": TYPED_ORDER,
             "notice": False,
             "reasons": RETURN_REASONS,
+            "packaging": RETURN_PACKAGING,
+            "conditions": RETURN_CONDITIONS,
+            "outcomes": RETURN_OUTCOMES,
             "areas": FEEDBACK_AREAS,
+            "ask_purchase": kind in ("return", "warranty") and self._int_help_asks_purchase(user, company),
+            "purchase_sources": PURCHASE_SOURCES,
+            "dealers": self.env["res.partner"]._int_help_dealer_companies(company)
+            if kind in ("return", "warranty") and self._int_help_asks_purchase(user, company)
+            else self.env["res.partner"],
             "max_files": spec["max_files"],
             "accept": spec["accept"],
             "upload_label": spec["upload_label"],
@@ -130,7 +176,7 @@ class HelpdeskTicket(models.Model):
         spec = self._int_help_kind(kind)
         if not spec:
             return {"error": _("That request type is not available.")}
-        access_error = self._int_help_access_error(user, company)
+        access_error = self._int_help_access_error(user, company, kind)
         if access_error:
             return {"error": access_error}
         tag = company.sudo()[spec["tag_field"]]
@@ -168,16 +214,16 @@ class HelpdeskTicket(models.Model):
         return {"ticket": ticket}
 
     @api.model
-    def _int_help_access_error(self, user, company):
+    def _int_help_access_error(self, user, company, kind=None):
         if not user or user._is_public():
             return _("Help & Feedback is not available for this account.")
         if not company._int_help_ready():
             return _("Help & Feedback is not available right now.")
-        if user.has_group("base.group_user"):
-            return None
-        if user.has_group("base.group_portal") and user._int_help_is_approved_dealer(company):
-            return None
-        return _("Help & Feedback is not available for this account.")
+        if not (user.has_group("base.group_user") or user.has_group("base.group_portal")):
+            return _("Help & Feedback is not available for this account.")
+        if kind and not user._int_help_kind_allowed(kind, company):
+            return _("That request type is not available for this account.")
+        return None
 
     @api.model
     def _int_help_order_domain(self, user, company):
@@ -212,6 +258,7 @@ class HelpdeskTicket(models.Model):
     def _int_help_order_line_options(self, user, company, order_id):
         """Products on one order that passed the ownership check. Anything else is an empty list."""
         order = self._int_help_own_order(user, company, order_id)
+        serials = self._int_help_order_serials(order)
         seen = set()
         options = []
         for line in order.order_line:
@@ -221,8 +268,33 @@ class HelpdeskTicket(models.Model):
             seen.add(product.id)
             sku = product.default_code
             label = f"{sku} {EN_DASH} {product.name}" if sku else product.name
-            options.append({"product_id": product.id, "name": label})
+            options.append({
+                "product_id": product.id,
+                "name": label,
+                "serials": serials.get(product.id, []),
+            })
         return options
+
+    @api.model
+    def _int_help_order_serials(self, order):
+        """Lot/serial numbers on the order's delivered moves, by product.
+
+        Only the order that passed the ownership check is read, in one pass.
+        """
+        if not order or "picking_ids" not in order._fields:
+            return {}
+        pickings = order.sudo().picking_ids.filtered(
+            lambda picking: picking.picking_type_code == "outgoing" and picking.state == "done"
+        )
+        serials = {}
+        for move_line in pickings.move_line_ids:
+            name = (move_line.lot_id.name or move_line.lot_name or "").strip()
+            if not name:
+                continue
+            names = serials.setdefault(move_line.product_id.id, [])
+            if name not in names:
+                names.append(name)
+        return serials
 
     @api.model
     def _int_help_order_product(self, order, product_id):
@@ -371,6 +443,11 @@ class HelpdeskTicket(models.Model):
             parsed = self._int_help_parse_feedback(data, errors)
         else:
             parsed = self._int_help_parse_part(data, errors)
+        parsed.setdefault("vals", {})
+        if kind in ("return", "warranty") and self._int_help_asks_purchase(user, company):
+            rows, vals = self._int_help_parse_purchase(company, data, errors)
+            parsed["rows"] = rows + parsed["rows"]
+            parsed["vals"].update(vals)
         if errors:
             return None, " ".join(errors)
         parsed["uploads"] = uploads
@@ -409,19 +486,39 @@ class HelpdeskTicket(models.Model):
         quantity = self._int_help_number(data.get("quantity"))
         if quantity is None or quantity <= 0:
             errors.append(_("Quantity must be a number greater than zero."))
-        reason = (data.get("reason") or "").strip()
         reasons = dict(RETURN_REASONS)
-        if reason not in reasons:
-            errors.append(_("Choose a reason."))
+        reason = self._int_help_choice(data, "reason", reasons, _("Choose a reason for the return."), errors)
+        reason_other = (data.get("reason_other") or "").strip()
+        packaging = self._int_help_choice(
+            data, "packaging", dict(RETURN_PACKAGING),
+            _("Say whether the product is in its original packaging."), errors,
+        )
+        condition = self._int_help_choice(
+            data, "condition", dict(RETURN_CONDITIONS), _("Choose the product condition."), errors,
+        )
+        outcomes = dict(RETURN_OUTCOMES)
+        outcome = (data.get("outcome") or "").strip()
+        if outcome and outcome not in outcomes:
+            errors.append(_("Choose a desired outcome."))
+        outcome_other = (data.get("outcome_other") or "").strip()
         serial = (data.get("serial") or "").strip()
         details = (data.get("details") or "").strip()
+        reason_label = reasons.get(reason, "")
+        if reason == "other" and reason_other:
+            reason_label = f"{reason_label}: {reason_other}"
+        outcome_label = outcomes.get(outcome, "")
+        if outcome == "other" and outcome_other:
+            outcome_label = f"{outcome_label}: {outcome_other}"
         rows = [
             (_("Order (typed, not linked)") if typed else _("Order"), order_label),
             (_("Product"), product_label),
             (_("Serial number"), serial or "\u2014"),
             (_("Quantity"), "" if quantity is None else self._int_help_qty(quantity)),
-            (_("Reason"), reasons.get(reason, "")),
-            (_("Details"), details or "\u2014"),
+            (_("Reason for return"), reason_label),
+            (_("In original packaging"), dict(RETURN_PACKAGING).get(packaging, "")),
+            (_("Product condition"), dict(RETURN_CONDITIONS).get(condition, "")),
+            (_("Desired outcome"), outcome_label or "\u2014"),
+            (_("Additional information"), details or "\u2014"),
         ]
         return {
             "order": order,
@@ -501,8 +598,6 @@ class HelpdeskTicket(models.Model):
     @api.model
     def _int_help_parse_part(self, data, errors):
         manufacturer = (data.get("manufacturer") or "").strip()
-        if not manufacturer:
-            errors.append(_("Manufacturer is required."))
         part = (data.get("part") or "").strip()
         if not part:
             errors.append(_("Part number or description is required."))
@@ -515,18 +610,20 @@ class HelpdeskTicket(models.Model):
         link = (data.get("link") or "").strip()
         if link and not (link.startswith("http://") or link.startswith("https://")):
             errors.append(_("Enter a link that starts with http:// or https://."))
+        comments = (data.get("comments") or "").strip()
         rows = [
-            (_("Manufacturer"), manufacturer),
+            (_("Manufacturer"), manufacturer or "\u2014"),
             (_("Part number or description"), part),
             (_("Estimated quantity per year"), self._int_help_qty(qty) if qty is not None else "\u2014"),
             (_("Link"), link or "\u2014"),
+            (_("Comments"), comments or "\u2014"),
         ]
         return {
             "order": self.env["sale.order"],
             "product": self.env["product.product"],
             "rows": rows,
-            "name_left": manufacturer,
-            "name_right": part,
+            "name_left": manufacturer or part,
+            "name_right": part if manufacturer else "",
         }
 
     @api.model
@@ -541,6 +638,43 @@ class HelpdeskTicket(models.Model):
         if not order:
             return self.env["sale.order"], _("That order cannot be used.")
         return order, None
+
+    @api.model
+    def _int_help_choice(self, data, key, choices, message, errors):
+        value = (data.get(key) or "").strip()
+        if value not in choices:
+            errors.append(message)
+            return ""
+        return value
+
+    @api.model
+    def _int_help_asks_purchase(self, user, company):
+        """Retail users are asked where they bought it. Dealers and staff are not."""
+        if user.has_group("base.group_user"):
+            return False
+        return not user._int_help_is_approved_dealer(company)
+
+    @api.model
+    def _int_help_parse_purchase(self, company, data, errors):
+        sources = dict(PURCHASE_SOURCES)
+        source = self._int_help_choice(
+            data, "purchase_source", sources, _("Tell us where you bought it."), errors,
+        )
+        dealer = self.env["res.partner"]
+        if source == "dealer":
+            dealer_id = self._int_help_int(data.get("purchase_dealer_id"))
+            dealers = self.env["res.partner"]._int_help_dealer_companies(company)
+            dealer = dealers.filtered(lambda partner: partner.id == dealer_id)
+            if not dealer:
+                errors.append(_("Choose the dealer you bought it from."))
+        label = sources.get(source, "")
+        if dealer:
+            label = f"{label}: {dealer.name}"
+        vals = {
+            "int_help_purchase_source": source or False,
+            "int_help_purchase_dealer_id": dealer.id or False,
+        }
+        return [(_("Where did you buy it?"), label)], vals
 
     @api.model
     def _int_help_read_uploads(self, files, spec):
@@ -602,6 +736,7 @@ class HelpdeskTicket(models.Model):
             vals["sale_order_id"] = parsed["order"].id
         if "product_id" in self._fields and parsed["product"]:
             vals["product_id"] = parsed["product"].id
+        vals.update(parsed.get("vals") or {})
         return vals
 
     @api.model

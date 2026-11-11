@@ -1,6 +1,6 @@
 {
     "name": "CRM Customizations",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.4.0",
     "category": "Sales/CRM",
     "summary": "Review dealer tax exemption claims on the lead and apply approved ones to the customer",
     "author": "Internal",

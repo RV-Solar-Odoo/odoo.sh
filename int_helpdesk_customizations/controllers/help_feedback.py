@@ -101,6 +101,8 @@ class IntHelpdeskHelp(http.Controller):
         hidden = self._hidden_redirect()
         if hidden:
             return hidden
+        if not request.env.user._int_help_kind_allowed(kind, self._company()):
+            return request.redirect("/my/help")
         Ticket = request.env["helpdesk.ticket"]
         company = self._company()
         prepared = Ticket._int_help_prepare(request.env.user, company, kind)

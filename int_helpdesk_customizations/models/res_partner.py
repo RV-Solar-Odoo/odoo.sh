@@ -20,3 +20,19 @@ class ResPartner(models.Model):
         pricelist = partner.with_company(company).property_product_pricelist
         public_pricelist = public_partner.with_company(company).property_product_pricelist
         return bool(pricelist) and bool(public_pricelist) and pricelist != public_pricelist
+
+    def _int_help_dealer_companies(self, company):
+        """Approved dealer companies, by name, for "Where did you buy it?".
+
+        Same rule as _int_help_is_approved_dealer: a company-level pricelist that
+        is not the public one.
+        """
+        partners = self.sudo().with_company(company).search(
+            [
+                # Top-level contacts only: a dealer's company, never its employees.
+                ("parent_id", "=", False),
+                ("specific_property_product_pricelist", "!=", False),
+            ],
+            order="name",
+        )
+        return partners.filtered(lambda partner: partner._int_help_is_approved_dealer(company))

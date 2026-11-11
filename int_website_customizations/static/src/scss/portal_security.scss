@@ -28,3 +28,9 @@ html.o_int_approved_dealer nav li:has(> .oe_structure a[href^="/dealer-applicati
 html.o_int_approved_dealer a.o_int_help_link {
     display: inline-block !important;
 }
+
+// Logged-in retail users: keep the header button hidden until the script has
+// turned it into Help & Feedback, so Become a Dealer never flashes.
+html.o_int_logged_in:not(.o_int_approved_dealer) :is(header, nav) a.btn:is([href="/dealer-application"], [href^="/dealer-application?"]):not(.o_int_help_link) {
+    visibility: hidden;
+}

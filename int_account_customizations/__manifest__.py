@@ -1,7 +1,7 @@
 {
     "name": "Accounting Customizations",
     "summary": "Sales tax threshold emails, and the credit card on My Portal",
-    "version": "19.0.1.1.1",
+    "version": "19.0.1.2.0",
     "category": "Accounting/Accounting",
     "author": "Internal",
     "license": "LGPL-3",
@@ -14,6 +14,7 @@
         "views/nexus_sale_views.xml",
         "views/res_config_settings_views.xml",
         "views/portal_templates.xml",
+        "views/res_partner_views.xml",
     ],
     "assets": {
         "web.assets_frontend": [

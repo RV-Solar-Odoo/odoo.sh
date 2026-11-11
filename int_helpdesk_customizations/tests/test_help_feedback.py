@@ -155,6 +155,9 @@ class TestHelpFeedback(TransactionCase):
         return order
 
     def _submit(self, kind, data, files=None, user=None):
+        if kind == "return":
+            # Required on every return, as on the public returns form.
+            data = {"packaging": "yes", "condition": "unopened", **data}
         return self.env["helpdesk.ticket"]._int_help_submit(
             user or self.dealer_user,
             self.company,
@@ -202,7 +205,8 @@ class TestHelpFeedback(TransactionCase):
     def test_hub_visibility(self):
         self.assertTrue(self.dealer_user.with_company(self.company)._int_help_hub_visible())
         self.assertTrue(self.env.user.with_company(self.company)._int_help_hub_visible())
-        self.assertFalse(self.retail_user.with_company(self.company)._int_help_hub_visible())
+        # Retail users get Help & Feedback too.
+        self.assertTrue(self.retail_user.with_company(self.company)._int_help_hub_visible())
         self.assertFalse(self.public_user.with_company(self.company)._int_help_hub_visible())
         self.company.int_help_team_return_id = False
         self.assertFalse(self.dealer_user.with_company(self.company)._int_help_hub_visible())
@@ -213,7 +217,7 @@ class TestHelpFeedback(TransactionCase):
                 "order_id": str(self.order.id),
                 "product_id": str(self.product.id),
                 "quantity": "2",
-                "reason": "wrong_item",
+                "reason": "wrong_product",
                 "serial": "SN-1",
                 "details": "Arrived open",
             },
@@ -313,7 +317,7 @@ class TestHelpFeedback(TransactionCase):
             "order_id": str(self.order.id),
             "product_id": str(self.other_product.id),
             "quantity": "1",
-            "reason": "damaged",
+            "reason": "defective",
         })
         self.assertFalse(result.get("ticket"))
         self.assertIn("product", result["error"].lower())
@@ -355,7 +359,7 @@ class TestHelpFeedback(TransactionCase):
             "order_id": str(self.order.id),
             "product_id": str(self.product.id),
             "quantity": "1",
-            "reason": "ordered_error",
+            "reason": "not_needed",
         }, [Upload("photo.png", "image/png", b"\x89PNG\r\n")])
         ticket = good["ticket"]
         attachment = self.env["ir.attachment"].search([
@@ -426,7 +430,7 @@ class TestHelpFeedback(TransactionCase):
             "order_ref": "GUEST-1042",
             "product_text": "SmartSolar 100/30",
             "quantity": "1",
-            "reason": "ordered_error",
+            "reason": "not_needed",
         }, user=user)
         self.assertFalse(result.get("error"), result.get("error"))
         ticket = result["ticket"]
@@ -454,7 +458,7 @@ class TestHelpFeedback(TransactionCase):
             "order_id": str(self.order.id),
             "product_id": str(self.product.id),
             "quantity": "1",
-            "reason": "damaged",
+            "reason": "defective",
         })["ticket"]
         warranty = self._submit("warranty", {
             "product_text": "Victron MultiPlus",
@@ -683,3 +687,72 @@ class TestHelpFeedback(TransactionCase):
         self.assertIn("Help Hub Rep", rendered)
         self.assertIn('href="mailto:help-hub-rep@example.com"', rendered)
         self.assertIn('href="tel:5550142"', rendered)
+
+    def test_retail_flag_hides_one_form_from_retail_only(self):
+        from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
+
+        retail = self.retail_user.with_company(self.company)
+        dealer = self.dealer_user.with_company(self.company)
+        self.assertTrue(retail._int_help_kind_allowed("part", self.company))
+        HELP_KINDS["part"]["retail"] = False
+        try:
+            self.assertFalse(retail._int_help_kind_allowed("part", self.company))
+            self.assertTrue(dealer._int_help_kind_allowed("part", self.company))
+            result = self._submit("part", {"part": "ORION-123"}, user=self.retail_user)
+            self.assertTrue(result.get("error"))
+        finally:
+            HELP_KINDS["part"]["retail"] = True
+
+    def test_retail_return_asks_where_it_was_bought(self):
+        Ticket = self.env["helpdesk.ticket"]
+        self.assertFalse(Ticket._int_help_prepare(self.dealer_user, self.company, "return")["ask_purchase"])
+        prepared = Ticket._int_help_prepare(self.retail_user, self.company, "return")
+        self.assertTrue(prepared["ask_purchase"])
+        self.assertIn(self.dealer, prepared["dealers"])
+        self.assertNotIn(self.retail, prepared["dealers"])
+        base = {
+            "order_id": TYPED_ORDER,
+            "order_ref": "S00999",
+            "product_text": "PMP",
+            "quantity": "1",
+            "reason": "not_needed",
+        }
+        missing = self._submit("return", base, user=self.retail_user)
+        self.assertIn("where you bought it", missing["error"])
+        no_dealer = self._submit("return", {**base, "purchase_source": "dealer"}, user=self.retail_user)
+        self.assertIn("Choose the dealer", no_dealer["error"])
+        not_a_dealer = self._submit("return", {
+            **base, "purchase_source": "dealer", "purchase_dealer_id": str(self.retail.id),
+        }, user=self.retail_user)
+        self.assertIn("Choose the dealer", not_a_dealer["error"])
+        result = self._submit("return", {
+            **base, "purchase_source": "dealer", "purchase_dealer_id": str(self.dealer.id),
+        }, user=self.retail_user)
+        self.assertFalse(result.get("error"), result.get("error"))
+        ticket = result["ticket"]
+        self.assertEqual(ticket.int_help_purchase_source, "dealer")
+        self.assertEqual(ticket.int_help_purchase_dealer_id, self.dealer)
+        self.assertIn("From one of our dealers: Approved Dealer", str(ticket.description))
+        self.assertIn("In original packaging", str(ticket.description))
+
+    def test_return_needs_packaging_and_condition(self):
+        result = self.env["helpdesk.ticket"]._int_help_submit(self.dealer_user, self.company, "return", {
+            "order_id": str(self.order.id),
+            "product_id": str(self.product.id),
+            "quantity": "1",
+            "reason": "not_needed",
+        }, [])
+        self.assertIn("original packaging", result["error"])
+        self.assertIn("product condition", result["error"])
+
+    def test_part_request_manufacturer_is_optional_and_comments_are_kept(self):
+        result = self._submit("part", {"part": "ORION-123\n12V to 12V", "comments": "For a van build"})
+        self.assertFalse(result.get("error"), result.get("error"))
+        self.assertIn("For a van build", str(result["ticket"].description))
+        self.assertTrue(self._submit("part", {"manufacturer": "Victron"}).get("error"))
+
+    def test_order_serials_come_from_delivered_moves(self):
+        Ticket = self.env["helpdesk.ticket"]
+        options = Ticket._int_help_order_line_options(self.dealer_user, self.company, self.order.id)
+        self.assertEqual(options[0]["serials"], [])
+        self.assertEqual(Ticket._int_help_order_serials(self.env["sale.order"]), {})
