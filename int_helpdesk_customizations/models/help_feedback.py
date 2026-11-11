@@ -10,6 +10,7 @@ from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
 from odoo.fields import Command
+from odoo.tools import email_normalize
 
 _logger = logging.getLogger(__name__)
 
@@ -33,11 +34,11 @@ VIDEO_TYPES = {
 }
 
 # Return choices are copied from the public returns form (/helpdesk, RVSB Returns)
-# so both forms ask the same questions.
+# so both forms ask the same questions. "Product is defective" is left out: that
+# is a warranty claim.
 RETURN_REASONS = (
     ("wrong_product", "Ordered the wrong product"),
     ("not_needed", "No longer need it"),
-    ("defective", "Product is defective"),
     ("other", "Other"),
 )
 RETURN_PACKAGING = (
@@ -76,8 +77,9 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_return_id",
         "team_field": "int_help_team_return_id",
         "code": "help_return",
-        # Retail (non-dealer) users can use this form. Set False to hide it from them.
-        "retail": True,
+        # Who besides dealers and staff can use this form. Set False to hide it.
+        "retail": True,  # logged-in customers who are not dealers
+        "public": True,  # guests who are not logged in
         "max_files": 5,
         "allow_video": False,
         "upload_label": "Photos",
@@ -89,8 +91,9 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_warranty_id",
         "team_field": "int_help_team_warranty_id",
         "code": "help_warranty",
-        # Retail (non-dealer) users can use this form. Set False to hide it from them.
-        "retail": True,
+        # Who besides dealers and staff can use this form. Set False to hide it.
+        "retail": True,  # logged-in customers who are not dealers
+        "public": True,  # guests who are not logged in
         "max_files": 5,
         "allow_video": True,
         "upload_label": "Photos or video",
@@ -102,8 +105,9 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_feedback_id",
         "team_field": "int_help_team_feedback_id",
         "code": "help_feedback",
-        # Retail (non-dealer) users can use this form. Set False to hide it from them.
-        "retail": True,
+        # Who besides dealers and staff can use this form. Set False to hide it.
+        "retail": True,  # logged-in customers who are not dealers
+        "public": True,  # guests who are not logged in
         "max_files": 3,
         "allow_video": False,
         "upload_label": "Screenshot",
@@ -115,14 +119,33 @@ HELP_KINDS = {
         "tag_field": "int_help_tag_part_id",
         "team_field": "int_help_team_part_id",
         "code": "help_part",
-        # Retail (non-dealer) users can use this form. Set False to hide it from them.
-        "retail": True,
+        # Who besides dealers and staff can use this form. Set False to hide it.
+        "retail": True,  # logged-in customers who are not dealers
+        "public": True,  # guests who are not logged in
         "max_files": 0,
         "allow_video": False,
         "upload_label": "",
         "accept": "",
     },
+    "general": {
+        "title": "General inquiries",
+        "name": "General Inquiry",
+        "tag_field": "int_help_tag_general_id",
+        "team_field": "int_help_team_general_id",
+        "code": "help_general",
+        # Who besides dealers and staff can use this form. Set False to hide it.
+        "retail": True,  # logged-in customers who are not dealers
+        "public": True,  # guests who are not logged in
+        "max_files": 3,
+        "allow_video": False,
+        "upload_label": "Attachment",
+        "accept": "image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp",
+    },
 }
+# Guests: at most this many requests per hour from one address (IP) or email.
+GUEST_HOURLY_LIMIT = 10
+# A hidden field people never see. A bot that fills it in is turned away.
+HONEYPOT_FIELD = "int_help_website"
 
 
 class HelpdeskTicket(models.Model):
@@ -134,6 +157,8 @@ class HelpdeskTicket(models.Model):
     int_help_purchase_dealer_id = fields.Many2one(
         "res.partner", string="Bought from dealer", copy=False, ondelete="set null",
     )
+    # Guest submissions only, for the hourly limit.
+    int_help_ip = fields.Char(string="Submitted from (IP)", copy=False, readonly=True)
 
     @api.model
     def _int_help_kind(self, kind):
@@ -155,6 +180,8 @@ class HelpdeskTicket(models.Model):
             "conditions": RETURN_CONDITIONS,
             "outcomes": RETURN_OUTCOMES,
             "areas": FEEDBACK_AREAS,
+            "is_guest": user._is_public(),
+            "honeypot_field": HONEYPOT_FIELD,
             "ask_purchase": kind in ("return", "warranty") and self._int_help_asks_purchase(user, company),
             "purchase_sources": PURCHASE_SOURCES,
             "dealers": self.env["res.partner"]._int_help_dealer_companies(company)
@@ -166,7 +193,7 @@ class HelpdeskTicket(models.Model):
         }
 
     @api.model
-    def _int_help_submit(self, user, company, kind, data, files=None):
+    def _int_help_submit(self, user, company, kind, data, files=None, ip=None):
         """Validate a portal submission and create the ticket.
 
         Returns ``{"ticket": record}`` or ``{"error": message}``. Creating the
@@ -186,10 +213,18 @@ class HelpdeskTicket(models.Model):
                 spec["tag_field"], company.display_name,
             )
             return {"error": _("This request type is not set up yet.")}
-        parsed, error = self._int_help_parse(user, company, kind, spec, data or {}, files or [])
+        data = data or {}
+        if user._is_public() and (data.get(HONEYPOT_FIELD) or "").strip():
+            _logger.info("Help & Feedback turned away a submission that filled the hidden field.")
+            return {"error": _("We could not send your request. Please try again.")}
+        parsed, error = self._int_help_parse(user, company, kind, spec, data, files or [])
         if error:
             return {"error": error}
-        if self._int_help_rate_limited(user, company):
+        if user._is_public():
+            parsed["vals"]["int_help_ip"] = (ip or "")[:64] or False
+            if self._int_help_guest_rate_limited(parsed["guest"]["email"], ip):
+                return {"error": _("You can submit up to 10 Help & Feedback requests per hour.")}
+        elif self._int_help_rate_limited(user, company):
             return {"error": _("You can submit up to 10 Help & Feedback requests per hour.")}
         team = company._int_help_team_for(kind)
         if not team:
@@ -199,7 +234,7 @@ class HelpdeskTicket(models.Model):
             )
             return {"error": _("This request type is not set up yet.")}
         vals = self._int_help_ticket_vals(user, company, spec, team, tag, parsed)
-        self._int_help_lock_submission(user, vals["name"])
+        self._int_help_lock_submission(user, vals["name"], vals.get("partner_email"))
         duplicate = self._int_help_recent_duplicate(user, vals)
         if duplicate:
             return {"ticket": duplicate}
@@ -215,20 +250,19 @@ class HelpdeskTicket(models.Model):
 
     @api.model
     def _int_help_access_error(self, user, company, kind=None):
-        if not user or user._is_public():
+        if not user:
             return _("Help & Feedback is not available for this account.")
         if not company._int_help_ready():
             return _("Help & Feedback is not available right now.")
-        if not (user.has_group("base.group_user") or user.has_group("base.group_portal")):
-            return _("Help & Feedback is not available for this account.")
         if kind and not user._int_help_kind_allowed(kind, company):
             return _("That request type is not available for this account.")
         return None
 
     @api.model
     def _int_help_order_domain(self, user, company):
+        # Guests have no orders here: they type the order number.
         commercial = user.partner_id.sudo().commercial_partner_id
-        if not commercial:
+        if not commercial or user._is_public():
             return [("id", "=", 0)]
         cutoff = fields.Datetime.now() - relativedelta(months=24)
         return [
@@ -320,10 +354,10 @@ class HelpdeskTicket(models.Model):
         return True
 
     @api.model
-    def _int_help_lock_submission(self, user, name):
+    def _int_help_lock_submission(self, user, name, email=None):
         """Serialize two identical submits so the second one sees the first ticket."""
-        partner_id = user.partner_id.id or 0
-        digest = hashlib.sha256(f"int-help:{partner_id}:{name}".encode()).digest()
+        who = f"guest:{(email or '').lower()}" if user._is_public() else (user.partner_id.id or 0)
+        digest = hashlib.sha256(f"int-help:{who}:{name}".encode()).digest()
         key = int.from_bytes(digest[:8], "big") & 0x7FFFFFFFFFFFFFFF
         self.env.cr.execute("SELECT pg_advisory_xact_lock(%s)", [key])
 
@@ -333,8 +367,13 @@ class HelpdeskTicket(models.Model):
         if not user.partner_id or not vals.get("name"):
             return self.browse()
         since = fields.Datetime.now() - DUPLICATE_WINDOW
-        domain = [
-            ("partner_id", "=", user.partner_id.id),
+        if user._is_public():
+            if not vals.get("partner_email"):
+                return self.browse()
+            who = [("partner_email", "=ilike", vals["partner_email"]), ("int_help_ip", "!=", False)]
+        else:
+            who = [("partner_id", "=", user.partner_id.id)]
+        domain = who + [
             ("name", "=", vals["name"]),
             ("create_date", ">=", since),
         ]
@@ -356,6 +395,21 @@ class HelpdeskTicket(models.Model):
         return count >= 10
 
     @api.model
+    def _int_help_guest_rate_limited(self, email, ip):
+        """Guests share one login, so count by address (IP) and by email instead."""
+        since = fields.Datetime.now() - timedelta(hours=1)
+        Ticket = self.sudo().with_context(active_test=False)
+        checks = []
+        if ip:
+            checks.append([("int_help_ip", "=", ip[:64])])
+        if email:
+            checks.append([("partner_email", "=ilike", email), ("int_help_ip", "!=", False)])
+        for who in checks:
+            if Ticket.search_count(who + [("create_date", ">=", since)]) >= GUEST_HOURLY_LIMIT:
+                return True
+        return False
+
+    @api.model
     def _int_help_open_returns(self, user, company):
         """Open returns for everyone at the dealer's company, from either return form.
 
@@ -364,7 +418,7 @@ class HelpdeskTicket(models.Model):
         """
         team = company._int_help_team_for("return")
         commercial = user.partner_id.sudo().commercial_partner_id
-        if not team or not commercial:
+        if not team or not commercial or user._is_public():
             return self.sudo().browse()
         domain = [
             ("team_id", "=", team.id),
@@ -435,15 +489,21 @@ class HelpdeskTicket(models.Model):
         uploads, upload_error = self._int_help_read_uploads(files, spec)
         if upload_error:
             errors.append(upload_error)
+        guest = self._int_help_parse_guest(data, errors) if user._is_public() else None
         if kind == "return":
             parsed = self._int_help_parse_return(user, company, data, errors)
         elif kind == "warranty":
             parsed = self._int_help_parse_warranty(user, company, data, errors)
         elif kind == "feedback":
             parsed = self._int_help_parse_feedback(data, errors)
+        elif kind == "general":
+            parsed = self._int_help_parse_general(data, errors)
         else:
             parsed = self._int_help_parse_part(data, errors)
         parsed.setdefault("vals", {})
+        parsed["guest"] = guest
+        if guest:
+            parsed["rows"] = guest["rows"] + parsed["rows"]
         if kind in ("return", "warranty") and self._int_help_asks_purchase(user, company):
             rows, vals = self._int_help_parse_purchase(company, data, errors)
             parsed["rows"] = rows + parsed["rows"]
@@ -555,8 +615,9 @@ class HelpdeskTicket(models.Model):
         failure = (data.get("failure") or "").strip()
         if not failure:
             errors.append(_("Description of failure is required."))
+        order_ref = (data.get("order_ref") or "").strip()
         rows = [
-            (_("Order"), order.name if order else "\u2014"),
+            (_("Order"), order.name if order else (order_ref or "\u2014")),
             (_("Product"), product_text),
             (_("Serial number"), serial),
             (_("Install date"), install_date or install_raw),
@@ -593,6 +654,58 @@ class HelpdeskTicket(models.Model):
             "rows": rows,
             "name_left": areas.get(area, ""),
             "name_right": description,
+        }
+
+    @api.model
+    def _int_help_parse_guest(self, data, errors):
+        """Name, email and phone for someone who is not logged in. Same as the public forms."""
+        first = (data.get("first_name") or "").strip()
+        last = (data.get("last_name") or "").strip()
+        email = email_normalize((data.get("email") or "").strip()) or ""
+        phone = (data.get("phone") or "").strip()
+        company_name = (data.get("company_name") or "").strip()
+        if not first:
+            errors.append(_("First name is required."))
+        if not last:
+            errors.append(_("Last name is required."))
+        if not email:
+            errors.append(_("Enter a valid email address."))
+        if not phone:
+            errors.append(_("Phone number is required."))
+        name = " ".join(part for part in (first, last) if part)
+        rows = [
+            (_("Name"), name),
+            (_("Email"), email),
+            (_("Phone"), phone),
+        ]
+        if company_name:
+            rows.append((_("Company"), company_name))
+        return {
+            "name": self._int_help_clip(name, 120),
+            "email": email,
+            "phone": phone[:64],
+            "company_name": company_name[:120],
+            "rows": rows,
+        }
+
+    @api.model
+    def _int_help_parse_general(self, data, errors):
+        subject = (data.get("subject") or "").strip()
+        question = (data.get("question") or "").strip()
+        if not subject:
+            errors.append(_("Subject is required."))
+        if not question:
+            errors.append(_("Tell us your question."))
+        rows = [
+            (_("Subject"), subject),
+            (_("Question"), question),
+        ]
+        return {
+            "order": self.env["sale.order"],
+            "product": self.env["product.product"],
+            "rows": rows,
+            "name_left": subject,
+            "name_right": "",
         }
 
     @api.model
@@ -719,18 +832,30 @@ class HelpdeskTicket(models.Model):
     @api.model
     def _int_help_ticket_vals(self, user, company, spec, team, tag, parsed):
         description = self._int_help_description(parsed["rows"])
+        guest = parsed.get("guest")
         vals = {
             "name": self._int_help_ticket_name(spec["name"], parsed["name_left"], parsed["name_right"]),
             "team_id": team.id,
-            "partner_id": user.partner_id.id,
             "tag_ids": [Command.set([tag.id])],
             "description": description,
         }
+        if guest:
+            # Not the Public user's contact. Helpdesk links or creates the customer from the email.
+            if "partner_name" in self._fields:
+                vals["partner_name"] = guest["name"] or False
+            if "partner_email" in self._fields:
+                vals["partner_email"] = guest["email"] or False
+            if "partner_phone" in self._fields:
+                vals["partner_phone"] = guest["phone"] or False
+            if "partner_company_name" in self._fields and guest["company_name"]:
+                vals["partner_company_name"] = guest["company_name"]
+        else:
+            vals["partner_id"] = user.partner_id.id
         if "company_id" in self._fields:
             vals["company_id"] = company.id
-        if "partner_name" in self._fields:
+        if not guest and "partner_name" in self._fields:
             vals["partner_name"] = (user.partner_id.name or user.name or "").strip() or False
-        if "partner_email" in self._fields:
+        if not guest and "partner_email" in self._fields:
             vals["partner_email"] = (user.email or user.partner_id.email or "").strip() or False
         if "sale_order_id" in self._fields and parsed["order"]:
             vals["sale_order_id"] = parsed["order"].id

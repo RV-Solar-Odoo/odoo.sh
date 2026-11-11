@@ -1,8 +1,10 @@
 # Help & Feedback
 
-Approved dealers open Help & Feedback from My Portal. The hub at `/my/help` leads to four forms: a return, a warranty claim, website and operations feedback, and a request for a part we do not stock. Each submission becomes a private helpdesk ticket on an existing team, tagged for that kind, with the dealer's contact as the customer so replies reach them. Returns and warranty claims use the returns team. Feedback and part requests use the general inquiries team. A ticket copies the tags already on that contact, with the same names. A contact tagged RVSB Dealer gets an RVSB Dealer tag on the ticket. A contact with no tags adds none.
+Help & Feedback is the site's helpdesk, open to everyone at `/help` (the old `/my/help` addresses redirect). The hub leads to five forms: a return, a warranty claim, website and operations feedback, a request for a part we do not stock, and general inquiries. Each submission becomes a private helpdesk ticket on an existing team, tagged for that kind. Returns and warranty claims use the returns team; feedback, part requests and general inquiries use the general inquiries team. Logged-in users are the ticket's customer and pick from their own orders. Guests type their name, email, phone and order number; helpdesk links the ticket to a contact by that email. A ticket copies the tags already on the customer's contact, with the same names. A contact tagged RVSB Dealer gets an RVSB Dealer tag on the ticket.
 
-The header link to `/my/help` is added by the website customizations. This module owns the My Portal tile, the hub, the forms, the tickets, the tags, and the staff alerts. It does not create a helpdesk team.
+Each form in `HELP_KINDS` has a `retail` flag (logged-in non-dealers) and a `public` flag (guests). Set one to False to hide that form from that group. Guests are limited to 10 requests per hour per address (IP) and per email, and a hidden trap field turns away simple bots.
+
+The header Help & Feedback button is the website-editor button, linked to `/help`. This module owns the My Portal tile, the hub, the forms, the tickets, the tags, and the staff alerts. It does not create a helpdesk team; a new request type is pointed at an existing team on every module update.
 
 ## Settings
 

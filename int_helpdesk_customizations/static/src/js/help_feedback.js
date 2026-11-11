@@ -125,7 +125,7 @@ function bind(form) {
             syncSerials();
             return;
         }
-        fetch(`/my/help/order-lines/${orderId}`, {
+        fetch(`/help/order-lines/${orderId}`, {
             headers: {Accept: "application/json"},
             credentials: "same-origin",
         })

@@ -24,34 +24,31 @@ class ResUsers(models.Model):
         company = company or self._int_help_request_company()
         return self.partner_id._int_help_is_approved_dealer(company)
 
-    def _int_help_hub_visible(self):
-        """Whether My Portal should show Help & Feedback for this user.
-
-        Any logged-in user (staff, dealer or retail) sees it once every request
-        type has an existing team. Public users never do. A missing team hides
-        the hub and logs a warning instead of raising.
+    def _int_help_hub_visible(self, company=None):
+        """Whether Help & Feedback is open. It is the site's helpdesk, for everyone:
+        guests, customers, dealers and staff, once every request type has an
+        existing team. A missing team hides it and logs a warning instead of raising.
         """
         self.ensure_one()
-        if self._is_public():
-            return False
-        company = self._int_help_request_company()
-        if not company._int_help_ready():
-            return False
-        return bool(self.has_group("base.group_user") or self.has_group("base.group_portal"))
+        company = company or self._int_help_request_company()
+        return bool(company._int_help_ready())
 
     def _int_help_kind_allowed(self, kind, company=None):
         """Whether this user may use one Help & Feedback form.
 
-        Staff and dealers get every form. Retail users get a form when its
-        ``retail`` flag in HELP_KINDS is True, so one form can be hidden from
-        retail by flipping that flag.
+        Staff and dealers get every form. Logged-in customers get a form when its
+        ``retail`` flag in HELP_KINDS is True, guests when its ``public`` flag is,
+        so one form can be hidden from either group by flipping that flag.
         """
         from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
 
         self.ensure_one()
         spec = HELP_KINDS.get(kind)
-        if not spec or not self._int_help_hub_visible():
+        company = company or self._int_help_request_company()
+        if not spec or not self._int_help_hub_visible(company):
             return False
+        if self._is_public():
+            return bool(spec.get("public"))
         if self.has_group("base.group_user"):
             return True
         if self._int_help_is_approved_dealer(company):

@@ -59,7 +59,7 @@ class TestDealerSections(HttpCase):
         self.assertLess(page.index(self.MARKER), page.index("<body"))
         self.assertIn(self.SECTION, page)
         self.assertIn("Your Dealer Support Center", page)
-        self.assertIn('href="/my/help"', page)
+        self.assertIn('href="/help"', page)
 
     def test_only_the_bottom_dealer_section_is_hidden(self):
         # The hero also has a Become a Dealer button. Hiding every section with

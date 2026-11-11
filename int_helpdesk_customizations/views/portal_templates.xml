@@ -16,7 +16,7 @@
                 <t t-set="icon" t-value="'/int_helpdesk_customizations/static/src/img/help_feedback.png?v=4'"/>
                 <t t-set="title">Help &amp; Feedback</t>
                 <t t-set="text">Returns, warranty, feedback, and part requests</t>
-                <t t-set="url" t-value="'/my/help'"/>
+                <t t-set="url" t-value="'/help'"/>
                 <t t-set="config_card" t-value="True"/>
             </t>
         </xpath>
@@ -26,11 +26,11 @@
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
             <li t-if="page_name == 'int_help'" class="breadcrumb-item">Help &amp; Feedback</li>
             <li t-if="page_name in ('int_help_form', 'int_help_done', 'int_help_returns')" class="breadcrumb-item">
-                <a href="/my/help">Help &amp; Feedback</a>
+                <a href="/help">Help &amp; Feedback</a>
             </li>
             <li t-if="page_name == 'int_help_returns'" class="breadcrumb-item">Returns</li>
             <li t-if="page_name == 'int_help_form' and kind == 'return'" class="breadcrumb-item">
-                <a href="/my/help/return">Returns</a>
+                <a href="/help/return">Returns</a>
             </li>
             <li t-if="page_name == 'int_help_form'" class="breadcrumb-item" t-out="int_help_title"/>
             <li t-if="page_name == 'int_help_done'" class="breadcrumb-item">Request received</li>
@@ -39,12 +39,13 @@
 
     <template id="portal_help_hub" name="Help &amp; Feedback hub">
         <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="request.env.user._is_public()"/>
             <t t-set="page_name" t-value="'int_help'"/>
             <t t-set="additional_title">Help &amp; Feedback</t>
             <div class="o_int_help_hub">
                 <h3 class="my-3">Help &amp; Feedback</h3>
                 <div class="o_int_help_hub_grid">
-                    <a t-if="request.env.user._int_help_kind_allowed('return')" class="o_int_help_hub_card" href="/my/help/return">
+                    <a t-if="request.env.user._int_help_kind_allowed('return')" class="o_int_help_hub_card" href="/help/return">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
                         </span>
@@ -52,7 +53,7 @@
                         <p>Start a return for unused or incorrect items, or check on one you've already sent.</p>
                         <span class="o_int_help_hub_cta">Start or view returns <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a t-if="request.env.user._int_help_kind_allowed('warranty')" class="o_int_help_hub_card" href="/my/help/warranty">
+                    <a t-if="request.env.user._int_help_kind_allowed('warranty')" class="o_int_help_hub_card" href="/help/warranty">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                         </span>
@@ -60,7 +61,7 @@
                         <p>Report a product that has failed. Include the serial number and photos so we can process it quickly.</p>
                         <span class="o_int_help_hub_cta">Start a claim <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a t-if="request.env.user._int_help_kind_allowed('feedback')" class="o_int_help_hub_card" href="/my/help/feedback">
+                    <a t-if="request.env.user._int_help_kind_allowed('feedback')" class="o_int_help_hub_card" href="/help/feedback">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
                         </span>
@@ -68,13 +69,21 @@
                         <p>Something broken, confusing or slow — on the site, in shipping, billing or anything else? Tell us and we'll fix it.</p>
                         <span class="o_int_help_hub_cta">Send feedback <i class="oi oi-arrow-right"/></span>
                     </a>
-                    <a t-if="request.env.user._int_help_kind_allowed('part')" class="o_int_help_hub_card" href="/my/help/part">
+                    <a t-if="request.env.user._int_help_kind_allowed('part')" class="o_int_help_hub_card" href="/help/part">
                         <span class="o_int_help_hub_icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
                         </span>
                         <h2>Request a part we don't stock</h2>
                         <p>Need something we don't carry? Tell us what it is and roughly how many you use per year.</p>
                         <span class="o_int_help_hub_cta">Request a part <i class="oi oi-arrow-right"/></span>
+                    </a>
+                    <a t-if="request.env.user._int_help_kind_allowed('general')" class="o_int_help_hub_card o_int_help_hub_card_wide" href="/help/general">
+                        <span class="o_int_help_hub_icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        </span>
+                        <h2>General inquiries</h2>
+                        <p>Questions about products, orders, or your system? Ask us anything.</p>
+                        <span class="o_int_help_hub_cta">Ask a question <i class="oi oi-arrow-right"/></span>
                     </a>
                 </div>
                 <div class="o_int_help_rep">
@@ -86,12 +95,13 @@
 
     <template id="portal_help_returns" name="Help &amp; Feedback returns">
         <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="request.env.user._is_public()"/>
             <t t-set="page_name" t-value="'int_help_returns'"/>
             <t t-set="additional_title">Returns</t>
             <div class="o_int_help_hub">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 my-3">
                     <h3 class="my-0">Your returns</h3>
-                    <a href="/my/help/return/new" class="btn btn-primary">Start a new return</a>
+                    <a href="/help/return/new" class="btn btn-primary">Start a new return</a>
                 </div>
                 <div t-if="tickets" class="o_int_help_returns">
                     <a t-foreach="tickets" t-as="ticket" class="o_int_help_return_row" t-att-href="ticket.get_portal_url()">
@@ -112,6 +122,7 @@
 
     <template id="portal_help_form" name="Help &amp; Feedback form">
         <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="request.env.user._is_public()"/>
             <t t-set="page_name" t-value="'int_help_form'"/>
             <t t-set="additional_title" t-value="title"/>
             <t t-set="int_help_title" t-value="title"/>
@@ -120,15 +131,47 @@
                 <h3 class="mb-3" t-out="title"/>
                 <div t-if="error" class="alert alert-danger" role="alert" t-out="error"/>
                 <p t-if="notice" class="mb-0" t-out="notice"/>
-                <form t-if="not notice" t-att-action="'/my/help/return/new' if kind == 'return' else '/my/help/%s' % kind" method="post" enctype="multipart/form-data" class="o_int_help_form">
+                <form t-if="not notice" t-att-action="'/help/return/new' if kind == 'return' else '/help/%s' % kind" method="post" enctype="multipart/form-data" class="o_int_help_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <!-- Hidden from people; a bot that fills it in is turned away. -->
+                    <div class="o_int_help_hp" aria-hidden="true">
+                        <label t-att-for="honeypot_field">Leave this empty</label>
+                        <input type="text" t-att-id="honeypot_field" t-att-name="honeypot_field" tabindex="-1" autocomplete="off" value=""/>
+                    </div>
 
                     <div t-if="kind == 'return'" class="o_int_help_note mb-3">
                         Returns are for items that work but aren't needed or were ordered by mistake.
-                        Product not working? <a href="/my/help/warranty">Start a warranty claim instead.</a>
+                        Product not working? <a href="/help/warranty">Start a warranty claim instead.</a>
                     </div>
 
-                    <!-- Retail only: where the product was bought. Dealers are not asked. -->
+                    <!-- Guests: the same contact fields as the public helpdesk forms. -->
+                    <t t-if="is_guest">
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="int_help_first_name">First name<span class="text-danger">*</span></label>
+                                <input id="int_help_first_name" type="text" name="first_name" class="form-control" required="required" autocomplete="given-name" t-att-value="values.get('first_name') or ''"/>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="int_help_last_name">Last name<span class="text-danger">*</span></label>
+                                <input id="int_help_last_name" type="text" name="last_name" class="form-control" required="required" autocomplete="family-name" t-att-value="values.get('last_name') or ''"/>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="int_help_email">Email<span class="text-danger">*</span></label>
+                                <input id="int_help_email" type="email" name="email" class="form-control" required="required" autocomplete="email" t-att-value="values.get('email') or ''"/>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="int_help_phone">Phone number<span class="text-danger">*</span></label>
+                                <input id="int_help_phone" type="tel" name="phone" class="form-control" required="required" autocomplete="tel" t-att-value="values.get('phone') or ''"/>
+                            </div>
+                            <div t-if="kind == 'general'" class="col-12">
+                                <label class="form-label" for="int_help_company_name">Company name</label>
+                                <input id="int_help_company_name" type="text" name="company_name" class="form-control" autocomplete="organization" t-att-value="values.get('company_name') or ''"/>
+                            </div>
+                        </div>
+                        <p class="form-text mt-0 mb-3">Have an account? <a t-attf-href="/web/login?redirect={{ request.httprequest.path }}">Sign in</a> to pick from your orders.</p>
+                    </t>
+
+                    <!-- Customers who are not dealers (and guests): where the product was bought. -->
                     <t t-if="ask_purchase">
                         <fieldset class="mb-3 js-int-help-purchase">
                             <legend class="form-label fs-6">Where did you buy it?<span class="text-danger">*</span></legend>
@@ -188,7 +231,11 @@
                         </div>
                     </t>
 
-                    <t t-if="kind == 'warranty'">
+                    <div t-if="kind == 'warranty' and not orders" class="mb-3">
+                        <label class="form-label" for="int_help_order_ref">Order number</label>
+                        <input id="int_help_order_ref" type="text" name="order_ref" class="form-control" t-att-value="values.get('order_ref') or ''"/>
+                    </div>
+                    <t t-if="kind == 'warranty' and orders">
                         <div class="mb-3">
                             <label class="form-label" for="int_help_order">Order</label>
                             <select id="int_help_order" name="order_id" class="form-select js-int-help-order">
@@ -327,6 +374,17 @@
                         </div>
                     </t>
 
+                    <t t-if="kind == 'general'">
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_subject">Subject<span class="text-danger">*</span></label>
+                            <input id="int_help_subject" type="text" name="subject" class="form-control" required="required" t-att-value="values.get('subject') or ''"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="int_help_question">Your question<span class="text-danger">*</span></label>
+                            <textarea id="int_help_question" name="question" class="form-control" rows="5" required="required"><t t-out="values.get('question') or ''"/></textarea>
+                        </div>
+                    </t>
+
                     <div t-if="max_files" class="mb-3">
                         <label class="form-label" for="int_help_files" t-out="upload_label"/>
                         <input id="int_help_files" type="file" name="attachments" class="form-control" t-att-accept="accept" multiple="multiple"/>
@@ -345,12 +403,16 @@
 
     <template id="portal_help_done" name="Help &amp; Feedback confirmation">
         <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="request.env.user._is_public()"/>
             <t t-set="page_name" t-value="'int_help_done'"/>
             <t t-set="additional_title">Request received</t>
             <div class="o_int_help_card">
                 <h3 class="mb-3">Request received</h3>
                 <p>Your request number is <strong t-out="ticket_reference"/>.</p>
-                <a t-attf-href="/helpdesk/ticket/{{ ticket_id }}" class="btn btn-primary">View your ticket</a>
+                <t t-if="request.env.user._is_public()">
+                    <p class="mb-0">We emailed you a copy and will reply to that email.</p>
+                </t>
+                <a t-else="" t-attf-href="/helpdesk/ticket/{{ ticket_id }}" class="btn btn-primary">View your ticket</a>
             </div>
         </t>
     </template>

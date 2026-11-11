@@ -70,10 +70,6 @@
          The class is on the document element before the body is parsed. -->
     <template id="layout_approved_dealer" inherit_id="website.layout" name="Approved dealer">
         <xpath expr="//head" position="inside">
-            <!-- Any logged-in user: the header Become a Dealer button becomes Help & Feedback. -->
-            <script t-if="not request.env.user._is_public()">
-                document.documentElement.classList.add('o_int_logged_in');
-            </script>
             <t t-if="website and request.env['product.template'].sudo()._int_is_dealer_contact(request.env.user.partner_id, website)">
                 <script>
                     document.documentElement.classList.add('o_int_approved_dealer');

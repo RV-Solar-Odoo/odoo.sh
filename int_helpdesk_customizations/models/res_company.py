@@ -12,6 +12,7 @@ TAG_FIELDS = (
     "int_help_tag_warranty_id",
     "int_help_tag_feedback_id",
     "int_help_tag_part_id",
+    "int_help_tag_general_id",
 )
 
 # Kind -> company field. Returns and warranty use the existing returns team.
@@ -22,12 +23,14 @@ TEAM_FIELDS = {
     "warranty": "int_help_team_warranty_id",
     "feedback": "int_help_team_feedback_id",
     "part": "int_help_team_part_id",
+    "general": "int_help_team_general_id",
 }
 TEAM_NAME_HINTS = {
     "int_help_team_return_id": ("return",),
     "int_help_team_warranty_id": ("return",),
     "int_help_team_feedback_id": ("inquir", "general"),
     "int_help_team_part_id": ("inquir", "general"),
+    "int_help_team_general_id": ("inquir", "general"),
 }
 
 TAG_XMLIDS = {
@@ -35,6 +38,7 @@ TAG_XMLIDS = {
     "int_help_tag_warranty_id": "int_helpdesk_customizations.tag_help_warranty",
     "int_help_tag_feedback_id": "int_helpdesk_customizations.tag_help_feedback",
     "int_help_tag_part_id": "int_helpdesk_customizations.tag_help_part",
+    "int_help_tag_general_id": "int_helpdesk_customizations.tag_help_general",
 }
 
 ALERTS = (
@@ -42,6 +46,7 @@ ALERTS = (
     ("help_warranty", "Warranty claims"),
     ("help_feedback", "Feedback"),
     ("help_part", "Part requests"),
+    ("help_general", "General inquiries"),
 )
 
 
@@ -72,6 +77,12 @@ class ResCompany(models.Model):
         ondelete="set null",
         help="Part requests are created on this existing team.",
     )
+    int_help_team_general_id = fields.Many2one(
+        "helpdesk.team",
+        string="General inquiries team",
+        ondelete="set null",
+        help="General inquiries are created on this existing team.",
+    )
     int_help_tag_return_id = fields.Many2one(
         "helpdesk.tag",
         string="Return tag",
@@ -90,6 +101,11 @@ class ResCompany(models.Model):
     int_help_tag_part_id = fields.Many2one(
         "helpdesk.tag",
         string="Part request tag",
+        ondelete="set null",
+    )
+    int_help_tag_general_id = fields.Many2one(
+        "helpdesk.tag",
+        string="General inquiry tag",
         ondelete="set null",
     )
 
@@ -184,6 +200,11 @@ class ResCompany(models.Model):
                     "company_id": company.id,
                 })
             company._int_help_archive_unused_dealer_support()
+
+    @api.model
+    def _int_help_setup_all(self):
+        """Run on every module update, so a new request type gets its team, tag and alert list."""
+        self.with_context(active_test=False).search([])._int_help_setup()
 
     def _int_help_archive_unused_dealer_support(self):
         """Hide an empty team this module used to create. Leave it if it already has tickets."""

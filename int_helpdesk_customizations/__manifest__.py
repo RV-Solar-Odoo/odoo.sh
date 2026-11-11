@@ -1,6 +1,6 @@
 {
     "name": "Helpdesk Customizations",
-    "version": "19.0.1.12.0",
+    "version": "19.0.1.13.0",
     "category": "Services/Helpdesk",
     "summary": "Keep ticket email replies on the ticket, and the dealer Help & Feedback hub",
     "author": "Internal",
@@ -11,6 +11,7 @@
         "security/ir.model.access.csv",
         "security/ir_rule.xml",
         "data/help_feedback_data.xml",
+        "data/help_feedback_setup.xml",
         "views/alert_list_views.xml",
         "views/res_config_settings_views.xml",
         "views/portal_templates.xml",

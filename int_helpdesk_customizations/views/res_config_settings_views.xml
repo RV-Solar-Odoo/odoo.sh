@@ -20,6 +20,9 @@
                         <setting string="Part request team" help="Part requests are created on this existing team.">
                             <field name="int_help_team_part_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
                         </setting>
+                        <setting string="General inquiries team" help="General inquiries are created on this existing team.">
+                            <field name="int_help_team_general_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        </setting>
                         <setting string="Return tag" help="Applied to return requests.">
                             <field name="int_help_tag_return_id" options="{'no_create': True}"/>
                         </setting>
@@ -31,6 +34,9 @@
                         </setting>
                         <setting string="Part request tag" help="Applied to requests for a part we do not stock.">
                             <field name="int_help_tag_part_id" options="{'no_create': True}"/>
+                        </setting>
+                        <setting string="General inquiry tag" help="Applied to general inquiries.">
+                            <field name="int_help_tag_general_id" options="{'no_create': True}"/>
                         </setting>
                     </block>
                 </app>

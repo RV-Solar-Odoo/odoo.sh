@@ -16,6 +16,10 @@
         <field name="name">Part Request</field>
         <field name="color">10</field>
     </record>
+    <record id="tag_help_general" model="helpdesk.tag">
+        <field name="name">General Inquiry</field>
+        <field name="color">7</field>
+    </record>
 
     <record id="mail_template_help_alert" model="mail.template">
         <field name="name">Help &amp; Feedback staff alert</field>
@@ -26,12 +30,12 @@
         <field name="partner_to" eval="False"/>
         <field name="use_default_to" eval="False"/>
         <field name="auto_delete" eval="True"/>
-        <field name="description">Staff alert when a dealer submits Help &amp; Feedback. Recipients are filled in when the alert is sent, so this template can be edited without changing who receives it.</field>
+        <field name="description">Staff alert when someone submits Help &amp; Feedback. Recipients are filled in when the alert is sent, so this template can be edited without changing who receives it.</field>
         <field name="body_html" type="html">
 <div>
-    <p>A dealer submitted a Help &amp; Feedback request.</p>
+    <p>A Help &amp; Feedback request was submitted.</p>
     <p><strong t-out="object.name or ''">Request</strong></p>
-    <p t-if="object.partner_id">From <t t-out="object.partner_id.name or ''">Dealer</t></p>
+    <p t-if="object.partner_id or object.partner_name">From <t t-out="object.partner_id.name or object.partner_name or ''">Customer</t></p>
     <div t-out="object.description or ''"/>
 </div>
         </field>

@@ -38,7 +38,7 @@
     .o_portal_index_card:has(a[href="/my/orders"]) { order: 10 !important; }
     .o_portal_index_card:has(a[href="/my/invoices?filterby=invoices"]) { order: 20 !important; }
     .o_portal_index_card:has(a[href="/my/tickets"]) { order: 30 !important; }
-    .o_portal_index_card:has(a[href="/my/help"]) { order: 40 !important; }
+    .o_portal_index_card:has(a[href="/help"]) { order: 40 !important; }
     .o_portal_index_card:has(a[href="/my/addresses"]) { order: 50 !important; }
     .o_portal_index_card:has(a[href="/my/security"]) { order: 60 !important; }
     .o_portal_index_card:has(a[href="/knowledge/home"]) { order: 70 !important; }
@@ -79,7 +79,7 @@
 
     // The other portal icons are 64px SVGs. This one is a picture, so without
     // a size it lays out at its full pixel width and fills the card.
-    a[href="/my/help"] .o_portal_icon {
+    a[href="/help"] .o_portal_icon {
         width: 64px;
         flex: 0 0 64px;
 
@@ -277,4 +277,18 @@
         color: #0054a8;
         font-weight: 600;
     }
+}
+
+// General inquiries sits across the bottom of the hub.
+.o_int_help_hub_card_wide {
+    grid-column: 1 / -1;
+}
+
+// Spam trap: off screen, not display:none, so simple bots still fill it in.
+.o_int_help_hp {
+    position: absolute !important;
+    left: -10000px !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
 }

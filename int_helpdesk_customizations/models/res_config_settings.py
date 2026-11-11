@@ -48,3 +48,13 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         string="Part request tag",
     )
+    int_help_team_general_id = fields.Many2one(
+        related="company_id.int_help_team_general_id",
+        readonly=False,
+        string="General inquiries team",
+    )
+    int_help_tag_general_id = fields.Many2one(
+        related="company_id.int_help_tag_general_id",
+        readonly=False,
+        string="General inquiry tag",
+    )

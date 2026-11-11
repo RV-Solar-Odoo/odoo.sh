@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Every update: fill empty team, tag and alert settings for new request types.
+         Never overwrites a team or tag someone already chose. -->
+    <function model="res.company" name="_int_help_setup_all"/>
+</odoo>

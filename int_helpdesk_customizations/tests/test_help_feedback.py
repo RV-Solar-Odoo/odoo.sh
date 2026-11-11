@@ -91,7 +91,8 @@ class TestHelpFeedback(TransactionCase):
         cls.tag_warranty = Tag.create({"name": "Test Warranty", "color": 2})
         cls.tag_feedback = Tag.create({"name": "Test Feedback", "color": 4})
         cls.tag_part = Tag.create({"name": "Test Part", "color": 10})
-        cls.tags = cls.tag_return | cls.tag_warranty | cls.tag_feedback | cls.tag_part
+        cls.tag_general = Tag.create({"name": "Test General", "color": 7})
+        cls.tags = cls.tag_return | cls.tag_warranty | cls.tag_feedback | cls.tag_part | cls.tag_general
         cls.dealer_category = cls.env["res.partner.category"].create({"name": "RVSB Dealer"})
         cls.dealer.write({"category_id": [Command.link(cls.dealer_category.id)]})
         cls.company.write({
@@ -99,10 +100,12 @@ class TestHelpFeedback(TransactionCase):
             "int_help_team_warranty_id": cls.returns_team.id,
             "int_help_team_feedback_id": cls.general_team.id,
             "int_help_team_part_id": cls.general_team.id,
+            "int_help_team_general_id": cls.general_team.id,
             "int_help_tag_return_id": cls.tag_return.id,
             "int_help_tag_warranty_id": cls.tag_warranty.id,
             "int_help_tag_feedback_id": cls.tag_feedback.id,
             "int_help_tag_part_id": cls.tag_part.id,
+            "int_help_tag_general_id": cls.tag_general.id,
         })
         Alert = cls.env["int.helpdesk.alert.list"]
         cls.alerts = Alert
@@ -111,6 +114,7 @@ class TestHelpFeedback(TransactionCase):
             ("help_warranty", "Warranty claims"),
             ("help_feedback", "Feedback"),
             ("help_part", "Part requests"),
+            ("help_general", "General inquiries"),
         ):
             cls.alerts |= Alert.create({
                 "name": name,
@@ -207,7 +211,8 @@ class TestHelpFeedback(TransactionCase):
         self.assertTrue(self.env.user.with_company(self.company)._int_help_hub_visible())
         # Retail users get Help & Feedback too.
         self.assertTrue(self.retail_user.with_company(self.company)._int_help_hub_visible())
-        self.assertFalse(self.public_user.with_company(self.company)._int_help_hub_visible())
+        # Help & Feedback is the site helpdesk: guests get it too.
+        self.assertTrue(self.public_user.with_company(self.company)._int_help_hub_visible())
         self.company.int_help_team_return_id = False
         self.assertFalse(self.dealer_user.with_company(self.company)._int_help_hub_visible())
 
@@ -317,7 +322,7 @@ class TestHelpFeedback(TransactionCase):
             "order_id": str(self.order.id),
             "product_id": str(self.other_product.id),
             "quantity": "1",
-            "reason": "defective",
+            "reason": "wrong_product",
         })
         self.assertFalse(result.get("ticket"))
         self.assertIn("product", result["error"].lower())
@@ -458,7 +463,7 @@ class TestHelpFeedback(TransactionCase):
             "order_id": str(self.order.id),
             "product_id": str(self.product.id),
             "quantity": "1",
-            "reason": "defective",
+            "reason": "wrong_product",
         })["ticket"]
         warranty = self._submit("warranty", {
             "product_text": "Victron MultiPlus",
@@ -508,6 +513,7 @@ class TestHelpFeedback(TransactionCase):
         self.assertFalse(company.int_help_team_warranty_id)
         self.assertFalse(company.int_help_team_feedback_id)
         self.assertFalse(company.int_help_team_part_id)
+        self.assertFalse(company.int_help_team_general_id)
         self.assertFalse(self.env["helpdesk.team"].search([
             ("company_id", "=", company.id),
             ("name", "=", "Dealer Support"),
@@ -532,6 +538,7 @@ class TestHelpFeedback(TransactionCase):
         self.assertEqual(company.int_help_team_warranty_id, returns)
         self.assertEqual(company.int_help_team_feedback_id, general)
         self.assertEqual(company.int_help_team_part_id, general)
+        self.assertEqual(company.int_help_team_general_id, general)
         self.assertFalse(decoy.active)
         self.assertEqual(
             company.int_help_tag_return_id,
@@ -543,7 +550,7 @@ class TestHelpFeedback(TransactionCase):
         alerts = self.env["int.helpdesk.alert.list"].search([("company_id", "=", company.id)])
         self.assertEqual(
             set(alerts.mapped("code")),
-            {"help_return", "help_warranty", "help_feedback", "help_part"},
+            {"help_return", "help_warranty", "help_feedback", "help_part", "help_general"},
         )
         alerts.write({"user_ids": [Command.set([self.env.user.id])]})
         company.int_help_team_warranty_id = general
@@ -756,3 +763,90 @@ class TestHelpFeedback(TransactionCase):
         options = Ticket._int_help_order_line_options(self.dealer_user, self.company, self.order.id)
         self.assertEqual(options[0]["serials"], [])
         self.assertEqual(Ticket._int_help_order_serials(self.env["sale.order"]), {})
+
+    def _guest(self, **extra):
+        return {
+            "first_name": "Gale",
+            "last_name": "Guest",
+            "email": "gale.guest@example.com",
+            "phone": "555-0199",
+            **extra,
+        }
+
+    def _guest_submit(self, kind, data, ip="203.0.113.7"):
+        if kind == "return":
+            data = {"packaging": "yes", "condition": "unopened", **data}
+        return self.env["helpdesk.ticket"]._int_help_submit(
+            self.public_user, self.company, kind, data, [], ip=ip,
+        )
+
+    def test_guest_general_inquiry_uses_typed_contact_not_the_public_partner(self):
+        result = self._guest_submit("general", self._guest(
+            subject="Battery sizing", question="What size for a 30 ft trailer?", company_name="Trailer Co",
+        ))
+        self.assertFalse(result.get("error"), result.get("error"))
+        ticket = result["ticket"]
+        self.assertEqual(ticket.team_id, self.general_team)
+        self.assertIn(self.tag_general, ticket.tag_ids)
+        self.assertEqual(ticket.partner_email, "gale.guest@example.com")
+        self.assertNotEqual(ticket.partner_id, self.public_user.partner_id)
+        self.assertEqual(ticket.int_help_ip, "203.0.113.7")
+        self.assertIn("What size for a 30 ft trailer?", str(ticket.description))
+
+    def test_guest_needs_contact_details_and_never_sees_orders(self):
+        result = self._guest_submit("general", {"subject": "Hi", "question": "Hello"})
+        for text in ("First name", "Last name", "valid email", "Phone number"):
+            self.assertIn(text, result["error"])
+        prepared = self.env["helpdesk.ticket"]._int_help_prepare(self.public_user, self.company, "return")
+        self.assertTrue(prepared["is_guest"])
+        self.assertTrue(prepared["ask_purchase"])
+        self.assertFalse(prepared["orders"])
+        self.assertFalse(self.env["helpdesk.ticket"]._int_help_open_returns(self.public_user, self.company))
+        self.assertEqual(
+            self.env["helpdesk.ticket"]._int_help_order_line_options(self.public_user, self.company, self.order.id),
+            [],
+        )
+
+    def test_guest_return_with_a_typed_order(self):
+        result = self._guest_submit("return", self._guest(
+            order_id=TYPED_ORDER, order_ref="S01234", product_text="PMP", quantity="1",
+            reason="wrong_product", purchase_source="direct",
+        ))
+        self.assertFalse(result.get("error"), result.get("error"))
+        self.assertEqual(result["ticket"].int_help_purchase_source, "direct")
+        self.assertIn("S01234", str(result["ticket"].description))
+
+    def test_guest_spam_trap_and_hourly_limit(self):
+        trapped = self._guest_submit("general", self._guest(
+            subject="Buy now", question="spam", int_help_website="http://spam.example",
+        ))
+        self.assertTrue(trapped.get("error"))
+        for number in range(10):
+            result = self._guest_submit("general", self._guest(
+                email=f"guest{number}@example.com", subject=f"Question {number}", question="Hello",
+            ), ip="198.51.100.9")
+            self.assertFalse(result.get("error"), result.get("error"))
+        limited = self._guest_submit("general", self._guest(
+            email="guest-late@example.com", subject="Question late", question="Hello",
+        ), ip="198.51.100.9")
+        self.assertIn("10 Help & Feedback requests per hour", limited["error"])
+        other_ip = self._guest_submit("general", self._guest(
+            email="guest-other@example.com", subject="Question other", question="Hello",
+        ), ip="198.51.100.10")
+        self.assertFalse(other_ip.get("error"), other_ip.get("error"))
+
+    def test_public_flag_hides_a_form_from_guests_only(self):
+        from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
+
+        HELP_KINDS["part"]["public"] = False
+        try:
+            self.assertFalse(self.public_user._int_help_kind_allowed("part", self.company))
+            self.assertTrue(self.retail_user._int_help_kind_allowed("part", self.company))
+            self.assertTrue(self._guest_submit("part", self._guest(part="ORION")).get("error"))
+        finally:
+            HELP_KINDS["part"]["public"] = True
+
+    def test_defective_is_not_a_return_reason(self):
+        from odoo.addons.int_helpdesk_customizations.models.help_feedback import RETURN_REASONS
+
+        self.assertNotIn("defective", dict(RETURN_REASONS))

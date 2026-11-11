@@ -5,8 +5,16 @@ from odoo.http import request
 
 from odoo.addons.int_helpdesk_customizations.models.help_feedback import HELP_KINDS
 
+# Tickets a guest submitted in this browser, so they can see their confirmation page.
+GUEST_SESSION_KEY = "int_help_guest_tickets"
+
 
 class IntHelpdeskHelp(http.Controller):
+    """Help & Feedback, the site's helpdesk at /help, open to everyone.
+
+    Guests type their contact details and order number. Logged-in users also
+    get their orders, open returns and sales rep.
+    """
 
     def _company(self):
         return request.env.user._int_help_request_company()
@@ -14,9 +22,9 @@ class IntHelpdeskHelp(http.Controller):
     def _hidden_redirect(self):
         if request.env.user._int_help_hub_visible():
             return None
-        return request.redirect("/my?int_help_warning=1")
+        return request.redirect("/")
 
-    @http.route("/my/help", type="http", auth="user", website=True, methods=["GET"], sitemap=False)
+    @http.route("/help", type="http", auth="public", website=True, methods=["GET"], sitemap=True)
     def hub(self, **kwargs):
         hidden = self._hidden_redirect()
         if hidden:
@@ -24,7 +32,7 @@ class IntHelpdeskHelp(http.Controller):
         return request.render("int_helpdesk_customizations.portal_help_hub", {})
 
     @http.route(
-        "/my/help/order-lines/<int:order_id>",
+        "/help/order-lines/<int:order_id>",
         type="http",
         auth="user",
         website=True,
@@ -40,9 +48,9 @@ class IntHelpdeskHelp(http.Controller):
         return request.make_json_response({"lines": lines})
 
     @http.route(
-        "/my/help/submitted/<int:ticket_id>",
+        "/help/submitted/<int:ticket_id>",
         type="http",
-        auth="user",
+        auth="public",
         website=True,
         methods=["GET"],
         sitemap=False,
@@ -52,29 +60,37 @@ class IntHelpdeskHelp(http.Controller):
         if hidden:
             return hidden
         Ticket = request.env["helpdesk.ticket"]
-        ticket = Ticket._int_help_user_ticket(request.env.user, self._company(), ticket_id)
+        user = request.env.user
+        if user._is_public():
+            # Only a ticket this browser just submitted.
+            ids = request.session.get(GUEST_SESSION_KEY) or []
+            ticket = Ticket.sudo().browse(ticket_id).exists() if ticket_id in ids else Ticket
+        else:
+            ticket = Ticket._int_help_user_ticket(user, self._company(), ticket_id)
         if not ticket:
-            return request.redirect("/my/help")
+            return request.redirect("/help")
         return request.render("int_helpdesk_customizations.portal_help_done", {
             "ticket_id": ticket.id,
             "ticket_reference": Ticket._int_help_reference(ticket),
         })
 
-    @http.route("/my/help/return", type="http", auth="user", website=True, methods=["GET"], sitemap=False)
+    @http.route("/help/return", type="http", auth="public", website=True, methods=["GET"], sitemap=False)
     def returns(self, **kwargs):
-        """Open returns, with a button to start a new one."""
+        """Open returns, with a button to start a new one. Guests go straight to the form."""
         hidden = self._hidden_redirect()
         if hidden:
             return hidden
+        if request.env.user._is_public():
+            return request.redirect("/help/return/new")
         tickets = request.env["helpdesk.ticket"]._int_help_open_returns(request.env.user, self._company())
         return request.render("int_helpdesk_customizations.portal_help_returns", {
             "tickets": tickets,
         })
 
     @http.route(
-        "/my/help/return/new",
+        "/help/return/new",
         type="http",
-        auth="user",
+        auth="public",
         website=True,
         methods=["GET", "POST"],
         sitemap=False,
@@ -83,26 +99,38 @@ class IntHelpdeskHelp(http.Controller):
         return self._form("return", post)
 
     @http.route(
-        "/my/help/<string:kind>",
+        "/help/<string:kind>",
         type="http",
-        auth="user",
+        auth="public",
         website=True,
         methods=["GET", "POST"],
         sitemap=False,
     )
     def form(self, kind, **post):
         if kind == "return":
-            return request.redirect("/my/help/return/new")
+            return request.redirect("/help/return/new")
         if kind not in HELP_KINDS:
             raise NotFound()
         return self._form(kind, post)
+
+    # The old portal addresses, kept for bookmarks and emails already sent.
+    @http.route(
+        ["/my/help", "/my/help/<path:rest>"],
+        type="http",
+        auth="public",
+        website=True,
+        methods=["GET", "POST"],
+        sitemap=False,
+    )
+    def old_portal_address(self, rest="", **kwargs):
+        return request.redirect(f"/help/{rest}" if rest else "/help", code=301)
 
     def _form(self, kind, post):
         hidden = self._hidden_redirect()
         if hidden:
             return hidden
         if not request.env.user._int_help_kind_allowed(kind, self._company()):
-            return request.redirect("/my/help")
+            return request.redirect("/help")
         Ticket = request.env["helpdesk.ticket"]
         company = self._company()
         prepared = Ticket._int_help_prepare(request.env.user, company, kind)
@@ -115,9 +143,14 @@ class IntHelpdeskHelp(http.Controller):
             files = request.httprequest.files.getlist("attachments")
             result = Ticket._int_help_submit(
                 request.env.user, company, kind, values, files,
+                ip=request.httprequest.remote_addr,
             )
             if result.get("ticket"):
-                return request.redirect(f"/my/help/submitted/{result['ticket'].id}")
+                ticket = result["ticket"]
+                if request.env.user._is_public():
+                    ids = list(request.session.get(GUEST_SESSION_KEY) or [])[-19:]
+                    request.session[GUEST_SESSION_KEY] = ids + [ticket.id]
+                return request.redirect(f"/help/submitted/{ticket.id}")
             error = result.get("error")
         return request.render("int_helpdesk_customizations.portal_help_form", {
             "error": error,
