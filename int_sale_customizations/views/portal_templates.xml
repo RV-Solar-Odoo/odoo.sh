@@ -186,10 +186,10 @@
                 <span t-if="sale_order.int_ship_has_dock"> · Loading dock</span>
                 <span t-if="sale_order.int_ship_has_forklift"> · Forklift</span>
             </p>
-            <div class="mb-3" t-if="not report_type">
+            <div class="mb-3" t-if="report_type != 'pdf'">
                 <t t-call="int_sale_customizations.portal_order_actions"/>
             </div>
-            <form t-if="not report_type and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"
+            <form t-if="report_type != 'pdf' and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"
                   t-attf-action="/my/orders/{{ sale_order.id }}/cancel" method="post" class="card card-body mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <h5>Request cancellation</h5>

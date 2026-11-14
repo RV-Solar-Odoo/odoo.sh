@@ -155,3 +155,9 @@ class TestPortalOrders(TransactionCase):
         owner_invoices = self.env["account.move"].with_user(owner).search([("id", "=", invoice.id)])
         self.assertFalse(buyer_invoices)
         self.assertIn(invoice, owner_invoices)
+
+    def test_order_page_actions_stay_on_the_html_portal(self):
+        arch = self.env.ref("sale.sale_order_portal_content").get_combined_arch()
+        self.assertIn("report_type != 'pdf'", arch)
+        self.assertNotIn('t-if="not report_type"', arch)
+        self.assertIn("Request cancellation", arch)
