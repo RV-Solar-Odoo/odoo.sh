@@ -1,8 +1,8 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.2.1",
+    "version": "19.0.1.3.0",
     "category": "Sales/Sales",
-    "summary": "Dealer orders: search, deliveries, pins, export, PO upload, and cancellation",
+    "summary": "Dealer orders: search, backorders, pins, export, PO upload, and cancellation",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": [

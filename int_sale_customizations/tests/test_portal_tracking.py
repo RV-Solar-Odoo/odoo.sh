@@ -217,17 +217,40 @@ class TestPortalTracking(TransactionCase):
         found = Picking.search(Picking._int_portal_delivery_domain(dealer))
         self.assertIn(first, found)
         self.assertIn(waiting, found)
-        self.assertIn(internal, found)
+        # Warehouse picks are internal: dealers only see shipments.
+        self.assertNotIn(internal, found)
         self.assertNotIn(cancelled, found)
         self.assertNotIn(receipt, found)
-        self.assertEqual(internal._int_portal_delivery_status()[0], "picked")
-        shipped = Picking.search(Picking._int_portal_delivery_domain(dealer, "shipped"))
-        self.assertNotIn(internal, shipped)
         self.assertFalse(found & other_order.picking_ids)
         self.assertEqual(waiting._int_portal_delivery_status()[0], "backordered")
         self.assertEqual(waiting._int_portal_delivery_moves(), waiting.move_ids)
         backordered = Picking.search(Picking._int_portal_delivery_domain(dealer, "backordered"))
         self.assertEqual(backordered, waiting)
+
+        # My Orders "Show backorders": ticked puts them first, unticked hides them.
+        newer = self.env["sale.order"].create({
+            "partner_id": dealer.id,
+            "order_line": [Command.create({
+                "product_id": product.id,
+                "product_uom_qty": 1,
+            })],
+        })
+        newer.action_confirm()
+        SaleOrder = self.env["sale.order"]
+        backordered_ids = SaleOrder._int_portal_backordered_ids(dealer)
+        self.assertIn(order.id, backordered_ids)
+        self.assertNotIn(newer.id, backordered_ids)
+        self.assertNotIn(other_order.id, backordered_ids)
+        sort = "date_order desc, id desc"
+        shown = SaleOrder._int_portal_order_domain(dealer)
+        page = SaleOrder._int_portal_orders_page(shown, sort, [], 20, 0, first_ids=backordered_ids)
+        self.assertEqual(page[:1], order)
+        self.assertIn(newer, page)
+        second_page = SaleOrder._int_portal_orders_page(shown, sort, [], 1, 1, first_ids=backordered_ids)
+        self.assertEqual(second_page, newer)
+        hidden = SaleOrder.search(SaleOrder._int_portal_order_domain(dealer, backorders=False))
+        self.assertNotIn(order, hidden)
+        self.assertIn(newer, hidden)
         dealer.sudo().write({"int_portal_role": "owner"})
         portal = self.env["res.users"].with_context(no_reset_password=True).create({
             "name": dealer.name,

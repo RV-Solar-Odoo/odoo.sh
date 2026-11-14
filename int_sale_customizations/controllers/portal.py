@@ -12,16 +12,6 @@ from odoo.addons.sale.controllers.portal import CustomerPortal
 
 class CustomerPortal(CustomerPortal):
 
-    def _prepare_home_portal_values(self, counters):
-        values = super()._prepare_home_portal_values(counters)
-        if "int_delivery_count" in counters:
-            commercial = request.env.user.partner_id.commercial_partner_id
-            Picking = request.env["stock.picking"]
-            values["int_delivery_count"] = Picking.sudo().search_count(
-                Picking._int_portal_delivery_domain(commercial)
-            )
-        return values
-
     def _get_sale_searchbar_sortings(self):
         sortings = super()._get_sale_searchbar_sortings()
         sortings.update({
@@ -50,12 +40,14 @@ class CustomerPortal(CustomerPortal):
         sortings = self._get_sale_searchbar_sortings()
         if sortby not in sortings:
             sortby = "date"
+        show_backorders = self._int_show_backorders(kwargs)
         commercial = user.partner_id.commercial_partner_id
         SaleOrder = request.env["sale.order"]
         domain = SaleOrder._int_portal_order_domain(
             commercial, search=search, search_in=search_in, filterby=filterby,
-            date_begin=date_begin, date_end=date_end,
+            date_begin=date_begin, date_end=date_end, backorders=show_backorders,
         )
+        backordered_ids = SaleOrder._int_portal_backordered_ids(commercial)
         url_args = {
             "date_begin": date_begin,
             "date_end": date_end,
@@ -63,6 +55,8 @@ class CustomerPortal(CustomerPortal):
             "filterby": filterby,
             "search": search,
             "search_in": search_in,
+            "int_bo": "1",
+            "backorders": "1" if show_backorders else "",
         }
         total = SaleOrder.search_count(domain) if SaleOrder.has_access("read") else 0
         pager_values = portal_pager(
@@ -78,6 +72,7 @@ class CustomerPortal(CustomerPortal):
             user.int_pinned_order_ids.ids,
             self._items_per_page,
             pager_values["offset"],
+            first_ids=backordered_ids if show_backorders else None,
         )
         values = self._prepare_portal_layout_values()
         values.update({
@@ -93,8 +88,23 @@ class CustomerPortal(CustomerPortal):
             "search_in": search_in,
             "filterby": filterby,
             "int_search_error": kwargs.get("int_error") or "",
+            "int_show_backorders": show_backorders,
+            "int_backordered_ids": set(backordered_ids),
         })
         return values
+
+    @staticmethod
+    def _int_show_backorders(kwargs):
+        """The My Orders "Show backorders" box. Ticked unless the form says otherwise.
+
+        The form always sends ``int_bo``, so an unticked box is told apart from
+        a first visit. The old Backordered filter still shows them.
+        """
+        if (kwargs.get("filterby") or "") == "backordered":
+            return True
+        if not kwargs.get("int_bo"):
+            return True
+        return kwargs.get("backorders") == "1"
 
     def _int_owned_order(self, order_id):
         order = request.env["sale.order"].browse(order_id).exists()
@@ -137,6 +147,7 @@ class CustomerPortal(CustomerPortal):
             filterby=kwargs.get("filterby") or "all",
             date_begin=kwargs.get("date_begin"),
             date_end=kwargs.get("date_end"),
+            backorders=self._int_show_backorders(kwargs),
         )
         orders = request.env["sale.order"].search(domain, limit=10001)
         rows = orders.sudo()._int_export_rows()
@@ -156,36 +167,10 @@ class CustomerPortal(CustomerPortal):
             ("Content-Disposition", f"attachment; filename={filename}"),
         ])
 
-    @route(["/my/deliveries", "/my/deliveries/page/<int:page>"], type="http", auth="user", website=True)
-    def int_portal_deliveries(self, page=1, filterby=None, **kwargs):
-        user = request.env.user
-        if not user.int_portal_can("view_orders"):
-            return request.redirect("/my")
-        if filterby not in ("all", "open", "shipped", "backordered"):
-            filterby = "all"
-        commercial = user.partner_id.commercial_partner_id
-        Picking = request.env["stock.picking"]
-        domain = Picking._int_portal_delivery_domain(commercial, filterby)
-        total = Picking.sudo().search_count(domain)
-        pager_values = portal_pager(
-            url="/my/deliveries",
-            total=total,
-            page=page,
-            step=self._items_per_page,
-            url_args={"filterby": filterby},
-        )
-        deliveries = Picking.sudo().search(
-            domain,
-            order="scheduled_date desc, id desc",
-            limit=self._items_per_page,
-            offset=pager_values["offset"],
-        )
-        return request.render("int_sale_customizations.portal_deliveries", {
-            "page_name": "int_delivery",
-            "deliveries": deliveries,
-            "filterby": filterby,
-            "pager": pager_values,
-        })
+    @route(["/my/deliveries", "/my/deliveries/page/<int:page>", "/my/backorders"], type="http", auth="user", website=True)
+    def int_portal_deliveries(self, **kwargs):
+        """The Deliveries list is gone. Backorders are on My Orders."""
+        return request.redirect("/my/orders")
 
     @route("/my/deliveries/<int:picking_id>", type="http", auth="user", website=True)
     def int_portal_delivery(self, picking_id, **kwargs):
@@ -194,17 +179,13 @@ class CustomerPortal(CustomerPortal):
             return request.redirect("/my")
         delivery = request.env["stock.picking"]._int_portal_owned_delivery(user, picking_id)
         if not delivery:
-            return request.redirect("/my/deliveries")
+            return request.redirect("/my/orders")
         if delivery.sale_id:
             delivery.sale_id.sudo()._portal_ensure_token()
         return request.render("int_sale_customizations.portal_delivery", {
             "page_name": "int_delivery",
             "delivery": delivery,
         })
-
-    @route("/my/backorders", type="http", auth="user", website=True)
-    def int_portal_backorders(self, **kwargs):
-        return request.redirect("/my/deliveries")
 
     @route("/my/orders/<int:order_id>/pin", type="http", auth="user", website=True, methods=["POST"])
     def int_order_pin(self, order_id, **kwargs):

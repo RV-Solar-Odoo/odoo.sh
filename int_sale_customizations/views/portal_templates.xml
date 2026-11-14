@@ -31,7 +31,7 @@
 
     <template id="portal_delivery_orders_all" name="All delivery orders on the order page" inherit_id="sale_stock.sale_order_portal_content_inherit_sale_stock">
         <xpath expr="//t[@t-set='delivery_orders']" position="attributes">
-            <attribute name="t-value">sale_order.picking_ids.filtered(lambda picking: picking.state != 'cancel' and picking.picking_type_id.code in ('outgoing', 'internal', 'dropship'))</attribute>
+            <attribute name="t-value">sale_order.picking_ids.filtered(lambda picking: picking.state != 'cancel' and picking.picking_type_id.code in ('outgoing', 'dropship'))</attribute>
         </xpath>
         <xpath expr="//t[@t-set='latest_delivery_orders']" position="attributes">
             <attribute name="t-value">delivery_orders.sorted('create_date', reverse=True)</attribute>
@@ -58,16 +58,8 @@
         </xpath>
     </template>
 
-    <template id="portal_my_home_orders_extra" name="Deliveries and PO upload" inherit_id="portal.portal_my_home" priority="40">
+    <template id="portal_my_home_orders_extra" name="PO upload" inherit_id="portal.portal_my_home" priority="40">
         <xpath expr="//div[@id='portal_client_category']" position="inside">
-            <t t-if="request.env.user.int_portal_can('view_orders')" t-call="portal.portal_docs_entry">
-                <t t-set="icon" t-value="'/int_sale_customizations/static/src/img/delivery.svg'"/>
-                <t t-set="title">Deliveries</t>
-                <t t-set="text">Picks, shipments, and backorders</t>
-                <t t-set="url" t-value="'/my/deliveries'"/>
-                <t t-set="placeholder_count" t-value="'int_delivery_count'"/>
-                <t t-set="config_card" t-value="True"/>
-            </t>
             <t t-if="request.env.user.int_portal_can('upload_po')" t-call="portal.portal_docs_entry">
                 <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
                 <t t-set="title">Upload a PO</t>
@@ -82,6 +74,14 @@
         <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
             <div t-if="int_search_error" class="alert alert-warning" role="alert" t-out="int_search_error"/>
             <form method="get" action="/my/orders" class="row g-2 mb-3">
+                <div class="col-12">
+                    <input type="hidden" name="int_bo" value="1"/>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="backorders" value="1" id="int_show_backorders"
+                               t-att-checked="int_show_backorders" onchange="this.form.submit()"/>
+                        <label class="form-check-label" for="int_show_backorders">Show backorders</label>
+                    </div>
+                </div>
                 <div class="col-md-3">
                     <select class="form-select" name="search_in">
                         <option value="all" t-att-selected="search_in == 'all'">All</option>
@@ -109,7 +109,6 @@
                         <option value="all" t-att-selected="filterby == 'all'">All</option>
                         <option value="open" t-att-selected="filterby == 'open'">Open</option>
                         <option value="shipped" t-att-selected="filterby == 'shipped'">Shipped</option>
-                        <option value="backordered" t-att-selected="filterby == 'backordered'">Backordered</option>
                         <option value="cancelled" t-att-selected="filterby == 'cancelled'">Cancelled</option>
                         <option value="cancel_requested" t-att-selected="filterby == 'cancel_requested'">Cancellation requested</option>
                     </select>
@@ -123,13 +122,16 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2 align-items-center" t-if="request.env.user.int_portal_can('export_orders')">
-                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=xlsx&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">Export XLSX</a>
-                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">CSV</a>
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=xlsx&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}&amp;int_bo=1&amp;backorders={{ '1' if int_show_backorders else '' }}">Export XLSX</a>
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}&amp;int_bo=1&amp;backorders={{ '1' if int_show_backorders else '' }}">CSV</a>
                 </div>
             </form>
         </xpath>
         <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="before">
             <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>
+        </xpath>
+        <xpath expr="//t[@t-foreach='orders']/tr/td/a[@t-att-href='order.get_portal_url()']" position="after">
+            <span t-if="order.id in (int_backordered_ids or ())" class="o_int_partial ms-2">Backordered</span>
         </xpath>
         <xpath expr="//t[@t-foreach='orders']/tr/td[1]" position="before">
             <td t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col">
@@ -260,64 +262,6 @@
         </xpath>
     </template>
 
-    <template id="portal_deliveries" name="Deliveries">
-        <t t-call="portal.portal_layout">
-            <t t-set="additional_title">Deliveries</t>
-            <h3 class="my-3">Deliveries</h3>
-            <form method="get" action="/my/deliveries" class="row g-2 mb-3">
-                <div class="col-md-4">
-                    <select class="form-select" name="filterby" onchange="this.form.submit()">
-                        <option value="all" t-att-selected="filterby == 'all'">All</option>
-                        <option value="open" t-att-selected="filterby == 'open'">Open</option>
-                        <option value="shipped" t-att-selected="filterby == 'shipped'">Shipped</option>
-                        <option value="backordered" t-att-selected="filterby == 'backordered'">Backordered</option>
-                    </select>
-                </div>
-            </form>
-            <div t-if="not deliveries" class="alert alert-info" role="alert">
-                <t t-if="filterby == 'backordered'">No backorders. Everything you've ordered has shipped.</t>
-                <t t-else="">No deliveries yet.</t>
-            </div>
-            <t t-else="" t-call="portal.portal_table">
-                <thead>
-                    <tr>
-                        <th>Delivery</th>
-                        <th>Order</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Tracking</th>
-                    </tr>
-                </thead>
-                <t t-foreach="deliveries" t-as="delivery">
-                    <t t-set="int_status" t-value="delivery._int_portal_delivery_status()"/>
-                    <tr>
-                        <td>
-                            <a t-attf-href="/my/deliveries/{{ delivery.id }}" t-out="delivery.name"/>
-                        </td>
-                        <td>
-                            <a t-if="delivery.sale_id" t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>
-                        </td>
-                        <td>
-                            <span t-if="delivery.state == 'done'" t-field="delivery.date_done" t-options="{'widget': 'date'}"/>
-                            <span t-else="" t-field="delivery.scheduled_date" t-options="{'widget': 'date'}"/>
-                        </td>
-                        <td>
-                            <span t-attf-class="badge rounded-pill {{ int_status[2] }}" t-out="int_status[1]"/>
-                        </td>
-                        <td class="o_int_tracking">
-                            <t t-set="links" t-value="delivery._int_portal_tracking_links()"/>
-                            <t t-if="links" t-call="int_sale_customizations.portal_tracking_links"/>
-                            <span t-else="">—</span>
-                        </td>
-                    </tr>
-                </t>
-            </t>
-            <div t-if="pager" class="d-flex justify-content-center mt-3">
-                <t t-call="portal.pager"/>
-            </div>
-        </t>
-    </template>
-
     <template id="portal_delivery" name="Delivery">
         <t t-call="portal.portal_layout">
             <t t-set="additional_title" t-value="delivery.name"/>
@@ -341,8 +285,7 @@
                         PO #: <t t-out="delivery.sale_id.client_order_ref"/>
                     </p>
                     <p class="mb-1">
-                        <t t-if="delivery.state == 'done' and delivery.picking_type_code == 'outgoing'">Shipped</t>
-                        <t t-elif="delivery.state == 'done'">Picked</t>
+                        <t t-if="delivery.state == 'done'">Shipped</t>
                         <t t-else="">Expected</t>:
                         <span t-if="delivery.state == 'done'" t-field="delivery.date_done" t-options="{'widget': 'date'}"/>
                         <span t-else="" t-field="delivery.scheduled_date" t-options="{'widget': 'date'}"/>
@@ -443,9 +386,11 @@
 
     <template id="portal_breadcrumbs_orders" inherit_id="portal.portal_breadcrumbs">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
-            <li t-if="page_name == 'int_delivery' and not delivery" class="breadcrumb-item">Deliveries</li>
-            <li t-if="page_name == 'int_delivery' and delivery" class="breadcrumb-item">
-                <a href="/my/deliveries">Deliveries</a>
+            <li t-if="page_name == 'int_delivery' and delivery.sale_id" class="breadcrumb-item">
+                <a href="/my/orders">Your Orders</a>
+            </li>
+            <li t-if="page_name == 'int_delivery' and delivery.sale_id" class="breadcrumb-item">
+                <a t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>
             </li>
             <li t-if="page_name == 'int_delivery' and delivery" class="breadcrumb-item" t-out="delivery.name"/>
             <li t-if="page_name == 'int_po'" class="breadcrumb-item">Upload a PO</li>

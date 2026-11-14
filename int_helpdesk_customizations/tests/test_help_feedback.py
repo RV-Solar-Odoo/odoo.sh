@@ -859,3 +859,17 @@ class TestHelpFeedback(TransactionCase):
         allowed = {value for value, _label in self.env["int.helpdesk.alert.list"]._fields["code"].selection}
         self.assertLessEqual({code for code, _name in ALERTS}, allowed)
         self.assertLessEqual({spec["code"] for spec in HELP_KINDS.values()}, allowed)
+
+    def test_header_button_for_everyone_signed_in(self):
+        website = self.env["website"].create({"name": "Help Header Site", "company_id": self.company.id})
+
+        def render(user):
+            env = self.env(user=user)
+            with MockRequest(env, website=website.with_env(env)):
+                return str(env["ir.qweb"]._render("website.header_call_to_action_large", {}))
+
+        for user in (self.dealer_user, self.retail_user, self.env.user):
+            rendered = render(user)
+            self.assertIn("o_int_help_header", rendered, user.login)
+            self.assertIn('href="/help"', rendered, user.login)
+        self.assertNotIn("o_int_help_header", render(self.public_user))

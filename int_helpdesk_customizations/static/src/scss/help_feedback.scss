@@ -37,7 +37,6 @@
 
     .o_portal_index_card:has(a[href="/my/orders"]) { order: 10 !important; }
     .o_portal_index_card:has(a[href="/my/invoices?filterby=invoices"]) { order: 20 !important; }
-    .o_portal_index_card:has(a[href="/my/deliveries"]) { order: 30 !important; }
     .o_portal_index_card:has(a[href="/my/tickets"]) { order: 40 !important; }
     .o_portal_index_card:has(a[href="/help"]) { order: 50 !important; }
     .o_portal_index_card:has(a[href="/my/addresses"]) { order: 60 !important; }
@@ -283,6 +282,17 @@
 // General inquiries sits across the bottom of the hub.
 .o_int_help_hub_card_wide {
     grid-column: 1 / -1;
+}
+
+// Header: signed-in users get Help & Feedback in place of the website-editor
+// button (Become a Dealer). Both are in the server HTML, so nothing jumps.
+// While editing, the editor button stays visible so it can still be changed.
+body:not(.editor_enable) ul:has(> li.o_int_help_header) > li:has(> .oe_structure_solo a.oe_unremovable.btn) {
+    display: none !important;
+}
+
+#top_menu_collapse_mobile .o_int_help_header .btn {
+    width: 100%;
 }
 
 // Spam trap: off screen, not display:none, so simple bots still fill it in.

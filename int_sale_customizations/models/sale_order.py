@@ -124,9 +124,21 @@ class SaleOrder(models.Model):
         return any(float_compare(invoice.amount_total, invoice.amount_residual, precision_rounding=invoice.currency_id.rounding) > 0 for invoice in invoices)
 
     @api.model
-    def _int_portal_order_domain(self, commercial, search=None, search_in="all", filterby="all", date_begin=None, date_end=None):
-        """Orders for one dealer, plus the portal search and status filters."""
+    def _int_portal_backordered_ids(self, commercial):
+        """Ids of this dealer's orders with a backorder still open."""
+        moves = self.env["stock.picking"]._int_portal_backorder_moves(commercial)
+        return (moves.sale_line_id.order_id | moves.picking_id.sale_id).ids
+
+    @api.model
+    def _int_portal_order_domain(self, commercial, search=None, search_in="all", filterby="all", date_begin=None, date_end=None, backorders=True):
+        """Orders for one dealer, plus the portal search and status filters.
+
+        ``backorders`` is the My Orders "Show backorders" box. Unticked, orders
+        with an open backorder are left out.
+        """
         domain = [("partner_id", "child_of", commercial.id)]
+        if not backorders:
+            domain.append(("id", "not in", self._int_portal_backordered_ids(commercial)))
         if filterby == "cancelled":
             domain.append(("state", "=", "cancel"))
         elif filterby == "cancel_requested":
@@ -136,8 +148,7 @@ class SaleOrder(models.Model):
         elif filterby == "open":
             domain += [("state", "=", "sale"), ("delivery_status", "in", (False, "pending", "started", "partial"))]
         elif filterby == "backordered":
-            moves = self.env["stock.picking"]._int_portal_backorder_moves(commercial)
-            domain += [("state", "=", "sale"), ("id", "in", moves.sale_line_id.order_id.ids)]
+            domain += [("state", "=", "sale"), ("id", "in", self._int_portal_backordered_ids(commercial))]
         else:
             domain.append(("state", "in", ("sale", "cancel")))
         if date_begin:
@@ -178,31 +189,36 @@ class SaleOrder(models.Model):
         return domain + combined
 
     @api.model
-    def _int_portal_orders_page(self, domain, order, pinned_ids, limit, offset):
-        """One page of the My Orders list, with pinned orders first.
+    def _int_portal_orders_page(self, domain, order, pinned_ids, limit, offset, first_ids=None):
+        """One page of the My Orders list: pinned orders, then ``first_ids``
+        (backorders when "Show backorders" is ticked), then the rest.
 
-        The chosen sort still applies inside the pinned rows and inside the rest.
-        A pin that does not match ``domain`` stays off the page.
+        The chosen sort still applies inside each group. An id that does not
+        match ``domain`` stays off the page.
         """
         if not self.has_access("read"):
             return self.browse()
-        pinned_ids = [order_id for order_id in pinned_ids if isinstance(order_id, int)]
-        if not pinned_ids:
-            return self.search(domain, order=order, limit=limit, offset=offset)
-        pinned_count = self.search_count(domain + [("id", "in", pinned_ids)])
-        others = domain + [("id", "not in", pinned_ids)]
-        if offset >= pinned_count:
-            return self.search(others, order=order, limit=limit, offset=offset - pinned_count)
-        pinned = self.search(
-            domain + [("id", "in", pinned_ids)],
-            order=order,
-            limit=min(limit, pinned_count - offset),
-            offset=offset,
-        )
-        remaining = limit - len(pinned)
-        if not remaining:
-            return pinned
-        return pinned + self.search(others, order=order, limit=remaining, offset=0)
+        groups = []
+        rest = list(domain)
+        for ids in (pinned_ids, first_ids or []):
+            ids = [order_id for order_id in ids if isinstance(order_id, int)]
+            if ids:
+                groups.append(rest + [("id", "in", ids)])
+                rest = rest + [("id", "not in", ids)]
+        groups.append(rest)
+        records = self.browse()
+        skip = offset
+        for index, group in enumerate(groups):
+            if index < len(groups) - 1:
+                count = self.search_count(group)
+                if skip >= count:
+                    skip -= count
+                    continue
+            records += self.search(group, order=order, limit=limit - len(records), offset=skip)
+            skip = 0
+            if len(records) >= limit:
+                break
+        return records
 
     @api.model
     def _int_serial_order_ids(self, commercial, term):

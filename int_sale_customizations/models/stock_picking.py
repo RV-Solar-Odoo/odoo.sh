@@ -79,15 +79,16 @@ class StockPicking(models.Model):
 
     @api.model
     def _int_portal_delivery_domain(self, commercial, filterby="all"):
-        """Picks and outgoing shipments for this commercial partner.
+        """Outgoing shipments for this commercial partner.
 
-        Done, open, and backordered transfers are included. Vendor receipts and
-        cancelled transfers are left out. The domain is safe to run with sudo.
+        Done, open, and backordered shipments are included. Warehouse picks,
+        vendor receipts and cancelled transfers are left out. The domain is
+        safe to run with sudo.
         """
         if not self.env["sale.order"]._int_portal_commercial_allowed(commercial):
             return [("id", "=", 0)]
         domain = [
-            ("picking_type_code", "in", ("outgoing", "internal", "dropship")),
+            ("picking_type_code", "in", ("outgoing", "dropship")),
             ("state", "!=", "cancel"),
             ("sale_id.partner_id", "child_of", commercial.id),
         ]
@@ -115,10 +116,8 @@ class StockPicking(models.Model):
     def _int_portal_delivery_status(self):
         """``(code, label, badge class)`` for the portal list and page."""
         self.ensure_one()
-        if self.state == "done" and self.picking_type_code == "outgoing":
-            return ("shipped", "Shipped", "text-bg-success")
         if self.state == "done":
-            return ("picked", "Picked", "text-bg-success")
+            return ("shipped", "Shipped", "text-bg-success")
         if self.backorder_id:
             return ("backordered", "Backordered", "text-bg-warning")
         return ("open", "Preparation", "text-bg-info")

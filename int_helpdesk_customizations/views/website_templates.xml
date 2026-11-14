@@ -8,4 +8,23 @@
             </t>
         </xpath>
     </template>
+
+    <!-- Header Help & Feedback button for anyone signed in, dealer, retail or staff.
+         Rendered on the server next to the website-editor button, which the
+         stylesheet hides for these users, so nothing moves after the page loads.
+         On the placeholder, so every header layout and the mobile menu get it. -->
+    <template id="header_help_feedback" inherit_id="website.placeholder_header_call_to_action" name="Header Help &amp; Feedback" priority="20">
+        <xpath expr="." position="inside">
+            <li t-if="not request.env.user._is_public() and request.env.user._int_help_hub_visible()"
+                t-attf-class="#{_item_class} o_int_help_header o_not_editable">
+                <div t-attf-class="#{_div_class}">
+                    <section class="s_text_block">
+                        <div class="container">
+                            <a href="/help" class="btn btn-primary">Help &amp; Feedback</a>
+                        </div>
+                    </section>
+                </div>
+            </li>
+        </xpath>
+    </template>
 </odoo>

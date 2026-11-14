@@ -436,11 +436,10 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 - Serial search: run the lot search with sudo, restricted to pickings whose `sale_id.partner_id` is a child of the commercial partner, then filter orders by the resulting IDs. Never expose lots belonging to another customer.
 - Performance target: under 2 seconds on 300+ orders. Add database indexes only if profiling shows the need (`index=True` on new fields only).
 
-**Task 10 — Deliveries**
-- Tile "Deliveries" on My Portal, third card, directly under Your Orders. It shows a count of the commercial partner's picks and outgoing shipments. `/my/backorders` redirects here. My Orders still has a Backordered filter.
-- List `GET /my/deliveries`: every pick and outgoing shipment for the commercial partner that is not cancelled, whether it is done, still open, or a backorder. A two-step warehouse's pick transfers are included. Vendor receipts are not. Columns: delivery (link), order (link), date, status (Shipped for a done outgoing, Picked for a done pick, Backordered, or Preparation), tracking. Filter: All, Open, Shipped, Backordered. The order page lists the same transfers.
-- Detail `GET /my/deliveries/<id>`: that delivery only, after the same ownership check. Status, dates, order, PO, ship-to, tracking, and the product lines (ordered and done). A delivery slip link uses the order's portal token.
-- Empty list: "No deliveries yet." The Backordered filter: "No backorders. Everything you've ordered has shipped."
+**Task 10 — Backorders on My Orders**
+- No Deliveries tile. My Orders has a "Show backorders" tick box at the top, ticked by default. Ticked: orders with an open backorder sort to the top, under any pinned orders, with a Backordered pill. Unticked: those orders are left out. Export follows the box. `/my/deliveries` and `/my/backorders` redirect to My Orders.
+- An order counts as backordered when it has an open outgoing shipment that is a backorder, or that is still open after another shipment on the order went out.
+- Dealers see outgoing shipments only, never warehouse picks. The order page lists them. Detail `GET /my/deliveries/<id>`, linked from the order page, after the ownership check: status (Shipped, Backordered, or Preparation), dates, order, PO, ship-to, tracking, product lines, and a delivery slip link using the order's portal token.
 
 **Task 11 — Cancellation requests and store credit**
 
@@ -895,6 +894,8 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 27 | Deliveries instead of a Backorders tile | Grant, 2026-11-14: My Portal has Deliveries, not Backorders. The tile is the third card, directly under Your Orders. The list is every outgoing shipment for the commercial partner, including backorders, and each row opens that delivery. Cancelled shipments stay off the list. | ☑ Grant |
 | 28 | Pinned orders in the main list | Grant, 2026-11-14: no separate Pinned section. Pinned orders sort to the top of My Orders. | ☑ Grant |
 | 29 | Deliveries include picks | Grant, 2026-11-14: Deliveries lists every pick and outgoing shipment on the dealer's orders, done or not, including backorders. Vendor receipts stay off the list. Cancelled shipments stay off the list. | ☑ Grant |
+| 30 | Backorders tick box instead of Deliveries, 2026-11-14 | Grant: replaces decisions 27 and 29. The Deliveries tile and list are removed, because they showed internal picks (Picked, Preparation). My Orders has a "Show backorders" box, ticked by default so no order disappears on a first visit. Ticked puts backordered orders at the top, below pinned orders; unticked hides them. The Backordered filter option is removed, since the box does that job. Dealers see outgoing shipments only, on the order page too. | ☑ Grant |
+| 31 | Header Help & Feedback button, 2026-11-14 | Grant: every signed-in user, dealer, retail or staff, sees Help & Feedback in the header. It is rendered on the server (`int_helpdesk_customizations.header_help_feedback`, on `website.placeholder_header_call_to_action`), and the website-editor button (Become a Dealer) is hidden for them by CSS, so nothing changes after load. Guests still see the editor button. While editing the site, the editor button stays visible. | ☑ Grant |
 
 ---
 

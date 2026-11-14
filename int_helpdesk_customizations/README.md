@@ -4,7 +4,7 @@ Help & Feedback is the site's helpdesk, open to everyone at `/help` (the old `/m
 
 Each form in `HELP_KINDS` has a `retail` flag (logged-in non-dealers) and a `public` flag (guests). Set one to False to hide that form from that group. Guests are limited to 10 requests per hour per address (IP) and per email, and a hidden trap field turns away simple bots.
 
-The header Help & Feedback button is the website-editor button, linked to `/help`. This module owns the My Portal tile, the hub, the forms, the tickets, the tags, and the staff alerts. It does not create a helpdesk team; a new request type is pointed at an existing team on every module update.
+Everyone signed in (dealer, retail, staff) gets a Help & Feedback button in the header, rendered on the server by `header_help_feedback`. The website-editor button (Become a Dealer) is hidden for them, so guests still see it and nothing moves after the page loads. While editing the site, the editor button stays visible. This module owns the My Portal tile, the hub, the forms, the tickets, the tags, and the staff alerts. It does not create a helpdesk team; a new request type is pointed at an existing team on every module update.
 
 ## Settings
 
