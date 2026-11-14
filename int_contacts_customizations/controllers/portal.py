@@ -9,6 +9,9 @@ from odoo.http import request, route
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
 
+ADDRESS_TABS = ("business", "customer", "billing")
+
+
 def _address_match(partner, query):
     if not query:
         return True
@@ -39,7 +42,12 @@ class CustomerPortal(CustomerPortal):
             lambda partner: partner.int_address_category == "customer" and _address_match(partner, customer_query)
         )
         show_all = kwargs.get("show") == "all"
+        tab = kwargs.get("tab")
+        if tab not in ADDRESS_TABS:
+            tab = "customer" if customer_query and not business_query else "business"
         data.update({
+            "int_address_tab": tab,
+            "billing_count": len(data.get("billing_addresses") or []),
             "business_count": len(business),
             "customer_count": len(customers),
             "business_addresses": business if show_all else business[:20],
@@ -68,7 +76,9 @@ class CustomerPortal(CustomerPortal):
             partner.write({"int_address_category": category})
         except UserError:
             return request.redirect("/my/addresses")
-        return request.redirect("/my/addresses")
+        # Back to the tab the address left, so the list it was in is still on screen.
+        back = "business" if category == "customer" else "customer"
+        return request.redirect(f"/my/addresses?tab={back}")
 
     @route("/my/address/submit", type="http", methods=["POST"], auth="user", website=True, sitemap=False)
     def portal_address_submit(self, partner_id=None, **form_data):

@@ -140,7 +140,7 @@
                 <label class="col-form-label">This address is</label>
                 <select class="form-select" name="int_address_category">
                     <option value="business" t-att-selected="partner_sudo.int_address_category != 'customer'">My business location</option>
-                    <option value="customer" t-att-selected="partner_sudo.int_address_category == 'customer'">A customer (drop-ship)</option>
+                    <option value="customer" t-att-selected="partner_sudo.int_address_category == 'customer' or (not partner_sudo and request.params.get('int_address_category') == 'customer')">A customer (drop-ship)</option>
                 </select>
             </div>
             <div class="col-lg-12 mb-2">
@@ -168,65 +168,151 @@
         </xpath>
     </template>
 
-    <template id="portal_my_addresses_readonly" inherit_id="portal.my_addresses">
-        <xpath expr="//section[hasclass('o_portal_addresses')]/div[1]/a" position="attributes">
-            <attribute name="t-if">request.env.user.int_portal_can('manage_addresses')</attribute>
-        </xpath>
-        <xpath expr="//a[contains(@t-attf-class, 'o_add_billing_address_btn')]" position="attributes">
-            <attribute name="t-if">request.env.user.int_portal_can('manage_addresses')</attribute>
+    <!-- My addresses as three tabs: business locations, customer (drop-ship)
+         addresses, and billing. Stock ids and classes the address script needs
+         stay: #use_delivery_as_billing, #billing_container,
+         .o_add_billing_address_btn, .o_address_card_add_new, .o_remove_address. -->
+    <template id="portal_my_addresses_tabs" name="My addresses tabs" inherit_id="portal.my_addresses">
+        <xpath expr="//section[hasclass('o_portal_addresses')]" position="replace">
+            <t t-set="int_tab" t-value="int_address_tab or 'business'"/>
+            <t t-set="int_can_manage" t-value="request.env.user.int_portal_can('manage_addresses')"/>
+            <section class="o_portal_addresses o_int_addresses">
+                <div class="o_int_addr_head">
+                    <h3>Addresses</h3>
+                    <div t-if="int_can_manage" class="o_int_addr_export">
+                        Export
+                        <a href="/my/addresses/export?export_format=xlsx">XLSX</a>
+                        <a href="/my/addresses/export?export_format=csv">CSV</a>
+                    </div>
+                </div>
+                <ul class="nav o_int_addr_tabs" role="tablist">
+                    <t t-foreach="[('business', 'My Business Locations', business_count), ('customer', 'Customer Addresses', customer_count), ('billing', 'Billing Addresses', billing_count)]" t-as="int_tab_info">
+                        <li class="nav-item" role="presentation">
+                            <button type="button" role="tab" data-bs-toggle="tab"
+                                    t-att-data-int-tab="int_tab_info[0]"
+                                    t-attf-id="int_addr_tab_{{ int_tab_info[0] }}"
+                                    t-attf-data-bs-target="#int_addr_pane_{{ int_tab_info[0] }}"
+                                    t-attf-aria-controls="int_addr_pane_{{ int_tab_info[0] }}"
+                                    t-att-aria-selected="'true' if int_tab == int_tab_info[0] else 'false'"
+                                    t-attf-class="nav-link #{'active' if int_tab == int_tab_info[0] else ''}">
+                                <t t-out="int_tab_info[1]"/>
+                                <span class="o_int_addr_count" t-out="int_tab_info[2]"/>
+                            </button>
+                        </li>
+                    </t>
+                </ul>
+                <div class="tab-content">
+                    <t t-call="int_contacts_customizations.portal_address_pane">
+                        <t t-set="pane" t-value="'business'"/>
+                        <t t-set="pane_addresses" t-value="business_addresses"/>
+                        <t t-set="pane_search_name" t-value="'business_search'"/>
+                        <t t-set="pane_search" t-value="business_search"/>
+                        <t t-set="pane_placeholder">Search business locations</t>
+                        <t t-set="pane_hint">Your shop, warehouse, and other places that receive orders.</t>
+                        <t t-set="pane_empty">No business locations yet.</t>
+                    </t>
+                    <t t-call="int_contacts_customizations.portal_address_pane">
+                        <t t-set="pane" t-value="'customer'"/>
+                        <t t-set="pane_addresses" t-value="customer_addresses"/>
+                        <t t-set="pane_search_name" t-value="'customer_search'"/>
+                        <t t-set="pane_search" t-value="customer_search"/>
+                        <t t-set="pane_placeholder">Search customer addresses</t>
+                        <t t-set="pane_hint">Your customers' addresses, for orders shipped straight to them.</t>
+                        <t t-set="pane_empty">No customer addresses yet.</t>
+                    </t>
+                    <div id="int_addr_pane_billing" role="tabpanel" aria-labelledby="int_addr_tab_billing"
+                         t-attf-class="tab-pane fade #{'show active' if int_tab == 'billing' else ''}">
+                        <t t-set="address_type" t-valuef="billing"/>
+                        <t t-set="new_address_url" t-value="'%s?address_type=billing&amp;callback=%%2Fmy%%2Faddresses%%3Ftab%%3Dbilling' % address_url"/>
+                        <div class="o_int_addr_toolbar">
+                            <div class="form-check form-switch mb-0">
+                                <label id="use_delivery_as_billing_label">
+                                    <input type="checkbox" id="use_delivery_as_billing" class="form-check-input"
+                                           t-att-checked="use_delivery_as_billing"/>
+                                    Bill to my delivery address
+                                </label>
+                            </div>
+                            <a t-if="int_can_manage" role="button" t-att-href="new_address_url"
+                               data-address-type="billing"
+                               t-attf-class="o_address_card_add_new o_add_billing_address_btn btn btn-primary btn-sm {{'d-none' if use_delivery_as_billing else ''}}"
+                               title="Add a billing address" aria-label="Add a billing address">
+                                <i class="oi oi-plus me-2"/>Add Address
+                            </a>
+                        </div>
+                        <p class="o_int_addr_hint">Where invoices are sent.</p>
+                        <div id="billing_container" t-attf-class="{{'d-none' if use_delivery_as_billing else ''}}">
+                            <t t-call="portal.address_list">
+                                <t t-set="addresses" t-value="billing_addresses"/>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+                <p t-if="int_addresses_truncated" class="o_int_addr_more">
+                    <a t-attf-href="/my/addresses?show=all&amp;tab={{ int_tab }}&amp;business_search={{ business_search }}&amp;customer_search={{ customer_search }}">Show all addresses</a>
+                </p>
+            </section>
         </xpath>
     </template>
 
-    <template id="portal_my_addresses_split" inherit_id="portal.my_addresses">
-        <xpath expr="//section[hasclass('o_portal_addresses')]/div[1]/h5" position="replace">
-            <h5 class="mb-0">My business locations (<t t-out="business_count"/>)</h5>
-        </xpath>
-        <xpath expr="//section[hasclass('o_portal_addresses')]/t[@t-call='portal.address_list']" position="replace">
-            <form method="get" action="/my/addresses" class="mb-2">
-                <input class="form-control" name="business_search" t-att-value="business_search" placeholder="Search business locations"/>
-            </form>
-            <t t-call="portal.address_list">
-                <t t-set="addresses" t-value="business_addresses"/>
-            </t>
-            <div class="d-flex justify-content-between align-items-start gap-3 mt-4 pt-2">
-                <h5 class="mb-0">Customer / drop-ship addresses (<t t-out="customer_count"/>)</h5>
+    <template id="portal_address_pane" name="My addresses tab">
+        <t t-set="address_type" t-valuef="delivery"/>
+        <t t-set="new_address_url" t-value="'%s?address_type=delivery&amp;use_delivery_as_billing=%s%s&amp;callback=%%2Fmy%%2Faddresses%%3Ftab%%3D%s' % (address_url, use_delivery_as_billing, '&amp;int_address_category=customer' if pane == 'customer' else '', pane)"/>
+        <div t-attf-id="int_addr_pane_{{ pane }}" role="tabpanel" t-attf-aria-labelledby="int_addr_tab_{{ pane }}"
+             t-attf-class="tab-pane fade #{'show active' if int_tab == pane else ''}">
+            <div class="o_int_addr_toolbar">
+                <form method="get" action="/my/addresses" class="o_int_addr_search" role="search">
+                    <input type="hidden" name="tab" t-att-value="pane"/>
+                    <input t-if="pane == 'customer'" type="hidden" name="business_search" t-att-value="business_search"/>
+                    <input t-if="pane == 'business'" type="hidden" name="customer_search" t-att-value="customer_search"/>
+                    <i class="fa fa-search" aria-hidden="true"/>
+                    <input class="form-control" type="search" t-att-name="pane_search_name" t-att-value="pane_search"
+                           t-att-placeholder="pane_placeholder" t-att-aria-label="pane_placeholder"/>
+                </form>
+                <a t-if="int_can_manage" role="button" t-att-href="new_address_url"
+                   data-address-type="delivery"
+                   class="o_address_card_add_new btn btn-primary btn-sm"
+                   title="Add an address" aria-label="Add an address">
+                    <i class="oi oi-plus me-2"/>Add Address
+                </a>
             </div>
-            <form method="get" action="/my/addresses" class="mb-2">
-                <input class="form-control" name="customer_search" t-att-value="customer_search" placeholder="Search customer addresses"/>
-            </form>
-            <t t-call="portal.address_list">
-                <t t-set="addresses" t-value="customer_addresses"/>
+            <p class="o_int_addr_hint" t-out="pane_hint"/>
+            <t t-if="pane_addresses" t-call="portal.address_list">
+                <t t-set="addresses" t-value="pane_addresses"/>
             </t>
-            <p t-if="int_addresses_truncated" class="mt-3">
-                <a t-attf-href="/my/addresses?show=all&amp;business_search={{ business_search }}&amp;customer_search={{ customer_search }}">Show all addresses</a>
-            </p>
-            <p t-if="request.env.user.int_portal_can('manage_addresses')">
-                <a href="/my/addresses/export?export_format=xlsx">Export addresses (XLSX)</a>
-                ·
-                <a href="/my/addresses/export?export_format=csv">CSV</a>
-            </p>
-        </xpath>
+            <div t-else="" class="o_int_addr_empty">
+                <t t-if="pane_search">No addresses match "<t t-out="pane_search"/>".</t>
+                <t t-else="" t-out="pane_empty"/>
+            </div>
+        </div>
     </template>
 
+    <!-- Address card: tags and the move link go under the address, in the card
+         body; the stylesheet puts the badge and edit buttons in a right column.
+         Also used at checkout (website_sale.address_card is built on this one). -->
     <template id="portal_address_card_category" inherit_id="portal.address_card">
-        <xpath expr="//div[@name='address_card']" position="inside">
-            <div class="small text-muted" t-if="contact">
+        <xpath expr="//div[hasclass('card-body')]/t[@t-out='contact']" position="after">
+            <div class="o_int_addr_tags" t-if="contact">
                 <span t-if="contact.int_address_category == 'customer'">Customer</span>
                 <span t-else="">Business</span>
-                <span t-if="contact.int_location_type == 'commercial'"> · Commercial</span>
-                <span t-if="contact.int_location_type == 'residential'"> · Residential</span>
-                <span t-if="contact.int_has_loading_dock"> · Dock</span>
-                <span t-if="contact.int_has_forklift"> · Forklift</span>
+                <span t-if="contact.int_location_type == 'commercial'">Commercial</span>
+                <span t-if="contact.int_location_type == 'residential'">Residential</span>
+                <span t-if="contact.int_has_loading_dock">Loading dock</span>
+                <span t-if="contact.int_has_forklift">Forklift</span>
             </div>
-            <form t-if="contact and request.env.user.int_portal_can('manage_addresses') and contact != contact.commercial_partner_id" action="/my/address/category" method="post" class="mt-1">
+            <form t-if="page_name == 'my_addresses' and contact and address_type == 'delivery' and request.env.user.int_portal_can('manage_addresses') and contact != contact.commercial_partner_id"
+                  action="/my/address/category" method="post" class="o_int_addr_move">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="partner_id" t-att-value="contact.id"/>
                 <input type="hidden" name="category" t-att-value="'business' if contact.int_address_category == 'customer' else 'customer'"/>
-                <button class="btn btn-link btn-sm p-0" type="submit">
-                    <t t-if="contact.int_address_category == 'customer'">Move to business</t>
-                    <t t-else="">Move to customer</t>
+                <button class="btn btn-link p-0" type="submit">
+                    <t t-if="contact.int_address_category == 'customer'">Move to business locations</t>
+                    <t t-else="">Move to customer addresses</t>
+                    <i class="fa fa-long-arrow-right ms-1" aria-hidden="true"/>
                 </button>
             </form>
+        </xpath>
+        <xpath expr="//div[hasclass('card-body')]" position="attributes">
+            <attribute name="class" add="o_int_addr_body" separator=" "/>
         </xpath>
     </template>
 </odoo>
