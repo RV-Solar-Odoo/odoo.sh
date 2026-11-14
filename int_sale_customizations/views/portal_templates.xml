@@ -33,11 +33,14 @@
         <xpath expr="//t[@t-set='latest_delivery_orders']" position="attributes">
             <attribute name="t-value">delivery_orders.sorted('create_date', reverse=True)</attribute>
         </xpath>
-        <xpath expr="//h5[@class='mb-1']" position="replace">
+        <xpath expr="//div[@t-if='delivery_orders']/h5[@class='mb-1']" position="replace">
             <h5 class="mb-1">
-                Delivery Orders
+                Deliveries
                 <span t-if="sale_order._int_portal_shipments()[sale_order.id]['partial']" class="o_int_partial">Partial</span>
             </h5>
+        </xpath>
+        <xpath expr="//div[@name='delivery_details']/a" position="attributes">
+            <attribute name="t-att-href">'/my/deliveries/%s' % picking.id</attribute>
         </xpath>
     </template>
 
@@ -52,14 +55,14 @@
         </xpath>
     </template>
 
-    <template id="portal_my_home_orders_extra" name="Backorders and PO upload" inherit_id="portal.portal_my_home" priority="40">
+    <template id="portal_my_home_orders_extra" name="Deliveries and PO upload" inherit_id="portal.portal_my_home" priority="40">
         <xpath expr="//div[@id='portal_client_category']" position="inside">
             <t t-if="request.env.user.int_portal_can('view_orders')" t-call="portal.portal_docs_entry">
-                <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
-                <t t-set="title">Backorders</t>
-                <t t-set="text">Lines still waiting to ship</t>
-                <t t-set="url" t-value="'/my/backorders'"/>
-                <t t-set="placeholder_count" t-value="'int_backorder_count'"/>
+                <t t-set="icon" t-value="'/int_sale_customizations/static/src/img/delivery.svg'"/>
+                <t t-set="title">Deliveries</t>
+                <t t-set="text">All shipments, including backorders</t>
+                <t t-set="url" t-value="'/my/deliveries'"/>
+                <t t-set="placeholder_count" t-value="'int_delivery_count'"/>
                 <t t-set="config_card" t-value="True"/>
             </t>
             <t t-if="request.env.user.int_portal_can('upload_po')" t-call="portal.portal_docs_entry">
@@ -254,35 +257,126 @@
         </xpath>
     </template>
 
-    <template id="portal_backorders" name="Backorders">
+    <template id="portal_deliveries" name="Deliveries">
         <t t-call="portal.portal_layout">
-            <t t-set="additional_title">Backorders</t>
-            <h3>Backorders</h3>
-            <div t-if="not int_backorder_moves" class="alert alert-info" role="alert">
-                No backorders. Everything you've ordered has shipped.
+            <t t-set="additional_title">Deliveries</t>
+            <h3 class="my-3">Deliveries</h3>
+            <form method="get" action="/my/deliveries" class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <select class="form-select" name="filterby" onchange="this.form.submit()">
+                        <option value="all" t-att-selected="filterby == 'all'">All</option>
+                        <option value="open" t-att-selected="filterby == 'open'">Open</option>
+                        <option value="shipped" t-att-selected="filterby == 'shipped'">Shipped</option>
+                        <option value="backordered" t-att-selected="filterby == 'backordered'">Backordered</option>
+                    </select>
+                </div>
+            </form>
+            <div t-if="not deliveries" class="alert alert-info" role="alert">
+                <t t-if="filterby == 'backordered'">No backorders. Everything you've ordered has shipped.</t>
+                <t t-else="">No deliveries yet.</t>
             </div>
             <t t-else="" t-call="portal.portal_table">
                 <thead>
                     <tr>
-                        <th>Product</th>
-                        <th class="text-end">Outstanding</th>
+                        <th>Delivery</th>
                         <th>Order</th>
-                        <th>PO #</th>
-                        <th>Expected</th>
+                        <th>Date</th>
                         <th>Status</th>
+                        <th>Tracking</th>
                     </tr>
                 </thead>
-                <t t-foreach="int_backorder_moves" t-as="move">
+                <t t-foreach="deliveries" t-as="delivery">
+                    <t t-set="int_status" t-value="delivery._int_portal_delivery_status()"/>
+                    <tr>
+                        <td>
+                            <a t-attf-href="/my/deliveries/{{ delivery.id }}" t-out="delivery.name"/>
+                        </td>
+                        <td>
+                            <a t-if="delivery.sale_id" t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>
+                        </td>
+                        <td>
+                            <span t-if="delivery.state == 'done'" t-field="delivery.date_done" t-options="{'widget': 'date'}"/>
+                            <span t-else="" t-field="delivery.scheduled_date" t-options="{'widget': 'date'}"/>
+                        </td>
+                        <td>
+                            <span t-attf-class="badge rounded-pill {{ int_status[2] }}" t-out="int_status[1]"/>
+                        </td>
+                        <td class="o_int_tracking">
+                            <t t-set="links" t-value="delivery._int_portal_tracking_links()"/>
+                            <t t-if="links" t-call="int_sale_customizations.portal_tracking_links"/>
+                            <span t-else="">—</span>
+                        </td>
+                    </tr>
+                </t>
+            </t>
+            <div t-if="pager" class="d-flex justify-content-center mt-3">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_delivery" name="Delivery">
+        <t t-call="portal.portal_layout">
+            <t t-set="additional_title" t-value="delivery.name"/>
+            <div class="d-flex justify-content-between align-items-center my-3">
+                <h3 class="mb-0">Delivery <t t-out="delivery.name"/></h3>
+                <t t-set="int_status" t-value="delivery._int_portal_delivery_status()"/>
+                <span t-attf-class="badge rounded-pill {{ int_status[2] }}" t-out="int_status[1]"/>
+            </div>
+            <div class="row">
+                <div class="col-12 col-lg-6 mb-4">
+                    <h5 class="mb-1">Shipment</h5>
+                    <hr class="mt-1 mb-2"/>
+                    <p t-if="delivery.backorder_id" class="mb-1">
+                        Backorder of <t t-out="delivery.backorder_id.name"/>
+                    </p>
+                    <p class="mb-1" t-if="delivery.sale_id">
+                        Order:
+                        <a t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>
+                    </p>
+                    <p class="mb-1" t-if="delivery.sale_id.client_order_ref">
+                        PO #: <t t-out="delivery.sale_id.client_order_ref"/>
+                    </p>
+                    <p class="mb-1">
+                        <t t-if="delivery.state == 'done'">Shipped</t>
+                        <t t-else="">Expected</t>:
+                        <span t-if="delivery.state == 'done'" t-field="delivery.date_done" t-options="{'widget': 'date'}"/>
+                        <span t-else="" t-field="delivery.scheduled_date" t-options="{'widget': 'date'}"/>
+                    </p>
+                    <p class="mb-1 o_int_delivery_tracking">
+                        Tracking:
+                        <t t-set="links" t-value="delivery._int_portal_tracking_links()"/>
+                        <t t-if="links" t-call="int_sale_customizations.portal_tracking_links"/>
+                        <span t-else="">—</span>
+                    </p>
+                    <p t-if="delivery.sale_id.access_token" class="mb-0">
+                        <a t-attf-href="/my/picking/pdf/{{ delivery.id }}?access_token={{ delivery.sale_id.access_token }}">Delivery slip</a>
+                    </p>
+                </div>
+                <div class="col-12 col-lg-6 mb-4">
+                    <h5 class="mb-1">Ship to</h5>
+                    <hr class="mt-1 mb-2"/>
+                    <div t-field="delivery.partner_id" t-options="{'widget': 'contact', 'fields': ['name', 'address', 'phone']}"/>
+                </div>
+            </div>
+            <h5 class="mb-1">Products</h5>
+            <hr class="mt-1 mb-2"/>
+            <t t-call="portal.portal_table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="text-end">Ordered</th>
+                        <th class="text-end">Done</th>
+                    </tr>
+                </thead>
+                <t t-foreach="delivery._int_portal_delivery_moves()" t-as="move">
                     <tr>
                         <td>
                             <span t-if="move.product_id.default_code" t-out="move.product_id.default_code"/>
                             <span t-out="move.product_id.name"/>
                         </td>
                         <td class="text-end" t-out="move.product_uom_qty"/>
-                        <td><a t-att-href="move.sale_line_id.order_id.get_portal_url()" t-out="move.sale_line_id.order_id.name"/></td>
-                        <td t-out="move.sale_line_id.order_id.client_order_ref"/>
-                        <td t-out="move.date_deadline or move.picking_id.scheduled_date"/>
-                        <td t-out="move.picking_id.state"/>
+                        <td class="text-end" t-out="move.quantity"/>
                     </tr>
                 </t>
             </t>
@@ -345,7 +439,11 @@
 
     <template id="portal_breadcrumbs_orders" inherit_id="portal.portal_breadcrumbs">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
-            <li t-if="page_name == 'int_backorders'" class="breadcrumb-item">Backorders</li>
+            <li t-if="page_name == 'int_delivery' and not delivery" class="breadcrumb-item">Deliveries</li>
+            <li t-if="page_name == 'int_delivery' and delivery" class="breadcrumb-item">
+                <a href="/my/deliveries">Deliveries</a>
+            </li>
+            <li t-if="page_name == 'int_delivery' and delivery" class="breadcrumb-item" t-out="delivery.name"/>
             <li t-if="page_name == 'int_po'" class="breadcrumb-item">Upload a PO</li>
         </xpath>
     </template>

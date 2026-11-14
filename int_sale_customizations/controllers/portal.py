@@ -14,10 +14,12 @@ class CustomerPortal(CustomerPortal):
 
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
-        if "int_backorder_count" in counters:
+        if "int_delivery_count" in counters:
             commercial = request.env.user.partner_id.commercial_partner_id
-            moves = request.env["stock.picking"]._int_portal_backorder_moves(commercial)
-            values["int_backorder_count"] = len(moves)
+            Picking = request.env["stock.picking"]
+            values["int_delivery_count"] = Picking.sudo().search_count(
+                Picking._int_portal_delivery_domain(commercial)
+            )
         return values
 
     def _get_sale_searchbar_sortings(self):
@@ -154,16 +156,55 @@ class CustomerPortal(CustomerPortal):
             ("Content-Disposition", f"attachment; filename={filename}"),
         ])
 
-    @route("/my/backorders", type="http", auth="user", website=True)
-    def int_portal_backorders(self, **kwargs):
+    @route(["/my/deliveries", "/my/deliveries/page/<int:page>"], type="http", auth="user", website=True)
+    def int_portal_deliveries(self, page=1, filterby=None, **kwargs):
         user = request.env.user
         if not user.int_portal_can("view_orders"):
             return request.redirect("/my")
-        moves = request.env["stock.picking"]._int_portal_backorder_moves(user.partner_id.commercial_partner_id)
-        return request.render("int_sale_customizations.portal_backorders", {
-            "page_name": "int_backorders",
-            "int_backorder_moves": moves.sudo(),
+        if filterby not in ("all", "open", "shipped", "backordered"):
+            filterby = "all"
+        commercial = user.partner_id.commercial_partner_id
+        Picking = request.env["stock.picking"]
+        domain = Picking._int_portal_delivery_domain(commercial, filterby)
+        total = Picking.sudo().search_count(domain)
+        pager_values = portal_pager(
+            url="/my/deliveries",
+            total=total,
+            page=page,
+            step=self._items_per_page,
+            url_args={"filterby": filterby},
+        )
+        deliveries = Picking.sudo().search(
+            domain,
+            order="scheduled_date desc, id desc",
+            limit=self._items_per_page,
+            offset=pager_values["offset"],
+        )
+        return request.render("int_sale_customizations.portal_deliveries", {
+            "page_name": "int_delivery",
+            "deliveries": deliveries,
+            "filterby": filterby,
+            "pager": pager_values,
         })
+
+    @route("/my/deliveries/<int:picking_id>", type="http", auth="user", website=True)
+    def int_portal_delivery(self, picking_id, **kwargs):
+        user = request.env.user
+        if not user.int_portal_can("view_orders"):
+            return request.redirect("/my")
+        delivery = request.env["stock.picking"]._int_portal_owned_delivery(user, picking_id)
+        if not delivery:
+            return request.redirect("/my/deliveries")
+        if delivery.sale_id:
+            delivery.sale_id.sudo()._portal_ensure_token()
+        return request.render("int_sale_customizations.portal_delivery", {
+            "page_name": "int_delivery",
+            "delivery": delivery,
+        })
+
+    @route("/my/backorders", type="http", auth="user", website=True)
+    def int_portal_backorders(self, **kwargs):
+        return request.redirect("/my/deliveries")
 
     @route("/my/orders/<int:order_id>/pin", type="http", auth="user", website=True, methods=["POST"])
     def int_order_pin(self, order_id, **kwargs):

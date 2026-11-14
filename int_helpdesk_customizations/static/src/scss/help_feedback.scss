@@ -37,14 +37,15 @@
 
     .o_portal_index_card:has(a[href="/my/orders"]) { order: 10 !important; }
     .o_portal_index_card:has(a[href="/my/invoices?filterby=invoices"]) { order: 20 !important; }
-    .o_portal_index_card:has(a[href="/my/tickets"]) { order: 30 !important; }
-    .o_portal_index_card:has(a[href="/help"]) { order: 40 !important; }
-    .o_portal_index_card:has(a[href="/my/addresses"]) { order: 50 !important; }
-    .o_portal_index_card:has(a[href="/my/security"]) { order: 60 !important; }
-    .o_portal_index_card:has(a[href="/knowledge/home"]) { order: 70 !important; }
-    .o_portal_index_card:has(a[href="/odoo/documents_portal"]) { order: 80 !important; }
-    .o_portal_index_card:has(a[href="/my/payment_method"]) { order: 90 !important; }
-    .o_portal_index_card:has(a[href="/my/purchase"]) { order: 100 !important; }
+    .o_portal_index_card:has(a[href="/my/deliveries"]) { order: 30 !important; }
+    .o_portal_index_card:has(a[href="/my/tickets"]) { order: 40 !important; }
+    .o_portal_index_card:has(a[href="/help"]) { order: 50 !important; }
+    .o_portal_index_card:has(a[href="/my/addresses"]) { order: 60 !important; }
+    .o_portal_index_card:has(a[href="/my/security"]) { order: 70 !important; }
+    .o_portal_index_card:has(a[href="/knowledge/home"]) { order: 80 !important; }
+    .o_portal_index_card:has(a[href="/odoo/documents_portal"]) { order: 90 !important; }
+    .o_portal_index_card:has(a[href="/my/payment_method"]) { order: 100 !important; }
+    .o_portal_index_card:has(a[href="/my/purchase"]) { order: 110 !important; }
 
     // Same frame and hover as the Help & Feedback hub cards. Padding and icon
     // size stay stock, so the cards keep their size.

@@ -77,6 +77,54 @@ class StockPicking(models.Model):
             )
         return moves
 
+    @api.model
+    def _int_portal_delivery_domain(self, commercial, filterby="all"):
+        """Outgoing shipments for this commercial partner, including backorders.
+
+        Cancelled shipments are left out. The domain is safe to run with sudo.
+        """
+        if not self.env["sale.order"]._int_portal_commercial_allowed(commercial):
+            return [("id", "=", 0)]
+        domain = [
+            ("picking_type_code", "=", "outgoing"),
+            ("state", "!=", "cancel"),
+            ("sale_id.partner_id", "child_of", commercial.id),
+        ]
+        if filterby == "shipped":
+            domain.append(("state", "=", "done"))
+        elif filterby == "open":
+            domain.append(("state", "not in", ("done", "cancel")))
+        elif filterby == "backordered":
+            domain += [
+                ("backorder_id", "!=", False),
+                ("state", "not in", ("done", "cancel")),
+            ]
+        return domain
+
+    def _int_portal_owned_delivery(self, user, picking_id):
+        """One delivery this user may open, or an empty record."""
+        if not user or not user.int_portal_can("view_orders"):
+            return self.browse()
+        commercial = user.partner_id.commercial_partner_id
+        return self.sudo().search(
+            self._int_portal_delivery_domain(commercial) + [("id", "=", picking_id)],
+            limit=1,
+        )
+
+    def _int_portal_delivery_status(self):
+        """``(code, label, badge class)`` for the portal list and page."""
+        self.ensure_one()
+        if self.state == "done":
+            return ("shipped", "Shipped", "text-bg-success")
+        if self.backorder_id:
+            return ("backordered", "Backordered", "text-bg-warning")
+        return ("open", "Preparation", "text-bg-info")
+
+    def _int_portal_delivery_moves(self):
+        """Product lines to show on the delivery page. Cancelled lines are left out."""
+        self.ensure_one()
+        return self.move_ids.filtered(lambda move: move.state != "cancel")
+
     def _int_portal_tracking_links(self):
         """Tracking numbers on this shipment, each with a link when one exists.
 

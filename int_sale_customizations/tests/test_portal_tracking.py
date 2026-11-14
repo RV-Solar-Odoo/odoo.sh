@@ -131,3 +131,89 @@ class TestPortalTracking(TransactionCase):
             "int_sale_customizations.portal_delivery_tracking_links",
         ):
             self.assertIn("int_sale_customizations.portal_tracking_links", self.env.ref(xmlid).arch)
+
+    def test_deliveries_list_is_this_customers_outgoing_including_backorders(self):
+        product = self.env["product.product"].create({
+            "name": "Delivered portal item",
+            "type": "consu",
+            "is_storable": True,
+            "list_price": 5,
+        })
+        dealer = self._partner("Delivery Dealer", is_company=True)
+        other = self._partner("Other Delivery Co", is_company=True)
+        order = self.env["sale.order"].create({
+            "partner_id": dealer.id,
+            "order_line": [Command.create({
+                "product_id": product.id,
+                "product_uom_qty": 2,
+            })],
+        })
+        order.action_confirm()
+        first = order.picking_ids.filtered(lambda picking: picking.picking_type_code == "outgoing")[:1]
+        self.assertTrue(first)
+        waiting = self._picking(backorder_id=first.id)
+        self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 1,
+            "product_uom": product.uom_id.id,
+            "picking_id": waiting.id,
+            "location_id": waiting.location_id.id,
+            "location_dest_id": waiting.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+        })
+        cancelled = self._picking()
+        self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 1,
+            "product_uom": product.uom_id.id,
+            "picking_id": cancelled.id,
+            "location_id": cancelled.location_id.id,
+            "location_dest_id": cancelled.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+        })
+        cancelled.action_cancel()
+        other_order = self.env["sale.order"].create({
+            "partner_id": other.id,
+            "order_line": [Command.create({
+                "product_id": product.id,
+                "product_uom_qty": 1,
+            })],
+        })
+        other_order.action_confirm()
+        Picking = self.env["stock.picking"]
+        found = Picking.search(Picking._int_portal_delivery_domain(dealer))
+        self.assertIn(first, found)
+        self.assertIn(waiting, found)
+        self.assertNotIn(cancelled, found)
+        self.assertFalse(found & other_order.picking_ids)
+        self.assertEqual(waiting._int_portal_delivery_status()[0], "backordered")
+        self.assertEqual(waiting._int_portal_delivery_moves(), waiting.move_ids)
+        backordered = Picking.search(Picking._int_portal_delivery_domain(dealer, "backordered"))
+        self.assertEqual(backordered, waiting)
+        dealer.sudo().write({"int_portal_role": "owner"})
+        portal = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": dealer.name,
+            "login": "delivery-dealer@example.com",
+            "email": "delivery-dealer@example.com",
+            "partner_id": dealer.id,
+            "company_id": self.company.id,
+            "company_ids": [Command.set([self.company.id])],
+            "group_ids": [Command.set([self.env.ref("base.group_portal").id])],
+        })
+        other.sudo().write({"int_portal_role": "owner"})
+        stranger = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": other.name,
+            "login": "other-delivery@example.com",
+            "email": "other-delivery@example.com",
+            "partner_id": other.id,
+            "company_id": self.company.id,
+            "company_ids": [Command.set([self.company.id])],
+            "group_ids": [Command.set([self.env.ref("base.group_portal").id])],
+        })
+        self.assertEqual(
+            Picking.with_user(portal)._int_portal_owned_delivery(portal, waiting.id),
+            waiting,
+        )
+        self.assertFalse(Picking.with_user(stranger)._int_portal_owned_delivery(stranger, waiting.id))
