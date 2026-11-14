@@ -228,7 +228,6 @@
                             </div>
                             <div class="modal-body">
                                 <div t-if="request.params.get('int_error')" class="alert alert-warning" role="alert" t-out="request.params.get('int_error')"/>
-                                <p class="text-muted">Nothing is cancelled and nothing is refunded until we confirm.</p>
                                 <label class="col-form-label" for="int_cancel_reason">Reason</label>
                                 <select class="form-select mb-2" name="reason" id="int_cancel_reason" required="required">
                                     <option value="no_longer_needed">No longer needed</option>
