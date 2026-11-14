@@ -141,8 +141,36 @@ class TestPortalOrders(TransactionCase):
 
     def test_export_header_includes_the_address_columns(self):
         header = self.env["sale.order"]._int_export_header()
-        for column in ("Order #", "Serial #s", "Dock", "Forklift", "Commercial/Residential"):
+        for column in ("Order #", "Serial #s", "Dock", "Forklift", "Commercial/Residential", "Delivery method"):
             self.assertIn(column, header)
+
+    def test_export_rows_are_products_only_with_the_delivery_method(self):
+        goods = self.env["product.product"].create({
+            "name": "Export battery", "type": "consu", "list_price": 100, "default_code": "INT-EXP-BAT",
+        })
+        shipping = self.env["product.product"].create({"name": "Export shipping", "type": "service", "list_price": 0})
+        discount = self.env["product.product"].create({"name": "Export discount", "type": "service", "list_price": -10})
+        carrier = self.env["delivery.carrier"].create({
+            "name": "Export Ground", "delivery_type": "fixed", "fixed_price": 12, "product_id": shipping.id,
+        })
+        order = self.env["sale.order"].create({
+            "partner_id": self.env["res.partner"].create({"name": "Export Dealer"}).id,
+            "carrier_id": carrier.id,
+            "order_line": [
+                Command.create({"product_id": goods.id, "product_uom_qty": 2}),
+                Command.create({"product_id": shipping.id, "name": "Export Ground", "price_unit": 12, "is_delivery": True}),
+                Command.create({"product_id": discount.id, "price_unit": -10}),
+                Command.create({"display_type": "line_note", "name": "Leave at the dock"}),
+            ],
+        })
+        header = order._int_export_header()
+        rows = order._int_export_rows()
+        self.assertEqual([row[header.index("SKU")] for row in rows], ["INT-EXP-BAT"])
+        self.assertEqual(rows[0][header.index("Delivery method")], "Export Ground")
+        self.assertEqual(len(rows[0]), len(header))
+        addable, skipped = order._int_reorder_plan(self.env["website"].search([], limit=1))
+        self.assertNotIn("Export shipping", [line.product_id.name for line in addable])
+        self.assertNotIn("Export shipping", [name for name, _reason in skipped])
 
     def test_buyer_cannot_read_invoices(self):
         dealer = self.env["res.partner"].create({"name": "Invoice Dealer", "is_company": True})

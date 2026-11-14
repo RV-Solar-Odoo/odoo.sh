@@ -261,7 +261,7 @@ class SaleOrder(models.Model):
         skipped = []
         for line in self.order_line:
             product = line.product_id
-            if line.display_type or not product or getattr(line, "is_delivery", False):
+            if line.display_type or not product or line._int_is_charge_line():
                 continue
             if self._int_product_on_website(product, website):
                 addable |= line
@@ -274,7 +274,12 @@ class SaleOrder(models.Model):
         return addable, skipped
 
     def _int_export_rows(self):
-        """One list per order line, in the portal export column order."""
+        """One list per product line, in the portal export column order.
+
+        Only physical products are rows. Shipping, discount and coupon lines,
+        down payments, sections and notes are left out; the delivery method is
+        a column instead.
+        """
         rows = []
         for order in self:
             shipments = order._int_portal_shipments().get(order.id, {})
@@ -283,7 +288,10 @@ class SaleOrder(models.Model):
             address = ", ".join(part for part in (
                 ship.street, ship.street2, ship.city, ship.state_id.code, ship.zip, ship.country_id.code,
             ) if part)
-            for line in order.order_line.filtered(lambda item: not item.display_type and item.product_id):
+            delivery_method = order.carrier_id.name or ", ".join(
+                order.order_line.filtered(lambda item: item._is_delivery()).mapped("name")
+            )
+            for line in order.order_line.filtered(lambda item: item._int_is_product_line()):
                 serials = line.move_ids.move_line_ids.filtered(
                     lambda move_line: move_line.state == "done" and move_line.lot_id
                 ).lot_id.mapped("name")
@@ -294,6 +302,7 @@ class SaleOrder(models.Model):
                     order.state,
                     ship.name or "",
                     address,
+                    delivery_method,
                     line.product_id.default_code or "",
                     line.product_id.name or "",
                     line.product_uom_qty,
@@ -313,7 +322,7 @@ class SaleOrder(models.Model):
     @api.model
     def _int_export_header(self):
         return [
-            "Order #", "Order date", "PO #", "Status", "Ship-to name", "Ship-to address",
+            "Order #", "Order date", "PO #", "Status", "Ship-to name", "Ship-to address", "Delivery method",
             "SKU", "Product", "Qty ordered", "Qty delivered", "Unit price", "Line subtotal",
             "Order total", "Tracking #s", "Serial #s",
             "Category", "Commercial/Residential", "Dock", "Forklift",
@@ -647,3 +656,25 @@ class SaleOrder(models.Model):
         sheet.write(2, 1, "Qty")
         workbook.close()
         return buffer.getvalue()
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    def _int_is_product_line(self):
+        """A physical product the dealer ordered. Shipping, coupon and discount
+        lines, down payments, sections, notes, services and combo headers are not.
+        Same rule as the Help & Feedback return form."""
+        self.ensure_one()
+        product = self.product_id
+        if self.display_type or not product or product.type != "consu":
+            return False
+        return not self._int_is_charge_line()
+
+    def _int_is_charge_line(self):
+        """Shipping, a down payment, or a discount or coupon line: not something
+        the dealer picked from the shop. A free-product reward is a real item."""
+        self.ensure_one()
+        if self.is_downpayment or self._is_delivery():
+            return True
+        return bool("reward_id" in self._fields and self.reward_id and self.reward_id.reward_type != "product")
