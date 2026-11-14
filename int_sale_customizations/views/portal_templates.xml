@@ -186,39 +186,64 @@
                 <span t-if="sale_order.int_ship_has_dock"> · Loading dock</span>
                 <span t-if="sale_order.int_ship_has_forklift"> · Forklift</span>
             </p>
+            <t t-set="int_can_cancel" t-value="report_type != 'pdf' and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"/>
             <div class="mb-3" t-if="report_type != 'pdf'">
                 <t t-call="int_sale_customizations.portal_order_actions">
                     <t t-set="order" t-value="sale_order"/>
                 </t>
+                <button t-if="int_can_cancel" type="button" class="btn btn-link btn-sm p-0 ms-2"
+                        data-bs-toggle="modal" data-bs-target="#int_cancel_modal">Request cancellation</button>
             </div>
-            <form t-if="report_type != 'pdf' and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"
-                  t-attf-action="/my/orders/{{ sale_order.id }}/cancel" method="post" class="card card-body mb-3">
-                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <h5>Request cancellation</h5>
-                <p class="text-muted">Nothing is cancelled and nothing is refunded until we confirm.</p>
-                <label class="col-form-label">Reason</label>
-                <select class="form-select mb-2" name="reason" required="required">
-                    <option value="no_longer_needed">No longer needed</option>
-                    <option value="ordered_wrong_item">Ordered the wrong item</option>
-                    <option value="found_elsewhere">Found it elsewhere</option>
-                    <option value="delay">Delay</option>
-                    <option value="other">Other</option>
-                </select>
-                <label class="col-form-label">Note</label>
-                <textarea class="form-control mb-2" name="note"/>
-                <div t-if="sale_order._int_cancel_needs_refund()">
-                    <label class="form-check">
-                        <input class="form-check-input" type="radio" name="preference" value="store_credit" checked="checked"/>
-                        Store credit
-                        <span class="text-muted d-block">Applied instantly to your next order once approved.</span>
-                    </label>
-                    <label class="form-check">
-                        <input class="form-check-input" type="radio" name="preference" value="original"/>
-                        Original payment method
-                    </label>
+            <div t-if="int_can_cancel" class="modal fade" id="int_cancel_modal" tabindex="-1" aria-labelledby="int_cancel_modal_title" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form t-attf-action="/my/orders/{{ sale_order.id }}/cancel" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="int_cancel_modal_title">Request cancellation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                            </div>
+                            <div class="modal-body">
+                                <div t-if="request.params.get('int_error')" class="alert alert-warning" role="alert" t-out="request.params.get('int_error')"/>
+                                <p class="text-muted">Nothing is cancelled and nothing is refunded until we confirm.</p>
+                                <label class="col-form-label" for="int_cancel_reason">Reason</label>
+                                <select class="form-select mb-2" name="reason" id="int_cancel_reason" required="required">
+                                    <option value="no_longer_needed">No longer needed</option>
+                                    <option value="ordered_wrong_item">Ordered the wrong item</option>
+                                    <option value="found_elsewhere">Found it elsewhere</option>
+                                    <option value="delay">Delay</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <label class="col-form-label" for="int_cancel_note">Note</label>
+                                <textarea class="form-control mb-2" name="note" id="int_cancel_note"/>
+                                <div t-if="sale_order._int_cancel_needs_refund()">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio" name="preference" value="store_credit" checked="checked"/>
+                                        Store credit
+                                        <span class="text-muted d-block">Applied instantly to your next order once approved.</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio" name="preference" value="original"/>
+                                        Original payment method
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                <button class="btn btn-primary" type="submit">Request cancellation</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <button class="btn btn-secondary mt-2" type="submit">Request cancellation</button>
-            </form>
+            </div>
+            <script t-if="int_can_cancel and request.params.get('int_error')">
+                document.addEventListener("DOMContentLoaded", function () {
+                    var modal = document.getElementById("int_cancel_modal");
+                    if (modal &amp;&amp; window.bootstrap) {
+                        window.bootstrap.Modal.getOrCreateInstance(modal).show();
+                    }
+                });
+            </script>
         </xpath>
         <xpath expr="//div[@id='sale_invoices']" position="attributes">
             <attribute name="t-if">invoices and sale_order.state in ['sale', 'cancel'] and request.env.user.int_portal_can('view_invoices')</attribute>

@@ -161,4 +161,6 @@ class TestPortalOrders(TransactionCase):
         self.assertIn("report_type != 'pdf'", arch)
         self.assertNotIn('t-if="not report_type"', arch)
         self.assertIn('t-set="order" t-value="sale_order"', arch)
+        self.assertIn('id="int_cancel_modal"', arch)
+        self.assertIn('data-bs-toggle="modal"', arch)
         self.assertIn("Request cancellation", arch)
