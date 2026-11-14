@@ -437,8 +437,8 @@ Then show a confirmation page with the ticket reference and a link to the ticket
 - Performance target: under 2 seconds on 300+ orders. Add database indexes only if profiling shows the need (`index=True` on new fields only).
 
 **Task 10 — Deliveries**
-- Tile "Deliveries" on My Portal, third card, directly under Your Orders. It shows a count of the commercial partner's outgoing shipments. `/my/backorders` redirects here. My Orders still has a Backordered filter.
-- List `GET /my/deliveries`: every outgoing delivery that is not cancelled, including ones still open and backorders. Columns: delivery (link), order (link), date, status (Shipped, Backordered, or Preparation), tracking. Filter: All, Open, Shipped, Backordered.
+- Tile "Deliveries" on My Portal, third card, directly under Your Orders. It shows a count of the commercial partner's picks and outgoing shipments. `/my/backorders` redirects here. My Orders still has a Backordered filter.
+- List `GET /my/deliveries`: every pick and outgoing shipment for the commercial partner that is not cancelled, whether it is done, still open, or a backorder. A two-step warehouse's pick transfers are included. Vendor receipts are not. Columns: delivery (link), order (link), date, status (Shipped for a done outgoing, Picked for a done pick, Backordered, or Preparation), tracking. Filter: All, Open, Shipped, Backordered. The order page lists the same transfers.
 - Detail `GET /my/deliveries/<id>`: that delivery only, after the same ownership check. Status, dates, order, PO, ship-to, tracking, and the product lines (ordered and done). A delivery slip link uses the order's portal token.
 - Empty list: "No deliveries yet." The Backordered filter: "No backorders. Everything you've ordered has shipped."
 
@@ -894,6 +894,7 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 26 | Where Tasks 9–16 and user management are built | Grant, 2026-11-14: build the orders phase and user management now, in the existing modules, and test on staging1. Permissions and `/my/users` are in `int_contacts_customizations`. Orders search, backorders, pins, reorder, export, PO upload, and cancellation are in `int_sale_customizations`. Invoice and payment visibility is in `int_account_customizations`. The Shippo residential flag is in `int_shippo_customizations`. Viewer still sees order prices and tracking. Financial pages hidden by role are invoices, payments, credit, and store credit. My Orders "All" includes cancelled orders. Store credit still needs an accountant review before production (decision 14). The credit card stays limited to approved dealers, and then the role. | ☑ Grant |
 | 27 | Deliveries instead of a Backorders tile | Grant, 2026-11-14: My Portal has Deliveries, not Backorders. The tile is the third card, directly under Your Orders. The list is every outgoing shipment for the commercial partner, including backorders, and each row opens that delivery. Cancelled shipments stay off the list. | ☑ Grant |
 | 28 | Pinned orders in the main list | Grant, 2026-11-14: no separate Pinned section. Pinned orders sort to the top of My Orders. | ☑ Grant |
+| 29 | Deliveries include picks | Grant, 2026-11-14: Deliveries lists every pick and outgoing shipment on the dealer's orders, done or not, including backorders. Vendor receipts stay off the list. Cancelled shipments stay off the list. | ☑ Grant |
 
 ---
 

@@ -183,10 +183,46 @@ class TestPortalTracking(TransactionCase):
         })
         other_order.action_confirm()
         Picking = self.env["stock.picking"]
+        internal = self.env["stock.picking"].create({
+            "picking_type_id": self.warehouse.int_type_id.id,
+            "location_id": self.warehouse.lot_stock_id.id,
+            "location_dest_id": self.customers.id,
+        })
+        self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 1,
+            "product_uom": product.uom_id.id,
+            "picking_id": internal.id,
+            "location_id": internal.location_id.id,
+            "location_dest_id": internal.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+        })
+        internal.write({"state": "done"})
+        receipt = self.env["stock.picking"].create({
+            "picking_type_id": self.warehouse.in_type_id.id,
+            "location_id": self.env.ref("stock.stock_location_suppliers").id,
+            "location_dest_id": self.warehouse.lot_stock_id.id,
+        })
+        self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 1,
+            "product_uom": product.uom_id.id,
+            "picking_id": receipt.id,
+            "location_id": receipt.location_id.id,
+            "location_dest_id": receipt.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+        })
         found = Picking.search(Picking._int_portal_delivery_domain(dealer))
         self.assertIn(first, found)
         self.assertIn(waiting, found)
+        self.assertIn(internal, found)
         self.assertNotIn(cancelled, found)
+        self.assertNotIn(receipt, found)
+        self.assertEqual(internal._int_portal_delivery_status()[0], "picked")
+        shipped = Picking.search(Picking._int_portal_delivery_domain(dealer, "shipped"))
+        self.assertNotIn(internal, shipped)
         self.assertFalse(found & other_order.picking_ids)
         self.assertEqual(waiting._int_portal_delivery_status()[0], "backordered")
         self.assertEqual(waiting._int_portal_delivery_moves(), waiting.move_ids)

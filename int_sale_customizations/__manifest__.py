@@ -1,6 +1,6 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "category": "Sales/Sales",
     "summary": "Dealer orders: search, deliveries, pins, export, PO upload, and cancellation",
     "author": "Internal",
