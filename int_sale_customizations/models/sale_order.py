@@ -178,6 +178,33 @@ class SaleOrder(models.Model):
         return domain + combined
 
     @api.model
+    def _int_portal_orders_page(self, domain, order, pinned_ids, limit, offset):
+        """One page of the My Orders list, with pinned orders first.
+
+        The chosen sort still applies inside the pinned rows and inside the rest.
+        A pin that does not match ``domain`` stays off the page.
+        """
+        if not self.has_access("read"):
+            return self.browse()
+        pinned_ids = [order_id for order_id in pinned_ids if isinstance(order_id, int)]
+        if not pinned_ids:
+            return self.search(domain, order=order, limit=limit, offset=offset)
+        pinned_count = self.search_count(domain + [("id", "in", pinned_ids)])
+        others = domain + [("id", "not in", pinned_ids)]
+        if offset >= pinned_count:
+            return self.search(others, order=order, limit=limit, offset=offset - pinned_count)
+        pinned = self.search(
+            domain + [("id", "in", pinned_ids)],
+            order=order,
+            limit=min(limit, pinned_count - offset),
+            offset=offset,
+        )
+        remaining = limit - len(pinned)
+        if not remaining:
+            return pinned
+        return pinned + self.search(others, order=order, limit=remaining, offset=0)
+
+    @api.model
     def _int_serial_order_ids(self, commercial, term):
         if not self._int_portal_commercial_allowed(commercial):
             return []

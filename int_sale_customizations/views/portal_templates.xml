@@ -121,34 +121,6 @@
                     <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">CSV</a>
                 </div>
             </form>
-            <t t-if="int_pinned_orders">
-                <h4>Pinned</h4>
-                <t t-call="portal.portal_table">
-                    <thead>
-                        <tr>
-                            <th class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>
-                            <th>Order</th>
-                            <th class="text-end">Total</th>
-                            <th t-if="request.env.user.int_portal_can('place_orders')" class="text-end"><span class="visually-hidden">Reorder</span></th>
-                        </tr>
-                    </thead>
-                    <t t-foreach="int_pinned_orders" t-as="order">
-                        <tr>
-                            <td class="o_int_pin_col">
-                                <t t-call="int_sale_customizations.portal_order_pin"/>
-                            </td>
-                            <td><a t-att-href="order.get_portal_url()" t-out="order.name"/></td>
-                            <td class="text-end"><span t-field="order.amount_total"/></td>
-                            <td t-if="request.env.user.int_portal_can('place_orders')" class="text-end">
-                                <t t-call="int_sale_customizations.portal_order_reorder"/>
-                            </td>
-                        </tr>
-                    </t>
-                </t>
-            </t>
-        </xpath>
-        <xpath expr="//div[@t-if='not orders']" position="attributes">
-            <attribute name="t-if">not orders and not int_pinned_orders</attribute>
         </xpath>
         <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="before">
             <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>

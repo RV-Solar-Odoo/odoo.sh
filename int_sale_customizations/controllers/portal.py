@@ -70,12 +70,12 @@ class CustomerPortal(CustomerPortal):
             step=self._items_per_page,
             url_args=url_args,
         )
-        orders = SaleOrder.search(
-            domain, order=sortings[sortby]["order"],
-            limit=self._items_per_page, offset=pager_values["offset"],
-        ) if SaleOrder.has_access("read") else SaleOrder
-        pinned = user.int_pinned_order_ids.filtered(
-            lambda order: order.partner_id.commercial_partner_id == commercial and order.state in ("sale", "cancel")
+        orders = SaleOrder._int_portal_orders_page(
+            domain,
+            sortings[sortby]["order"],
+            user.int_pinned_order_ids.ids,
+            self._items_per_page,
+            pager_values["offset"],
         )
         values = self._prepare_portal_layout_values()
         values.update({
@@ -90,7 +90,6 @@ class CustomerPortal(CustomerPortal):
             "search": search,
             "search_in": search_in,
             "filterby": filterby,
-            "int_pinned_orders": pinned.sudo(),
             "int_search_error": kwargs.get("int_error") or "",
         })
         return values
