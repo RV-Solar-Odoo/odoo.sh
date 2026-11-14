@@ -123,6 +123,18 @@
     </template>
 
     <template id="portal_address_fields" inherit_id="portal.address_form_fields">
+        <xpath expr="//label[@for='o_name']" position="replace">
+            <label class="col-form-label" for="o_name">Name</label>
+        </xpath>
+        <xpath expr="//small[contains(., 'your main account')]" position="replace">
+            <small class="form-text text-muted">
+                The company name and VAT number can only be updated on the main account.
+                <t t-if="commercial_address_update_url">
+                    If you want to modify it, update
+                    <a t-att-href="commercial_address_update_url">the account details</a>.
+                </t>
+            </small>
+        </xpath>
         <xpath expr="//div[@id='div_street']" position="before">
             <div class="col-lg-12 mb-2">
                 <label class="col-form-label">This address is</label>
