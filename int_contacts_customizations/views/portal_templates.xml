@@ -186,7 +186,7 @@
                     </div>
                 </div>
                 <ul class="nav o_int_addr_tabs" role="tablist">
-                    <t t-foreach="[('business', 'My Business Locations', business_count), ('customer', 'Customer Addresses', customer_count), ('billing', 'Billing Addresses', billing_count)]" t-as="int_tab_info">
+                    <t t-foreach="[('business', 'My Business Locations', business_count), ('billing', 'My Billing Addresses', billing_count), ('customer', 'Customer Addresses', customer_count)]" t-as="int_tab_info">
                         <li class="nav-item" role="presentation">
                             <button type="button" role="tab" data-bs-toggle="tab"
                                     t-att-data-int-tab="int_tab_info[0]"
@@ -210,15 +210,6 @@
                         <t t-set="pane_placeholder">Search business locations</t>
                         <t t-set="pane_hint">Your shop, warehouse, and other places that receive orders.</t>
                         <t t-set="pane_empty">No business locations yet.</t>
-                    </t>
-                    <t t-call="int_contacts_customizations.portal_address_pane">
-                        <t t-set="pane" t-value="'customer'"/>
-                        <t t-set="pane_addresses" t-value="customer_addresses"/>
-                        <t t-set="pane_search_name" t-value="'customer_search'"/>
-                        <t t-set="pane_search" t-value="customer_search"/>
-                        <t t-set="pane_placeholder">Search customer addresses</t>
-                        <t t-set="pane_hint">Your customers' addresses, for orders shipped straight to them.</t>
-                        <t t-set="pane_empty">No customer addresses yet.</t>
                     </t>
                     <div id="int_addr_pane_billing" role="tabpanel" aria-labelledby="int_addr_tab_billing"
                          t-attf-class="tab-pane fade #{'show active' if int_tab == 'billing' else ''}">
@@ -246,6 +237,15 @@
                             </t>
                         </div>
                     </div>
+                    <t t-call="int_contacts_customizations.portal_address_pane">
+                        <t t-set="pane" t-value="'customer'"/>
+                        <t t-set="pane_addresses" t-value="customer_addresses"/>
+                        <t t-set="pane_search_name" t-value="'customer_search'"/>
+                        <t t-set="pane_search" t-value="customer_search"/>
+                        <t t-set="pane_placeholder">Search customer addresses</t>
+                        <t t-set="pane_hint">Your customers' addresses, for orders shipped straight to them.</t>
+                        <t t-set="pane_empty">No customer addresses yet.</t>
+                    </t>
                 </div>
                 <p t-if="int_addresses_truncated" class="o_int_addr_more">
                     <a t-attf-href="/my/addresses?show=all&amp;tab={{ int_tab }}&amp;business_search={{ business_search }}&amp;customer_search={{ customer_search }}">Show all addresses</a>
@@ -299,14 +299,13 @@
                 <span t-if="contact.int_has_loading_dock">Loading dock</span>
                 <span t-if="contact.int_has_forklift">Forklift</span>
             </div>
-            <form t-if="page_name == 'my_addresses' and contact and address_type == 'delivery' and request.env.user.int_portal_can('manage_addresses') and contact != contact.commercial_partner_id"
+            <form t-if="page_name == 'my_addresses' and contact and address_type == 'delivery' and contact.int_address_category != 'customer' and request.env.user.int_portal_can('manage_addresses') and contact != contact.commercial_partner_id"
                   action="/my/address/category" method="post" class="o_int_addr_move">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="partner_id" t-att-value="contact.id"/>
-                <input type="hidden" name="category" t-att-value="'business' if contact.int_address_category == 'customer' else 'customer'"/>
+                <input type="hidden" name="category" value="customer"/>
                 <button class="btn btn-link p-0" type="submit">
-                    <t t-if="contact.int_address_category == 'customer'">Move to business locations</t>
-                    <t t-else="">Move to customer addresses</t>
+                    Move to customer addresses
                     <i class="fa fa-long-arrow-right ms-1" aria-hidden="true"/>
                 </button>
             </form>

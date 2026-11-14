@@ -1,6 +1,6 @@
 {
     "name": "Contacts Customizations",
-    "version": "19.0.1.4.1",
+    "version": "19.0.1.4.2",
     "category": "Sales/CRM",
     "summary": "Dealer account email, portal role, and the sales rep card on My Portal",
     "author": "Internal",

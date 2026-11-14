@@ -197,13 +197,21 @@ $int-addr-line: #e3e6f3;
         border-radius: 14px;
         background: #fff;
         box-shadow: 0 2px 10px rgba(22, 27, 46, 0.05);
-        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        // No lift on hover: the card itself is not a link, only its buttons are.
+    }
 
-        &:hover {
-            transform: translateY(-2px);
-            border-color: $int-addr-blue;
-            box-shadow: 0 10px 30px rgba(0, 84, 168, 0.12);
-        }
+    // Every control on the page shows the hand. The remove icon has no href,
+    // so the browser would otherwise show the arrow.
+    .o_int_addr_tabs .nav-link,
+    .o_address_card_add_new,
+    .js_edit_address,
+    .o_remove_address,
+    .o_int_addr_move .btn-link,
+    .o_int_addr_export a,
+    .o_int_addr_more a,
+    .form-switch label,
+    .form-switch .form-check-input {
+        cursor: pointer;
     }
 
     // Address, tags and move link on the left; badge and edit buttons on the right.
