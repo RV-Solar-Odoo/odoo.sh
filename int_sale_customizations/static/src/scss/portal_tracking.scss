@@ -1,3 +1,23 @@
+.o_int_pin_col {
+    width: 2.5rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.o_int_pin_btn {
+    color: #6c757d;
+    line-height: 1;
+
+    .fa-star {
+        color: #e0a100;
+    }
+}
+
+.o_int_pin_btn:hover,
+.o_int_pin_btn:focus {
+    color: #e0a100;
+}
+
 .o_int_tracking {
     white-space: normal;
 

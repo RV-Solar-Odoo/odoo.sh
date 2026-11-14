@@ -126,17 +126,21 @@
                 <t t-call="portal.portal_table">
                     <thead>
                         <tr>
+                            <th class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>
                             <th>Order</th>
                             <th class="text-end">Total</th>
-                            <th/>
+                            <th t-if="request.env.user.int_portal_can('place_orders')" class="text-end"><span class="visually-hidden">Reorder</span></th>
                         </tr>
                     </thead>
                     <t t-foreach="int_pinned_orders" t-as="order">
                         <tr>
+                            <td class="o_int_pin_col">
+                                <t t-call="int_sale_customizations.portal_order_pin"/>
+                            </td>
                             <td><a t-att-href="order.get_portal_url()" t-out="order.name"/></td>
                             <td class="text-end"><span t-field="order.amount_total"/></td>
-                            <td class="text-end">
-                                <t t-call="int_sale_customizations.portal_order_actions"/>
+                            <td t-if="request.env.user.int_portal_can('place_orders')" class="text-end">
+                                <t t-call="int_sale_customizations.portal_order_reorder"/>
                             </td>
                         </tr>
                     </t>
@@ -146,28 +150,47 @@
         <xpath expr="//div[@t-if='not orders']" position="attributes">
             <attribute name="t-if">not orders and not int_pinned_orders</attribute>
         </xpath>
-        <xpath expr="//thead/tr/th[1]" position="before">
-            <th/>
+        <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="before">
+            <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>
         </xpath>
         <xpath expr="//t[@t-foreach='orders']/tr/td[1]" position="before">
-            <td>
-                <t t-call="int_sale_customizations.portal_order_actions"/>
+            <td t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col">
+                <t t-call="int_sale_customizations.portal_order_pin"/>
+            </td>
+        </xpath>
+        <xpath expr="//th[@name='order_total']" position="after">
+            <th t-if="request.env.user.int_portal_can('place_orders')" class="text-end"><span class="visually-hidden">Reorder</span></th>
+        </xpath>
+        <xpath expr="//td[@name='order_amount_total']" position="after">
+            <td t-if="request.env.user.int_portal_can('place_orders')" class="text-end">
+                <t t-call="int_sale_customizations.portal_order_reorder"/>
             </td>
         </xpath>
     </template>
 
-    <template id="portal_order_actions" name="Order pin and reorder">
+    <template id="portal_order_pin" name="Order pin">
         <form t-if="request.env.user.int_portal_can('pin_orders')" t-attf-action="/my/orders/{{ order.id }}/pin" method="post" class="d-inline">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-            <button class="btn btn-link btn-sm p-0" type="submit">
-                <t t-if="order in request.env.user.int_pinned_order_ids">Unpin</t>
-                <t t-else="">Pin</t>
+            <button class="btn btn-link p-0 o_int_pin_btn" type="submit"
+                    t-att-aria-label="'Unpin' if order in request.env.user.int_pinned_order_ids else 'Pin'"
+                    t-att-title="'Unpin' if order in request.env.user.int_pinned_order_ids else 'Pin'">
+                <i t-attf-class="fa #{'fa-star' if order in request.env.user.int_pinned_order_ids else 'fa-star-o'}" aria-hidden="true"/>
             </button>
         </form>
+    </template>
+
+    <template id="portal_order_reorder" name="Order reorder">
         <form t-if="request.env.user.int_portal_can('place_orders')" t-attf-action="/my/orders/{{ order.id }}/reorder" method="post" class="d-inline">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-            <button class="btn btn-link btn-sm p-0" type="submit">Reorder</button>
+            <button class="btn btn-outline-primary btn-sm" type="submit">Reorder</button>
         </form>
+    </template>
+
+    <template id="portal_order_actions" name="Order pin and reorder">
+        <span class="d-inline-flex align-items-center gap-3">
+            <t t-call="int_sale_customizations.portal_order_pin"/>
+            <t t-call="int_sale_customizations.portal_order_reorder"/>
+        </span>
     </template>
 
     <template id="portal_order_cancel" name="Request cancellation" inherit_id="sale.sale_order_portal_content">
