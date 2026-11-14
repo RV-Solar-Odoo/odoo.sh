@@ -23,6 +23,10 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='sales_purchases']//group[@name='sale']/field[@name='user_id']" position="after">
                 <field name="int_portal_role"/>
+                <field name="int_address_category"/>
+                <field name="int_location_type"/>
+                <field name="int_has_loading_dock" invisible="int_location_type != 'commercial'"/>
+                <field name="int_has_forklift" invisible="int_location_type != 'commercial'"/>
             </xpath>
         </field>
     </record>

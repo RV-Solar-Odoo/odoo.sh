@@ -51,4 +51,290 @@
             </div>
         </xpath>
     </template>
+
+    <template id="portal_my_home_orders_extra" name="Backorders and PO upload" inherit_id="portal.portal_my_home" priority="40">
+        <xpath expr="//div[@id='portal_client_category']" position="inside">
+            <t t-if="request.env.user.int_portal_can('view_orders')" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                <t t-set="title">Backorders</t>
+                <t t-set="text">Lines still waiting to ship</t>
+                <t t-set="url" t-value="'/my/backorders'"/>
+                <t t-set="placeholder_count" t-value="'int_backorder_count'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+            <t t-if="request.env.user.int_portal_can('upload_po')" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                <t t-set="title">Upload a PO</t>
+                <t t-set="text">Add a spreadsheet to your cart, or send a PDF</t>
+                <t t-set="url" t-value="'/my/po-upload'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_orders_tools" name="My Orders search, pins, and export" inherit_id="sale.portal_my_orders">
+        <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
+            <div t-if="int_search_error" class="alert alert-warning" role="alert" t-out="int_search_error"/>
+            <form method="get" action="/my/orders" class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <select class="form-select" name="search_in">
+                        <option value="all" t-att-selected="search_in == 'all'">All</option>
+                        <option value="name" t-att-selected="search_in == 'name'">Order #</option>
+                        <option value="po" t-att-selected="search_in == 'po'">PO #</option>
+                        <option value="ship" t-att-selected="search_in == 'ship'">Ship-to</option>
+                        <option value="product" t-att-selected="search_in == 'product'">Product / SKU</option>
+                        <option value="serial" t-att-selected="search_in == 'serial'">Serial #</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input class="form-control" name="search" t-att-value="search" placeholder="Search"/>
+                </div>
+                <div class="col-md-2">
+                    <input class="form-control" type="date" name="date_begin" t-att-value="date_begin"/>
+                </div>
+                <div class="col-md-2">
+                    <input class="form-control" type="date" name="date_end" t-att-value="date_end"/>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Search</button>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="filterby">
+                        <option value="all" t-att-selected="filterby == 'all'">All</option>
+                        <option value="open" t-att-selected="filterby == 'open'">Open</option>
+                        <option value="shipped" t-att-selected="filterby == 'shipped'">Shipped</option>
+                        <option value="backordered" t-att-selected="filterby == 'backordered'">Backordered</option>
+                        <option value="cancelled" t-att-selected="filterby == 'cancelled'">Cancelled</option>
+                        <option value="cancel_requested" t-att-selected="filterby == 'cancel_requested'">Cancellation requested</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="sortby">
+                        <option value="date" t-att-selected="sortby == 'date'">Newest</option>
+                        <option value="date_asc" t-att-selected="sortby == 'date_asc'">Oldest</option>
+                        <option value="name" t-att-selected="sortby == 'name'">Order #</option>
+                        <option value="amount" t-att-selected="sortby == 'amount'">Total</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2 align-items-center" t-if="request.env.user.int_portal_can('export_orders')">
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=xlsx&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">Export XLSX</a>
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">CSV</a>
+                </div>
+            </form>
+            <t t-if="int_pinned_orders">
+                <h4>Pinned</h4>
+                <t t-call="portal.portal_table">
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th class="text-end">Total</th>
+                            <th/>
+                        </tr>
+                    </thead>
+                    <t t-foreach="int_pinned_orders" t-as="order">
+                        <tr>
+                            <td><a t-att-href="order.get_portal_url()" t-out="order.name"/></td>
+                            <td class="text-end"><span t-field="order.amount_total"/></td>
+                            <td class="text-end">
+                                <t t-call="int_sale_customizations.portal_order_actions"/>
+                            </td>
+                        </tr>
+                    </t>
+                </t>
+            </t>
+        </xpath>
+        <xpath expr="//div[@t-if='not orders']" position="attributes">
+            <attribute name="t-if">not orders and not int_pinned_orders</attribute>
+        </xpath>
+        <xpath expr="//thead/tr/th[1]" position="before">
+            <th/>
+        </xpath>
+        <xpath expr="//t[@t-foreach='orders']/tr/td[1]" position="before">
+            <td>
+                <t t-call="int_sale_customizations.portal_order_actions"/>
+            </td>
+        </xpath>
+    </template>
+
+    <template id="portal_order_actions" name="Order pin and reorder">
+        <form t-if="request.env.user.int_portal_can('pin_orders')" t-attf-action="/my/orders/{{ order.id }}/pin" method="post" class="d-inline">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <button class="btn btn-link btn-sm p-0" type="submit">
+                <t t-if="order in request.env.user.int_pinned_order_ids">Unpin</t>
+                <t t-else="">Pin</t>
+            </button>
+        </form>
+        <form t-if="request.env.user.int_portal_can('place_orders')" t-attf-action="/my/orders/{{ order.id }}/reorder" method="post" class="d-inline">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <button class="btn btn-link btn-sm p-0" type="submit">Reorder</button>
+        </form>
+    </template>
+
+    <template id="portal_order_cancel" name="Request cancellation" inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//div[@id='introduction']" position="after">
+            <div t-if="request.params.get('int_error')" class="alert alert-warning" role="alert" t-out="request.params.get('int_error')"/>
+            <div t-if="sale_order.int_cancel_state == 'requested'" class="alert alert-info" role="alert">
+                Cancellation requested — we'll confirm shortly.
+            </div>
+            <div t-if="sale_order.int_cancel_state == 'denied'" class="alert alert-warning" role="alert">
+                The cancellation was denied.
+                <span t-if="sale_order.int_cancel_decision_note" t-out="sale_order.int_cancel_decision_note"/>
+            </div>
+            <p t-if="sale_order.int_ship_location_type" class="text-muted">
+                <span t-if="sale_order.int_ship_location_type == 'commercial'">Commercial</span>
+                <span t-if="sale_order.int_ship_location_type == 'residential'">Residential</span>
+                <span t-if="sale_order.int_ship_has_dock"> · Loading dock</span>
+                <span t-if="sale_order.int_ship_has_forklift"> · Forklift</span>
+            </p>
+            <div class="mb-3" t-if="not report_type">
+                <t t-call="int_sale_customizations.portal_order_actions"/>
+            </div>
+            <form t-if="not report_type and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"
+                  t-attf-action="/my/orders/{{ sale_order.id }}/cancel" method="post" class="card card-body mb-3">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <h5>Request cancellation</h5>
+                <p class="text-muted">Nothing is cancelled and nothing is refunded until we confirm.</p>
+                <label class="col-form-label">Reason</label>
+                <select class="form-select mb-2" name="reason" required="required">
+                    <option value="no_longer_needed">No longer needed</option>
+                    <option value="ordered_wrong_item">Ordered the wrong item</option>
+                    <option value="found_elsewhere">Found it elsewhere</option>
+                    <option value="delay">Delay</option>
+                    <option value="other">Other</option>
+                </select>
+                <label class="col-form-label">Note</label>
+                <textarea class="form-control mb-2" name="note"/>
+                <div t-if="sale_order._int_cancel_needs_refund()">
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="preference" value="store_credit" checked="checked"/>
+                        Store credit
+                        <span class="text-muted d-block">Applied instantly to your next order once approved.</span>
+                    </label>
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="preference" value="original"/>
+                        Original payment method
+                    </label>
+                </div>
+                <button class="btn btn-secondary mt-2" type="submit">Request cancellation</button>
+            </form>
+        </xpath>
+        <xpath expr="//div[@id='sale_invoices']" position="attributes">
+            <attribute name="t-if">invoices and sale_order.state in ['sale', 'cancel'] and request.env.user.int_portal_can('view_invoices')</attribute>
+        </xpath>
+    </template>
+
+    <template id="portal_store_credit" name="Store credit card" inherit_id="int_account_customizations.portal_credit_card">
+        <xpath expr="//div[@id='int_account_cards']" position="inside">
+            <t t-set="int_store_credit" t-value="request.env.user._int_portal_store_credit()"/>
+            <div t-if="int_store_credit" class="o_int_summary_card">
+                <h3>Store credit</h3>
+                <strong t-out="int_store_credit['amount']" t-options="{'widget': 'monetary', 'display_currency': int_store_credit['currency']}"/>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="portal_backorders" name="Backorders">
+        <t t-call="portal.portal_layout">
+            <t t-set="additional_title">Backorders</t>
+            <h3>Backorders</h3>
+            <div t-if="not int_backorder_moves" class="alert alert-info" role="alert">
+                No backorders. Everything you've ordered has shipped.
+            </div>
+            <t t-else="" t-call="portal.portal_table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="text-end">Outstanding</th>
+                        <th>Order</th>
+                        <th>PO #</th>
+                        <th>Expected</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <t t-foreach="int_backorder_moves" t-as="move">
+                    <tr>
+                        <td>
+                            <span t-if="move.product_id.default_code" t-out="move.product_id.default_code"/>
+                            <span t-out="move.product_id.name"/>
+                        </td>
+                        <td class="text-end" t-out="move.product_uom_qty"/>
+                        <td><a t-att-href="move.sale_line_id.order_id.get_portal_url()" t-out="move.sale_line_id.order_id.name"/></td>
+                        <td t-out="move.sale_line_id.order_id.client_order_ref"/>
+                        <td t-out="move.date_deadline or move.picking_id.scheduled_date"/>
+                        <td t-out="move.picking_id.state"/>
+                    </tr>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="portal_reorder_review" name="Reorder review">
+        <t t-call="portal.portal_layout">
+            <h3>Some products will not be added</h3>
+            <p>Nothing has been added to the cart yet.</p>
+            <ul>
+                <li t-foreach="int_skipped" t-as="item">
+                    <span t-out="item[0]"/> — <span t-out="item[1]"/>
+                </li>
+            </ul>
+            <form t-attf-action="/my/orders/{{ sale_order.id }}/reorder" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="confirm" value="1"/>
+                <button class="btn btn-primary" type="submit">Add the available products</button>
+                <a class="btn btn-light" t-att-href="sale_order.get_portal_url()">Back</a>
+            </form>
+        </t>
+    </template>
+
+    <template id="portal_po_upload" name="Upload a PO">
+        <t t-call="portal.portal_layout">
+            <h3>Upload a PO</h3>
+            <div t-if="int_po_done" class="alert alert-success" role="alert">
+                We've received your PO and will send a quote shortly.
+            </div>
+            <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <p><a href="/my/po-template.xlsx">Download the spreadsheet template</a></p>
+            <form action="/my/po-upload/submit" method="post" enctype="multipart/form-data" class="row g-2">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="col-md-6">
+                    <input class="form-control" type="file" name="po_file" accept=".xlsx,.pdf" required="required"/>
+                </div>
+                <div class="col-md-4">
+                    <input class="form-control" name="po_number" placeholder="PO number (PDF, optional)"/>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Upload</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <template id="portal_po_result" name="PO upload result">
+        <t t-call="portal.portal_layout">
+            <h3>Purchase order <t t-out="int_po_number"/></h3>
+            <p t-if="int_added"><t t-out="len(int_added)"/> line(s) added to the cart.</p>
+            <ul t-if="int_rejected">
+                <li t-foreach="int_rejected" t-as="item">
+                    <span t-out="item[0] or 'Row'"/> — <span t-out="item[1]"/>
+                </li>
+            </ul>
+            <a class="btn btn-primary" href="/shop/cart">View cart</a>
+        </t>
+    </template>
+
+    <template id="portal_breadcrumbs_orders" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'int_backorders'" class="breadcrumb-item">Backorders</li>
+            <li t-if="page_name == 'int_po'" class="breadcrumb-item">Upload a PO</li>
+        </xpath>
+    </template>
+
+    <template id="product_add_to_cart_role" inherit_id="website_sale.cta_wrapper">
+        <xpath expr="//a[@id='add_to_cart']" position="attributes">
+            <attribute name="t-if">not request.env.user.int_portal_ordering_blocked()</attribute>
+        </xpath>
+        <xpath expr="//a[@id='add_to_cart']" position="after">
+            <span t-if="request.env.user.int_portal_ordering_blocked()" class="text-muted">Ask your account owner to order.</span>
+        </xpath>
+    </template>
 </odoo>

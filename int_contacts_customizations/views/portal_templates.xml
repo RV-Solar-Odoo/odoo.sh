@@ -23,4 +23,198 @@
             </div>
         </xpath>
     </template>
+
+    <template id="portal_my_home_users" name="My Portal users" inherit_id="portal.portal_my_home" priority="45">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-if="request.env.user.int_portal_can('manage_users')" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                <t t-set="title">Users</t>
+                <t t-set="text">Invite people and choose what they can see</t>
+                <t t-set="url" t-value="'/my/users'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_users_breadcrumbs" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'int_users'" class="breadcrumb-item">Users</li>
+        </xpath>
+    </template>
+
+    <template id="portal_users" name="Portal users">
+        <t t-call="portal.portal_layout">
+            <t t-set="additional_title">Users</t>
+            <h3>Users</h3>
+            <p class="text-muted">People who sign in for this dealer. The role controls invoices, payments, credit, and ordering.</p>
+            <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <form action="/my/users/invite" method="post" class="row g-2 mb-4">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="col-md-4">
+                    <input class="form-control" name="name" placeholder="Name" required="required"/>
+                </div>
+                <div class="col-md-4">
+                    <input class="form-control" type="email" name="email" placeholder="Email" required="required"/>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="role">
+                        <option value="owner">Owner</option>
+                        <option value="buyer" selected="selected">Buyer</option>
+                        <option value="accountant">Accountant</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Invite</button>
+                </div>
+            </form>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Last login</th>
+                        <th>Status</th>
+                        <th/>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="int_users" t-as="portal_user">
+                        <td t-out="portal_user.name"/>
+                        <td t-out="portal_user.login"/>
+                        <td>
+                            <form t-attf-action="/my/users/{{ portal_user.id }}/role" method="post" class="d-flex gap-2">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <select class="form-select" name="role">
+                                    <t t-foreach="int_roles" t-as="role">
+                                        <option t-att-value="role[0]" t-att-selected="(portal_user.partner_id.int_portal_role or 'owner') == role[0]" t-out="role[1]"/>
+                                    </t>
+                                </select>
+                                <button class="btn btn-secondary" type="submit">Save</button>
+                            </form>
+                        </td>
+                        <td>
+                            <span t-if="portal_user.login_date" t-field="portal_user.login_date"/>
+                        </td>
+                        <td>
+                            <span t-if="not portal_user.active">Disabled</span>
+                            <span t-elif="not portal_user.login_date">Invited</span>
+                            <span t-else="">Active</span>
+                        </td>
+                        <td class="text-end">
+                            <form t-attf-action="/my/users/{{ portal_user.id }}/resend" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button class="btn btn-link" type="submit">Resend invite</button>
+                            </form>
+                            <form t-attf-action="/my/users/{{ portal_user.id }}/active" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="active" t-att-value="'0' if portal_user.active else '1'"/>
+                                <button class="btn btn-link" type="submit">
+                                    <t t-if="portal_user.active">Disable</t>
+                                    <t t-else="">Enable</t>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </t>
+    </template>
+
+    <template id="portal_address_fields" inherit_id="portal.address_form_fields">
+        <xpath expr="//div[@id='div_street']" position="before">
+            <div class="col-lg-12 mb-2">
+                <label class="col-form-label">This address is</label>
+                <select class="form-select" name="int_address_category">
+                    <option value="business" t-att-selected="partner_sudo.int_address_category != 'customer'">My business location</option>
+                    <option value="customer" t-att-selected="partner_sudo.int_address_category == 'customer'">A customer (drop-ship)</option>
+                </select>
+            </div>
+            <div class="col-lg-12 mb-2">
+                <label class="col-form-label">Location</label>
+                <select class="form-select" name="int_location_type">
+                    <option value="">Select</option>
+                    <option value="commercial" t-att-selected="partner_sudo.int_location_type == 'commercial'">Commercial</option>
+                    <option value="residential" t-att-selected="partner_sudo.int_location_type == 'residential'">Residential</option>
+                </select>
+            </div>
+            <div class="col-lg-6 mb-2">
+                <label class="col-form-label">Loading dock</label>
+                <select class="form-select" name="int_has_loading_dock">
+                    <option value="0" t-att-selected="not partner_sudo.int_has_loading_dock">No</option>
+                    <option value="1" t-att-selected="partner_sudo.int_has_loading_dock">Yes</option>
+                </select>
+            </div>
+            <div class="col-lg-6 mb-2">
+                <label class="col-form-label">Forklift on site</label>
+                <select class="form-select" name="int_has_forklift">
+                    <option value="0" t-att-selected="not partner_sudo.int_has_forklift">No</option>
+                    <option value="1" t-att-selected="partner_sudo.int_has_forklift">Yes</option>
+                </select>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="portal_my_addresses_readonly" inherit_id="portal.my_addresses">
+        <xpath expr="//section[hasclass('o_portal_addresses')]/div[1]/a" position="attributes">
+            <attribute name="t-if">request.env.user.int_portal_can('manage_addresses')</attribute>
+        </xpath>
+        <xpath expr="//a[contains(@t-attf-class, 'o_add_billing_address_btn')]" position="attributes">
+            <attribute name="t-if">request.env.user.int_portal_can('manage_addresses')</attribute>
+        </xpath>
+    </template>
+
+    <template id="portal_my_addresses_split" inherit_id="portal.my_addresses">
+        <xpath expr="//section[hasclass('o_portal_addresses')]/div[1]/h5" position="replace">
+            <h5 class="mb-0">My business locations (<t t-out="business_count"/>)</h5>
+        </xpath>
+        <xpath expr="//section[hasclass('o_portal_addresses')]/t[@t-call='portal.address_list']" position="replace">
+            <form method="get" action="/my/addresses" class="mb-2">
+                <input class="form-control" name="business_search" t-att-value="business_search" placeholder="Search business locations"/>
+            </form>
+            <t t-call="portal.address_list">
+                <t t-set="addresses" t-value="business_addresses"/>
+            </t>
+            <div class="d-flex justify-content-between align-items-start gap-3 mt-4 pt-2">
+                <h5 class="mb-0">Customer / drop-ship addresses (<t t-out="customer_count"/>)</h5>
+            </div>
+            <form method="get" action="/my/addresses" class="mb-2">
+                <input class="form-control" name="customer_search" t-att-value="customer_search" placeholder="Search customer addresses"/>
+            </form>
+            <t t-call="portal.address_list">
+                <t t-set="addresses" t-value="customer_addresses"/>
+            </t>
+            <p t-if="int_addresses_truncated" class="mt-3">
+                <a t-attf-href="/my/addresses?show=all&amp;business_search={{ business_search }}&amp;customer_search={{ customer_search }}">Show all addresses</a>
+            </p>
+            <p t-if="request.env.user.int_portal_can('manage_addresses')">
+                <a href="/my/addresses/export?export_format=xlsx">Export addresses (XLSX)</a>
+                ·
+                <a href="/my/addresses/export?export_format=csv">CSV</a>
+            </p>
+        </xpath>
+    </template>
+
+    <template id="portal_address_card_category" inherit_id="portal.address_card">
+        <xpath expr="//div[@name='address_card']" position="inside">
+            <div class="small text-muted" t-if="contact">
+                <span t-if="contact.int_address_category == 'customer'">Customer</span>
+                <span t-else="">Business</span>
+                <span t-if="contact.int_location_type == 'commercial'"> · Commercial</span>
+                <span t-if="contact.int_location_type == 'residential'"> · Residential</span>
+                <span t-if="contact.int_has_loading_dock"> · Dock</span>
+                <span t-if="contact.int_has_forklift"> · Forklift</span>
+            </div>
+            <form t-if="contact and request.env.user.int_portal_can('manage_addresses') and contact != contact.commercial_partner_id" action="/my/address/category" method="post" class="mt-1">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="partner_id" t-att-value="contact.id"/>
+                <input type="hidden" name="category" t-att-value="'business' if contact.int_address_category == 'customer' else 'customer'"/>
+                <button class="btn btn-link btn-sm p-0" type="submit">
+                    <t t-if="contact.int_address_category == 'customer'">Move to business</t>
+                    <t t-else="">Move to customer</t>
+                </button>
+            </form>
+        </xpath>
+    </template>
 </odoo>

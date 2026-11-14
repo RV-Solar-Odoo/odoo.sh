@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.int.sale.portal</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <setting id="autocomplete_googleplaces_setting" position="after">
+                <setting string="Dealer portal orders" help="Pin limit, store credit used for cancellation refunds, and who hears about a cancel request. Have accounting review store credit before production.">
+                    <field name="int_max_pinned"/>
+                    <field name="int_store_credit_program_id"/>
+                    <field name="int_store_credit_product_id"/>
+                    <field name="int_cancel_notify_user_ids" widget="many2many_tags"/>
+                </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

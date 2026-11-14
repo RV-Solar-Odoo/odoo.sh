@@ -17,6 +17,8 @@ The button is limited to sales users. An internal user's email is refused.
 
 ## Portal role and sales rep
 
-**Portal role** is on the contact, under Sales. Owner and Accountant can see credit. Buyer and Viewer cannot. Existing contacts stay Owner.
+**Portal role** is on the contact, under Sales. Owner and Accountant can see credit, invoices, payments, and store credit. Buyer can order and cannot see those. Viewer can see orders and tracking. Existing contacts stay Owner. The owner manages logins at My Portal → Users. The last owner cannot be demoted or disabled. Changing a role signs that person out.
+
+Addresses are split into business locations and customer drop-ship addresses. A residential address clears the dock and forklift. The company address stays a business location. Viewers and accountants can look, and cannot edit.
 
 **Your Sales Rep** is at the top of My Portal. It uses the salesperson on the company contact, so an extra login sees the same person. Email and phone are links. The card is hidden when no salesperson is set. Phone uses `work_phone` when that field exists, otherwise phone, otherwise mobile.

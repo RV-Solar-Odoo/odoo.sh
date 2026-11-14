@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_cancel" model="ir.ui.view">
+        <field name="name">sale.order.form.cancel.request</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning" role="alert" invisible="int_cancel_state != 'requested'">
+                    Cancellation requested by the customer.
+                    <field name="int_cancel_reason" readonly="1"/>
+                    <field name="int_cancel_note" readonly="1"/>
+                    <button name="action_int_open_cancel_wizard" type="object" string="Review cancellation"
+                            class="btn-primary" groups="sales_team.group_sale_manager"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <field name="int_ship_location_type" readonly="1"/>
+                <field name="int_ship_has_dock" readonly="1"/>
+                <field name="int_ship_has_forklift" readonly="1"/>
+                <field name="int_cancel_state" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_sales_order_filter_cancel" model="ir.ui.view">
+        <field name="name">sale.order.search.cancel.request</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter name="int_cancel_requested" string="Cancellation requested"
+                        domain="[('int_cancel_state', '=', 'requested')]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_form_cancel" model="ir.ui.view">
+        <field name="name">stock.picking.form.cancel.request</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning" role="alert"
+                     invisible="not sale_id or sale_id.int_cancel_state != 'requested'">
+                    Cancellation requested by the customer. Hold this shipment.
+                </div>
+                <field name="sale_id" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id'][@nolabel='1']" position="after">
+                <field name="int_ship_location_type" readonly="1"/>
+                <field name="int_ship_has_dock" readonly="1"/>
+                <field name="int_ship_has_forklift" readonly="1"/>
+                <field name="int_liftgate_needed" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_int_sale_cancel_wizard" model="ir.ui.view">
+        <field name="name">int.sale.cancel.wizard.form</field>
+        <field name="model">int.sale.cancel.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancellation">
+                <group>
+                    <field name="order_id" readonly="1"/>
+                    <field name="preference"/>
+                    <field name="note" placeholder="Required to deny the request"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirm cancellation" class="btn-primary"/>
+                    <button name="action_deny" type="object" string="Deny"/>
+                    <button special="cancel" string="Close"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

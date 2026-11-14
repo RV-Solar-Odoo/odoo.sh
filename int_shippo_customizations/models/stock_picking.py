@@ -133,7 +133,7 @@ class StockPicking(models.Model):
                 partner=partner.display_name,
                 fields=", ".join(missing),
             ))
-        return {
+        payload = {
             "name": partner.name or partner.display_name,
             "street1": partner.street,
             "street2": partner.street2 or "",
@@ -144,6 +144,12 @@ class StockPicking(models.Model):
             "phone": self._int_shippo_phone(partner),
             "email": partner.email or "",
         }
+        location = partner.int_location_type if "int_location_type" in partner._fields else False
+        if location == "residential":
+            payload["is_residential"] = True
+        elif location == "commercial":
+            payload["is_residential"] = False
+        return payload
 
     def _int_shippo_phone(self, partner):
         return partner.phone or (partner.mobile if "mobile" in partner._fields else "") or ""

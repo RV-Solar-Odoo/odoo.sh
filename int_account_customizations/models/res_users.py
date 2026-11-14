@@ -1,7 +1,5 @@
 from odoo import models
 
-CREDIT_ROLES = {"owner", "accountant"}
-
 
 class ResUsers(models.Model):
     _inherit = "res.users"
@@ -17,10 +15,11 @@ class ResUsers(models.Model):
         return self.env.company
 
     def _int_portal_can_view_credit(self, company=None):
-        """Who may see the credit card. The one place to extend for portal roles.
+        """Who may see the credit card.
 
         Internal users always can, so staff can check the card. Portal users must
-        belong to an approved dealer company, with the Owner or Accountant role.
+        belong to an approved dealer company and have the view_credit permission
+        (Owner or Accountant).
         """
         self.ensure_one()
         if self._is_public():
@@ -29,8 +28,7 @@ class ResUsers(models.Model):
             return True
         if not self._int_portal_is_dealer(company or self._int_portal_company()):
             return False
-        role = self.partner_id.sudo().int_portal_role or "owner"
-        return role in CREDIT_ROLES
+        return self.int_portal_can("view_credit")
 
     def _int_portal_is_dealer(self, company):
         """Same rule as the shop's dealer pricing: the company contact's pricelist

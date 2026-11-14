@@ -1,7 +1,7 @@
 {
     "name": "Accounting Customizations",
     "summary": "Sales tax threshold emails, and the credit card on My Portal",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Accounting/Accounting",
     "author": "Internal",
     "license": "LGPL-3",
@@ -9,6 +9,7 @@
     "depends": ["account", "sale", "mail", "portal", "int_contacts_customizations"],
     "data": [
         "security/ir.model.access.csv",
+        "security/portal_rules.xml",
         "data/ir_cron.xml",
         "views/nexus_threshold_views.xml",
         "views/nexus_sale_views.xml",

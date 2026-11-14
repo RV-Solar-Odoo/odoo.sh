@@ -44,6 +44,21 @@
         </xpath>
     </template>
 
+    <template id="portal_my_home_invoice_role" name="Hide invoices by role" inherit_id="account.portal_my_home_invoice">
+        <xpath expr="//div[@id='portal_client_category']//t[@t-call='portal.portal_docs_entry']" position="attributes">
+            <attribute name="t-if">request.env.user.int_portal_can('view_invoices')</attribute>
+        </xpath>
+        <xpath expr="//div[@id='portal_vendor_category']//t[@t-call='portal.portal_docs_entry']" position="attributes">
+            <attribute name="t-if">request.env.user.int_portal_can('view_invoices')</attribute>
+        </xpath>
+    </template>
+
+    <template id="portal_my_home_payment_role" name="Hide payment methods by role" inherit_id="payment.portal_my_home_payment">
+        <xpath expr="//t[@t-call='portal.portal_docs_entry']" position="attributes">
+            <attribute name="t-if">request.env.user.int_portal_can('make_payments') and (methods_allowing_tokenization or existing_tokens)</attribute>
+        </xpath>
+    </template>
+
     <template id="portal_my_invoices_credit" name="Invoices credit card" inherit_id="account.portal_my_invoices">
         <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
             <div class="o_int_portal_summary">
