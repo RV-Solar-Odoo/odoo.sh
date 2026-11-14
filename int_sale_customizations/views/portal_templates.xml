@@ -238,9 +238,9 @@
             </div>
             <script t-if="int_can_cancel and request.params.get('int_error')">
                 document.addEventListener("DOMContentLoaded", function () {
-                    var modal = document.getElementById("int_cancel_modal");
-                    if (modal &amp;&amp; window.bootstrap) {
-                        window.bootstrap.Modal.getOrCreateInstance(modal).show();
+                    var button = document.querySelector("[data-bs-target='#int_cancel_modal']");
+                    if (button) {
+                        button.click();
                     }
                 });
             </script>
