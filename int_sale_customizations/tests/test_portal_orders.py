@@ -160,4 +160,5 @@ class TestPortalOrders(TransactionCase):
         arch = self.env.ref("sale.sale_order_portal_content").get_combined_arch()
         self.assertIn("report_type != 'pdf'", arch)
         self.assertNotIn('t-if="not report_type"', arch)
+        self.assertIn('t-set="order" t-value="sale_order"', arch)
         self.assertIn("Request cancellation", arch)

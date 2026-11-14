@@ -187,7 +187,9 @@
                 <span t-if="sale_order.int_ship_has_forklift"> · Forklift</span>
             </p>
             <div class="mb-3" t-if="report_type != 'pdf'">
-                <t t-call="int_sale_customizations.portal_order_actions"/>
+                <t t-call="int_sale_customizations.portal_order_actions">
+                    <t t-set="order" t-value="sale_order"/>
+                </t>
             </div>
             <form t-if="report_type != 'pdf' and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"
                   t-attf-action="/my/orders/{{ sale_order.id }}/cancel" method="post" class="card card-body mb-3">
