@@ -9,7 +9,11 @@ $int-addr-line: #e3e6f3;
 .o_int_addr_tags {
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    align-self: start;
     gap: 6px;
+    margin-top: 0.75rem;
 
     > span {
         display: inline-block;
@@ -22,6 +26,52 @@ $int-addr-line: #e3e6f3;
         line-height: 1.4;
         text-transform: uppercase;
         white-space: nowrap;
+    }
+}
+
+// Address card, here and at checkout: address, tags and move link on the left;
+// badge and edit buttons on the right. Without this, checkout's flex row makes
+// the tags a stretched middle column.
+.o_int_addr_body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0 1rem !important;
+    padding: 1.25rem 1.25rem 1.1rem 1.5rem;
+
+    > :not(:last-child) {
+        grid-column: 1;
+    }
+
+    > :last-child {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        align-self: stretch;
+        gap: 0.75rem;
+    }
+
+    // Phone: one column, with the badge and buttons in a footer row.
+    @media (max-width: 575.98px) {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 1.1rem 1.1rem 0.6rem 1.25rem;
+
+        > :last-child {
+            grid-column: 1;
+            grid-row: auto;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            margin-top: 0.9rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid $int-addr-line;
+
+            // Stock pushes the edit buttons left on phones; keep them on the right.
+            > .d-flex {
+                margin: 0 0 0 auto !important;
+            }
+        }
     }
 }
 
@@ -212,45 +262,6 @@ $int-addr-line: #e3e6f3;
     .form-switch label,
     .form-switch .form-check-input {
         cursor: pointer;
-    }
-
-    // Address, tags and move link on the left; badge and edit buttons on the right.
-    .o_int_addr_body {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-        gap: 0 1rem !important;
-        padding: 1.25rem 1.25rem 1.1rem 1.5rem;
-
-        > :not(:last-child) {
-            grid-column: 1;
-        }
-
-        > :last-child {
-            grid-column: 2;
-            grid-row: 1 / span 3;
-            flex-direction: column !important;
-            align-items: flex-end !important;
-            align-self: stretch;
-            gap: 0.75rem;
-        }
-
-        // Phone: one column, with the badge and buttons in a footer row.
-        @media (max-width: 575.98px) {
-            grid-template-columns: minmax(0, 1fr);
-            padding: 1.1rem 1.1rem 0.6rem 1.25rem;
-
-            > :last-child {
-                grid-column: 1;
-                grid-row: auto;
-                flex-direction: row !important;
-                align-items: center !important;
-                justify-content: space-between !important;
-                margin-top: 0.9rem;
-                padding-top: 0.5rem;
-                border-top: 1px solid $int-addr-line;
-            }
-        }
     }
 
     .o_portal_address {
