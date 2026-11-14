@@ -681,16 +681,16 @@
   }
 }
 
-/* Homepage featured products: no add-to-cart; the whole card opens the product,
-   including empty space under the price. */
+/* Homepage featured products: the whole card opens the product, including empty
+   space under the price. The cart button sits above that link layer, so it adds
+   to the cart instead of opening the product. */
 .s_dynamic_snippet_products .oe_product_cart {
   position: relative !important;
   cursor: pointer;
 
-  .o_wsale_product_action_row,
-  .o_wsale_product_btn_primary,
   .o_wsale_product_btn {
-    display: none !important;
+    position: relative;
+    z-index: 2;
   }
 
   .o_wsale_products_item_title a::after {
@@ -826,6 +826,12 @@
     background: transparent !important;
     border: none !important;
     border-bottom: 1px solid var(--border-light) !important;
+}
+
+/* Price Range: stock gives its wrapper a top border, which doubles up with the
+   bottom border of the section above it. One line, like the other sections. */
+.o_wsale_products_grid_before_rail #o_wsale_price_range_option {
+    border-top: 0 !important;
 }
  
 /* All Products link */
