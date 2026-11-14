@@ -223,7 +223,7 @@
                     <div id="int_addr_pane_billing" role="tabpanel" aria-labelledby="int_addr_tab_billing"
                          t-attf-class="tab-pane fade #{'show active' if int_tab == 'billing' else ''}">
                         <t t-set="address_type" t-valuef="billing"/>
-                        <t t-set="new_address_url" t-value="'%s?address_type=billing&amp;callback=%%2Fmy%%2Faddresses%%3Ftab%%3Dbilling' % address_url"/>
+                        <t t-set="new_address_url" t-value="address_url + '?address_type=billing&amp;callback=/my/addresses?tab=billing'"/>
                         <div class="o_int_addr_toolbar">
                             <div class="form-check form-switch mb-0">
                                 <label id="use_delivery_as_billing_label">
@@ -256,7 +256,7 @@
 
     <template id="portal_address_pane" name="My addresses tab">
         <t t-set="address_type" t-valuef="delivery"/>
-        <t t-set="new_address_url" t-value="'%s?address_type=delivery&amp;use_delivery_as_billing=%s%s&amp;callback=%%2Fmy%%2Faddresses%%3Ftab%%3D%s' % (address_url, use_delivery_as_billing, '&amp;int_address_category=customer' if pane == 'customer' else '', pane)"/>
+        <t t-set="new_address_url" t-value="address_url + '?address_type=delivery&amp;use_delivery_as_billing=' + str(use_delivery_as_billing) + ('&amp;int_address_category=customer' if pane == 'customer' else '') + '&amp;callback=/my/addresses?tab=' + pane"/>
         <div t-attf-id="int_addr_pane_{{ pane }}" role="tabpanel" t-attf-aria-labelledby="int_addr_tab_{{ pane }}"
              t-attf-class="tab-pane fade #{'show active' if int_tab == pane else ''}">
             <div class="o_int_addr_toolbar">

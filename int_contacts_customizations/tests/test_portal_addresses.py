@@ -21,3 +21,25 @@ class TestPortalAddresses(TransactionCase):
         checkout = self.env.ref("website_sale.address_card", raise_if_not_found=False)
         if checkout:
             self.assertIn("o_int_addr_tags", checkout.get_combined_arch())
+
+    def test_address_tab_renders_with_return_links(self):
+        # Rendering, not just the arch: the Nov 14 build failed here at render time.
+        for pane in ("business", "customer"):
+            html = str(self.env["ir.qweb"]._render("int_contacts_customizations.portal_address_pane", {
+                "pane": pane,
+                "int_tab": "customer",
+                "int_can_manage": True,
+                "address_url": "/my/address",
+                "use_delivery_as_billing": False,
+                "pane_addresses": self.env["res.partner"],
+                "pane_search_name": f"{pane}_search",
+                "pane_search": "",
+                "pane_placeholder": "Search",
+                "pane_hint": "Hint",
+                "pane_empty": "None yet.",
+                "business_search": "",
+                "customer_search": "",
+            }))
+            self.assertIn(f'id="int_addr_pane_{pane}"', html)
+            self.assertIn(f"callback=/my/addresses?tab={pane}", html)
+            self.assertEqual("int_address_category=customer" in html, pane == "customer")
