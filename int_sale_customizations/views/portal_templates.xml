@@ -36,7 +36,7 @@
         <xpath expr="//t[@t-set='latest_delivery_orders']" position="attributes">
             <attribute name="t-value">delivery_orders.sorted('create_date', reverse=True)</attribute>
         </xpath>
-        <xpath expr="//div[@t-if='delivery_orders']/h5[@class='mb-1']" position="replace">
+        <xpath expr="//div[@t-if='delivery_orders']/h5[hasclass('mb-1')]" position="replace">
             <h5 class="mb-1">
                 Deliveries
                 <span t-if="sale_order._int_portal_shipments()[sale_order.id]['partial']" class="o_int_partial">Partial</span>

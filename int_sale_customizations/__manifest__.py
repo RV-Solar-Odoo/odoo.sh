@@ -1,6 +1,6 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.4.0",
+    "version": "19.0.1.4.1",
     "category": "Sales/Sales",
     "summary": "Dealer orders: tabs, favorite orders, search, backorders, export, PO upload, and cancellation",
     "author": "Internal",
