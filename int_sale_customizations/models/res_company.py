@@ -4,10 +4,10 @@ from odoo import fields, models
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    int_max_pinned = fields.Integer(
-        string="Pinned orders",
-        default=5,
-        help="How many orders one portal user can pin.",
+    int_max_favorites = fields.Integer(
+        string="Favorite orders",
+        default=25,
+        help="How many favorite orders one dealer can save. Shared by every login of the dealer.",
     )
     int_store_credit_program_id = fields.Many2one(
         "loyalty.program",

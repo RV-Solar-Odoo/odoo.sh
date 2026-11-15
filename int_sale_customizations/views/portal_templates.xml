@@ -70,18 +70,14 @@
         </xpath>
     </template>
 
-    <template id="portal_my_orders_tools" name="My Orders search, pins, and export" inherit_id="sale.portal_my_orders">
+    <template id="portal_my_orders_tools" name="My Orders tabs, search, favorites, and export" inherit_id="sale.portal_my_orders">
         <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
+            <t t-set="int_back_url" t-value="request.httprequest.full_path.rstrip('?')"/>
+            <t t-call="int_sale_customizations.portal_order_tabs"/>
+            <t t-call="int_sale_customizations.portal_favorite_notice"/>
             <div t-if="int_search_error" class="alert alert-warning" role="alert" t-out="int_search_error"/>
-            <form method="get" action="/my/orders" class="row g-2 mb-3">
-                <div class="col-12">
-                    <input type="hidden" name="int_bo" value="1"/>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="backorders" value="1" id="int_show_backorders"
-                               t-att-checked="int_show_backorders" onchange="this.form.submit()"/>
-                        <label class="form-check-label" for="int_show_backorders">Show backorders</label>
-                    </div>
-                </div>
+            <p t-if="int_tab == 'backorders'" class="o_int_tab_hint">Orders with items still waiting for stock. Each one ships as soon as it arrives.</p>
+            <form t-if="int_tab != 'backorders'" method="get" action="/my/orders" class="row g-2 mb-3">
                 <div class="col-md-3">
                     <select class="form-select" name="search_in">
                         <option value="all" t-att-selected="search_in == 'all'">All</option>
@@ -122,20 +118,22 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2 align-items-center" t-if="request.env.user.int_portal_can('export_orders')">
-                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=xlsx&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}&amp;int_bo=1&amp;backorders={{ '1' if int_show_backorders else '' }}">Export XLSX</a>
-                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}&amp;int_bo=1&amp;backorders={{ '1' if int_show_backorders else '' }}">CSV</a>
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=xlsx&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">Export XLSX</a>
+                    <a class="btn btn-light" t-attf-href="/my/orders/export?export_format=csv&amp;search={{ search }}&amp;search_in={{ search_in }}&amp;filterby={{ filterby }}&amp;date_begin={{ date_begin }}&amp;date_end={{ date_end }}">CSV</a>
                 </div>
             </form>
         </xpath>
         <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="before">
-            <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Pin</span></th>
+            <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Favorite</span></th>
         </xpath>
         <xpath expr="//t[@t-foreach='orders']/tr/td/a[@t-att-href='order.get_portal_url()']" position="after">
             <span t-if="order.id in (int_backordered_ids or ())" class="o_int_partial ms-2">Backordered</span>
         </xpath>
         <xpath expr="//t[@t-foreach='orders']/tr/td[1]" position="before">
             <td t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col">
-                <t t-call="int_sale_customizations.portal_order_pin"/>
+                <t t-call="int_sale_customizations.portal_order_pin">
+                    <t t-set="int_fav" t-value="(int_fav_by_order or {}).get(order.id)"/>
+                </t>
             </td>
         </xpath>
         <xpath expr="//th[@name='order_total']" position="after">
@@ -146,17 +144,38 @@
                 <t t-call="int_sale_customizations.portal_order_reorder"/>
             </td>
         </xpath>
+        <xpath expr="//div[@t-if='not orders']" position="replace">
+            <div t-if="not orders" class="alert alert-info" role="alert">
+                <t t-if="int_tab == 'backorders'">No backorders. Everything you've ordered has shipped or is ready to ship.</t>
+                <t t-elif="search or (filterby and filterby != 'all')">No orders match.</t>
+                <t t-else="">There are currently no sales orders for your account.</t>
+            </div>
+        </xpath>
+        <xpath expr="//t[@t-if='orders']" position="after">
+            <t t-call="int_sale_customizations.portal_favorite_modal"/>
+        </xpath>
     </template>
 
-    <template id="portal_order_pin" name="Order pin">
-        <form t-if="request.env.user.int_portal_can('pin_orders')" t-attf-action="/my/orders/{{ order.id }}/pin" method="post" class="d-inline">
-            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-            <button class="btn btn-link p-0 o_int_pin_btn" type="submit"
-                    t-att-aria-label="'Unpin' if order in request.env.user.int_pinned_order_ids else 'Pin'"
-                    t-att-title="'Unpin' if order in request.env.user.int_pinned_order_ids else 'Pin'">
-                <i t-attf-class="fa #{'fa-star' if order in request.env.user.int_pinned_order_ids else 'fa-star-o'}" aria-hidden="true"/>
+    <!-- The favorite star. Empty: opens the Save to Favorite Orders dialog.
+         Gold: removes the favorite, with Undo. ``int_fav`` is the favorite or False. -->
+    <template id="portal_order_pin" name="Order favorite star">
+        <t t-if="request.env.user.int_portal_can('pin_orders')">
+            <form t-if="int_fav" t-attf-action="/my/favorites/{{ int_fav.id }}/delete" method="post" class="d-inline">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="redirect" t-att-value="int_back_url"/>
+                <button class="btn btn-link p-0 o_int_pin_btn o_int_pin_on" type="submit"
+                        t-attf-aria-label="Remove {{ int_fav.name }} from Favorite Orders"
+                        title="Remove from Favorite Orders">
+                    <i class="fa fa-star" aria-hidden="true"/>
+                </button>
+            </form>
+            <button t-else="" type="button" class="btn btn-link p-0 o_int_pin_btn"
+                    data-bs-toggle="modal" data-bs-target="#int_fav_modal"
+                    t-att-data-int-order="order.id" t-att-data-int-name="order.name"
+                    aria-label="Save to Favorite Orders" title="Save to Favorite Orders">
+                <i class="fa fa-star-o" aria-hidden="true"/>
             </button>
-        </form>
+        </t>
     </template>
 
     <template id="portal_order_reorder" name="Order reorder">
@@ -166,9 +185,11 @@
         </form>
     </template>
 
-    <template id="portal_order_actions" name="Order pin and reorder">
+    <template id="portal_order_actions" name="Order favorite and reorder">
         <span class="d-inline-flex align-items-center gap-3">
-            <t t-call="int_sale_customizations.portal_order_pin"/>
+            <t t-if="request.env.user.int_portal_can('pin_orders') and order._int_owned_by(request.env.user)" t-call="int_sale_customizations.portal_order_pin">
+                <t t-set="int_fav" t-value="request.env['int.favorite.order']._int_by_order(request.env.user, request.website.company_id or request.env.company, order).get(order.id)"/>
+            </t>
             <t t-call="int_sale_customizations.portal_order_reorder"/>
         </span>
     </template>
@@ -190,6 +211,11 @@
                 <span t-if="sale_order.int_ship_has_forklift"> · Forklift</span>
             </p>
             <t t-set="int_can_cancel" t-value="report_type != 'pdf' and request.env.user.int_portal_can('cancel_orders') and not sale_order._int_cancel_blocked_reason() and sale_order._int_owned_by(request.env.user)"/>
+            <t t-if="report_type != 'pdf'">
+                <t t-set="int_back_url" t-value="request.httprequest.full_path.rstrip('?')"/>
+                <t t-call="int_sale_customizations.portal_favorite_notice"/>
+                <t t-call="int_sale_customizations.portal_favorite_modal"/>
+            </t>
             <div class="mb-3" t-if="report_type != 'pdf'">
                 <t t-call="int_sale_customizations.portal_order_actions">
                     <t t-set="order" t-value="sale_order"/>

@@ -10,7 +10,6 @@ class TestPortalOrders(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.company
-        cls.company.int_max_pinned = 1
         cls.product = cls.env["product.product"].create({
             "name": "Portal order service",
             "type": "service",
@@ -81,37 +80,6 @@ class TestPortalOrders(TransactionCase):
         self.assertTrue(added)
         self.assertEqual(added[0][0].default_code, "INT-PORTAL-SVC")
         self.assertEqual(len(rejected), 2)
-
-    def test_pinned_orders_sort_first(self):
-        dealer = self.env["res.partner"].create({"name": "Pin Sort Dealer", "is_company": True})
-        self.company.int_max_pinned = 5
-        older = self._order(dealer, "PIN-OLD")
-        middle = self._order(dealer, "PIN-MID")
-        newer = self._order(dealer, "PIN-NEW")
-        older.date_order = "2026-01-01"
-        middle.date_order = "2026-06-01"
-        newer.date_order = "2026-11-01"
-        user = self._portal(dealer, "pin-sort@example.com", "buyer")
-        self.assertEqual(user.int_portal_toggle_pin(older), "pinned")
-        SaleOrder = self.env["sale.order"].with_user(user)
-        domain = SaleOrder._int_portal_order_domain(dealer)
-        order = "date_order desc, id desc"
-        page = SaleOrder._int_portal_orders_page(domain, order, user.int_pinned_order_ids.ids, 2, 0)
-        self.assertEqual(list(page), [older, newer])
-        rest = SaleOrder._int_portal_orders_page(domain, order, user.int_pinned_order_ids.ids, 2, 2)
-        self.assertEqual(list(rest), [middle])
-        cancelled = SaleOrder._int_portal_order_domain(dealer, filterby="cancelled")
-        hidden = SaleOrder._int_portal_orders_page(cancelled, order, user.int_pinned_order_ids.ids, 20, 0)
-        self.assertNotIn(older, hidden)
-
-    def test_pin_limit(self):
-        user = self.env.user
-        first = self._order(user.partner_id, "PIN-1")
-        second = self._order(user.partner_id, "PIN-2")
-        self.assertEqual(user.int_portal_toggle_pin(first), "pinned")
-        with self.assertRaises(UserError):
-            user.int_portal_toggle_pin(second)
-        self.assertEqual(user.int_portal_toggle_pin(first), "unpinned")
 
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})

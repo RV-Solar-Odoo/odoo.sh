@@ -1,8 +1,8 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.3.1",
+    "version": "19.0.1.4.0",
     "category": "Sales/Sales",
-    "summary": "Dealer orders: search, backorders, pins, export, PO upload, and cancellation",
+    "summary": "Dealer orders: tabs, favorite orders, search, backorders, export, PO upload, and cancellation",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": [
@@ -19,12 +19,15 @@
     "data": [
         "security/ir.model.access.csv",
         "views/portal_templates.xml",
+        "views/favorite_templates.xml",
         "views/sale_order_views.xml",
         "views/res_config_settings_views.xml",
     ],
     "assets": {
         "web.assets_frontend": [
             "int_sale_customizations/static/src/scss/portal_tracking.scss",
+            "int_sale_customizations/static/src/scss/favorites.scss",
+            "int_sale_customizations/static/src/js/favorites.js",
         ],
     },
 }

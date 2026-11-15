@@ -6,8 +6,8 @@
         <field name="inherit_id" ref="website_sale.res_config_settings_view_form"/>
         <field name="arch" type="xml">
             <setting id="autocomplete_googleplaces_setting" position="after">
-                <setting string="Dealer portal orders" help="Pin limit, store credit used for cancellation refunds, and who hears about a cancel request. Have accounting review store credit before production.">
-                    <field name="int_max_pinned"/>
+                <setting string="Dealer portal orders" help="Favorite orders per dealer, store credit used for cancellation refunds, and who hears about a cancel request. Have accounting review store credit before production.">
+                    <field name="int_max_favorites"/>
                     <field name="int_store_credit_program_id"/>
                     <field name="int_store_credit_product_id"/>
                     <field name="int_cancel_notify_user_ids" widget="many2many_tags"/>

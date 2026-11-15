@@ -1,6 +1,6 @@
 # Sales Customizations
 
-My Orders lists carrier tracking for every outgoing shipment. A "Show backorders" box at the top, ticked by default, puts orders with an open backorder at the top (below pinned orders) with a Backordered pill. Unticked, those orders are left out, and the export follows the box. Dealers see outgoing shipments only, never warehouse picks. The order page links each shipment to a page with the ship-to, the products, and the delivery slip. `/my/deliveries` and `/my/backorders` open My Orders.
+My Orders lists carrier tracking for every outgoing shipment. My Orders has four tabs: All Orders (search, filters, export), Favorite Orders, Backorders (orders with an open backorder), and Quotes (Odoo's quotations, `/my/quotes`; the Quotations box is gone from My Portal). Backordered orders carry a Backordered pill on All Orders. Dealers see outgoing shipments only, never warehouse picks. The order page links each shipment to a page with the ship-to, the products, and the delivery slip. `/my/deliveries` and `/my/backorders` open My Orders.
 
 The order page uses Odoo's delivery list for the status and the return slip. Sale Information stays Sale Information.
 
@@ -10,4 +10,4 @@ My Orders also searches by order number, PO, ship-to, product, or serial, and fi
 
 ## Decisions
 
-Pins are per login, default limit 5, on the company (`int_max_pinned`). Reorder explains unavailable products before adding anything. A spreadsheet PO goes into the cart. A PDF PO becomes a draft quotation with a private attachment. The ship-to dock, forklift, and location type are copied onto the delivery when it is created.
+Favorite orders (`int.favorite.order`) are saved product lists shared by every login of the dealer (the commercial partner) on that company's website, 25 per dealer by default (`int_max_favorites` in Settings). Starring an order on All Orders or the order page saves its product lines (no shipping, discounts, notes) under the order number, renamed in the same dialog. "Save Cart as a Favorite" on the cart saves a list that was never ordered. A favorite is a copy: editing it (name, quantities, remove, add a product by name or SKU) never touches the order. Owner and Buyer change favorites; everyone who sees orders sees them; adding to the cart follows the ordering role and uses today's prices. Removing one archives it so Undo can bring it back. The 19.0.1.4.0 update turned each starred order into a favorite named by its order number. Reorder explains unavailable products before adding anything. A spreadsheet PO goes into the cart. A PDF PO becomes a draft quotation with a private attachment. The ship-to dock, forklift, and location type are copied onto the delivery when it is created.

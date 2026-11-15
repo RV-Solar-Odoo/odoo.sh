@@ -1,0 +1,685 @@
+// My Orders tabs and Favorite Orders, in the brand colours. Same tabs as
+// My addresses, same cards as Help & Feedback.
+$int-fav-blue: #0054a8;
+$int-fav-blue-dark: #004488;
+$int-fav-ink: #161b2e;
+$int-fav-muted: #767c96;
+$int-fav-body: #4a5068;
+$int-fav-line: #e3e6f3;
+$int-fav-soft: #eef0f5;
+$int-fav-gold: #e0a100;
+
+// Tabs
+.o_int_order_tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    margin: 0.5rem 0 1.25rem;
+    border-bottom: 1px solid $int-fav-line;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    @media (max-width: 575.98px) {
+        gap: 0;
+    }
+}
+
+.o_int_order_tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: -1px;
+    padding: 0.75rem 1rem;
+    border-bottom: 3px solid transparent;
+    color: $int-fav-muted;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+
+    &:hover,
+    &:focus-visible {
+        color: $int-fav-ink;
+    }
+
+    &.active {
+        color: $int-fav-blue;
+        border-bottom-color: $int-fav-blue;
+
+        .o_int_order_tab_count {
+            background: $int-fav-blue;
+            color: #fff;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        flex: 1 1 0;
+        flex-direction: column;
+        gap: 0.3rem;
+        padding: 0.6rem 0.25rem;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        text-align: center;
+        white-space: normal;
+    }
+}
+
+.o_int_order_tab_count {
+    min-width: 1.6rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(0, 84, 168, 0.08);
+    color: $int-fav-blue;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.o_int_tab_hint {
+    margin: -0.25rem 0 1rem;
+    color: $int-fav-muted;
+    font-size: 0.9rem;
+}
+
+// Saved / Removed · Undo
+.o_int_fav_notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid $int-fav-line;
+    border-left: 4px solid $int-fav-gold;
+    border-radius: 10px;
+    background: #fff;
+    color: $int-fav-ink;
+    font-size: 0.95rem;
+
+    .fa-star {
+        color: $int-fav-gold;
+    }
+
+    a,
+    .btn-link {
+        color: $int-fav-blue;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+}
+
+// The star on All Orders and the order page
+.o_int_pin_btn {
+    font-size: 1.15rem;
+    cursor: pointer;
+
+    &.o_int_pin_on,
+    &.o_int_pin_on:hover {
+        color: $int-fav-gold;
+    }
+}
+
+// Save dialogs
+.o_int_fav_modal {
+    .modal-content {
+        border: 1px solid #c9d6ea;
+        border-radius: 14px;
+    }
+
+    .modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+
+        .fa-star {
+            margin-right: 0.35rem;
+            color: $int-fav-gold;
+        }
+    }
+
+    .form-label {
+        color: $int-fav-body;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .form-control {
+        min-height: 44px;
+        border-radius: 10px;
+
+        &:focus {
+            border-color: $int-fav-blue;
+            box-shadow: 0 0 0 3px rgba(0, 84, 168, 0.12);
+        }
+    }
+
+    .btn {
+        min-height: 44px;
+        padding: 0 1.1rem;
+        font-weight: 600;
+    }
+}
+
+.o_int_fav_hint {
+    margin: 0.75rem 0 0;
+    color: $int-fav-muted;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.o_int_fav_cart_btn {
+    min-height: 44px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+// Favorite Orders list
+.o_int_favs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.o_int_fav_empty {
+    padding: 2rem 1.5rem;
+    border: 1px dashed #d9dee7;
+    border-radius: 14px;
+    color: $int-fav-muted;
+    text-align: center;
+}
+
+.o_int_fav {
+    border: 1px solid $int-fav-line;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(22, 27, 46, 0.05);
+    overflow: hidden;
+
+    &:has(.collapse.show),
+    &.o_int_fav_open {
+        border-color: $int-fav-blue;
+    }
+}
+
+.o_int_fav_head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.o_int_fav_star {
+    display: inline-flex;
+    margin: 0;
+
+    .btn-link,
+    & {
+        color: $int-fav-gold;
+        font-size: 1.3rem;
+        cursor: pointer;
+    }
+}
+
+.o_int_fav_title {
+    display: flex;
+    flex: 1 1 240px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.o_int_fav_name {
+    color: $int-fav-ink;
+    font-size: 1.05rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.o_int_fav_meta {
+    color: $int-fav-muted;
+    font-size: 0.875rem;
+}
+
+.o_int_fav_thumbs {
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+
+    .o_int_fav_thumb {
+        width: 44px;
+        height: 44px;
+        margin-left: -12px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px $int-fav-line;
+    }
+}
+
+.o_int_fav_thumb {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 auto;
+    object-fit: contain;
+    border: 1px solid $int-fav-soft;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.o_int_fav_count {
+    color: $int-fav-body;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.o_int_fav_total {
+    min-width: 6.5rem;
+    color: $int-fav-blue;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.o_int_fav_reorder {
+    margin: 0;
+}
+
+.o_int_fav .btn-primary,
+.o_int_fav_edit .btn-primary {
+    min-height: 44px;
+    padding: 0 1.1rem;
+    border-color: $int-fav-blue;
+    background: $int-fav-blue;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+        border-color: $int-fav-blue-dark;
+        background: $int-fav-blue-dark;
+    }
+}
+
+.o_int_fav_edit .btn-outline-primary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 1.1rem;
+    font-weight: 600;
+}
+
+.o_int_fav_chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: $int-fav-muted;
+    font-size: 1.4rem;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(0, 84, 168, 0.08);
+        color: $int-fav-blue;
+    }
+
+    .fa {
+        transition: transform 0.2s;
+    }
+
+    &[aria-expanded="true"] .fa {
+        transform: rotate(180deg);
+    }
+}
+
+.o_int_fav_body {
+    border-top: 1px solid $int-fav-line;
+    background: #fbfbfd;
+}
+
+.o_int_fav_line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid $int-fav-soft;
+
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin: 0;
+        cursor: pointer;
+
+        &:checked {
+            border-color: $int-fav-blue;
+            background-color: $int-fav-blue;
+        }
+    }
+}
+
+.o_int_fav_product {
+    display: flex;
+    flex: 1 1 240px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    color: $int-fav-ink;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+// Same tag as the shop's product tags.
+.o_int_fav_sku {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #e1e4eb;
+    color: #686f86;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.o_int_fav_price {
+    min-width: 7rem;
+    color: $int-fav-body;
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.o_int_fav_qty {
+    color: $int-fav-body;
+    font-size: 0.9rem;
+}
+
+.o_int_step {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #c9d6ea;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+
+    button {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        background: #fff;
+        color: $int-fav-blue;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(0, 84, 168, 0.08);
+        }
+    }
+
+    input {
+        width: 52px;
+        height: 40px;
+        border: 0;
+        border-right: 1px solid $int-fav-line;
+        border-left: 1px solid $int-fav-line;
+        color: $int-fav-ink;
+        font-weight: 500;
+        text-align: center;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            margin: 0;
+            -webkit-appearance: none;
+        }
+    }
+}
+
+.o_int_fav_foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+}
+
+.o_int_fav_links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+
+    a {
+        color: $int-fav-blue;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    a.o_int_fav_muted {
+        color: $int-fav-muted;
+        font-weight: 400;
+    }
+}
+
+// Edit Favorite
+.o_int_fav_edit {
+    margin-bottom: 2rem;
+    border-width: 2px;
+}
+
+.o_int_fav_edit_head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+    padding: 1.25rem;
+    border-bottom: 1px solid $int-fav-line;
+
+    .o_int_fav_meta {
+        padding-bottom: 0.75rem;
+    }
+}
+
+.o_int_fav_name_field {
+    display: flex;
+    flex: 1 1 320px;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: $int-fav-body;
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    .form-control {
+        min-height: 44px;
+        border-color: #c9d6ea;
+        border-radius: 10px;
+        color: $int-fav-ink;
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+}
+
+.o_int_fav_remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: #9aa0b4;
+    font-size: 1.1rem;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(220, 53, 69, 0.08);
+        color: #dc3545;
+    }
+}
+
+.o_int_fav_removed {
+    opacity: 0.45;
+
+    .o_int_fav_product {
+        text-decoration: line-through;
+    }
+
+    .o_int_fav_remove {
+        color: $int-fav-blue;
+        opacity: 1;
+    }
+}
+
+.o_int_fav_new {
+    background: rgba(0, 84, 168, 0.03);
+}
+
+.o_int_fav_add {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid $int-fav-soft;
+}
+
+.o_int_fav_add_field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 0.9rem;
+    border: 1px dashed #c9d6ea;
+    border-radius: 10px;
+    background: #fbfbfd;
+    color: $int-fav-muted;
+
+    input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: none;
+        color: $int-fav-ink;
+    }
+
+    &:focus-within {
+        border-style: solid;
+        border-color: $int-fav-blue;
+    }
+}
+
+.o_int_fav_results {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    border: 1px solid $int-fav-line;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(22, 27, 46, 0.1);
+    list-style: none;
+    overflow: hidden;
+
+    li + li {
+        border-top: 1px solid $int-fav-soft;
+    }
+}
+
+.o_int_fav_result {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border: 0;
+    background: #fff;
+    color: $int-fav-ink;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        background: #f3f7fd;
+    }
+
+    img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+
+    > span:not(.o_int_fav_result_add) {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+
+        small {
+            color: $int-fav-muted;
+        }
+    }
+
+    strong {
+        color: $int-fav-blue;
+    }
+}
+
+.o_int_fav_result_add {
+    color: $int-fav-blue;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.o_int_fav_noresult {
+    padding: 0.75rem 0.9rem;
+    color: $int-fav-muted;
+}
+
+.o_int_fav_delete {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #b42318;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// Phones: the row wraps; keep the price and buttons on one line.
+@media (max-width: 575.98px) {
+    .o_int_fav_head {
+        padding: 0.9rem 1rem;
+    }
+
+    .o_int_fav_total {
+        min-width: 0;
+        margin-left: auto;
+    }
+
+    .o_int_fav_line {
+        padding: 0.75rem 1rem;
+    }
+
+    .o_int_fav_price {
+        min-width: 0;
+        text-align: left;
+    }
+}

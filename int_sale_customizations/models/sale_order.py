@@ -189,38 +189,6 @@ class SaleOrder(models.Model):
         return domain + combined
 
     @api.model
-    def _int_portal_orders_page(self, domain, order, pinned_ids, limit, offset, first_ids=None):
-        """One page of the My Orders list: pinned orders, then ``first_ids``
-        (backorders when "Show backorders" is ticked), then the rest.
-
-        The chosen sort still applies inside each group. An id that does not
-        match ``domain`` stays off the page.
-        """
-        if not self.has_access("read"):
-            return self.browse()
-        groups = []
-        rest = list(domain)
-        for ids in (pinned_ids, first_ids or []):
-            ids = [order_id for order_id in ids if isinstance(order_id, int)]
-            if ids:
-                groups.append(rest + [("id", "in", ids)])
-                rest = rest + [("id", "not in", ids)]
-        groups.append(rest)
-        records = self.browse()
-        skip = offset
-        for index, group in enumerate(groups):
-            if index < len(groups) - 1:
-                count = self.search_count(group)
-                if skip >= count:
-                    skip -= count
-                    continue
-            records += self.search(group, order=order, limit=limit - len(records), offset=skip)
-            skip = 0
-            if len(records) >= limit:
-                break
-        return records
-
-    @api.model
     def _int_serial_order_ids(self, commercial, term):
         if not self._int_portal_commercial_allowed(commercial):
             return []
@@ -670,6 +638,12 @@ class SaleOrderLine(models.Model):
         if self.display_type or not product or product.type != "consu":
             return False
         return not self._int_is_charge_line()
+
+    def _int_is_favorite_line(self):
+        """A line a favorite order copies: a product the dealer picked, not
+        shipping, a discount, a down payment, a section or a note."""
+        self.ensure_one()
+        return bool(self.product_id) and not self.display_type and not self._int_is_charge_line()
 
     def _int_is_charge_line(self):
         """Shipping, a down payment, or a discount or coupon line: not something

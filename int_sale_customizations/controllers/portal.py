@@ -5,6 +5,7 @@ from urllib.parse import quote
 from odoo import _
 from odoo.exceptions import UserError
 from odoo.http import request, route
+from odoo.tools.misc import formatLang
 
 from odoo.addons.portal.controllers.portal import pager as portal_pager
 from odoo.addons.sale.controllers.portal import CustomerPortal
@@ -26,54 +27,54 @@ class CustomerPortal(CustomerPortal):
         self, page=1, date_begin=None, date_end=None, sortby=None, quotation_page=False, **kwargs
     ):
         if quotation_page:
-            return super()._prepare_sale_portal_rendering_values(
+            values = super()._prepare_sale_portal_rendering_values(
                 page=page, date_begin=date_begin, date_end=date_end, sortby=sortby,
                 quotation_page=True, **kwargs,
             )
+            values.update(self._int_order_tab_values("quotes"))
+            return values
         user = request.env.user
         if user.share and not user.int_portal_can("view_orders"):
             return request.redirect("/my")
-        search = (kwargs.get("search") or "").strip()
+        tab = "backorders" if kwargs.get("int_tab") == "backorders" else "all"
+        search = (kwargs.get("search") or "").strip() if tab == "all" else ""
         search_in = kwargs.get("search_in") or "all"
-        filterby = kwargs.get("filterby") or "all"
+        filterby = "backordered" if tab == "backorders" else (kwargs.get("filterby") or "all")
         sortby = sortby or "date"
         sortings = self._get_sale_searchbar_sortings()
         if sortby not in sortings:
             sortby = "date"
-        show_backorders = self._int_show_backorders(kwargs)
         commercial = user.partner_id.commercial_partner_id
         SaleOrder = request.env["sale.order"]
         domain = SaleOrder._int_portal_order_domain(
             commercial, search=search, search_in=search_in, filterby=filterby,
-            date_begin=date_begin, date_end=date_end, backorders=show_backorders,
+            date_begin=date_begin, date_end=date_end,
         )
-        backordered_ids = SaleOrder._int_portal_backordered_ids(commercial)
-        url_args = {
-            "date_begin": date_begin,
-            "date_end": date_end,
-            "sortby": sortby,
-            "filterby": filterby,
-            "search": search,
-            "search_in": search_in,
-            "int_bo": "1",
-            "backorders": "1" if show_backorders else "",
-        }
-        total = SaleOrder.search_count(domain) if SaleOrder.has_access("read") else 0
+        url = "/my/backorders" if tab == "backorders" else "/my/orders"
+        url_args = {"sortby": sortby}
+        if tab == "all":
+            url_args.update({
+                "date_begin": date_begin,
+                "date_end": date_end,
+                "filterby": filterby,
+                "search": search,
+                "search_in": search_in,
+            })
+        can_read = SaleOrder.has_access("read")
+        total = SaleOrder.search_count(domain) if can_read else 0
         pager_values = portal_pager(
-            url="/my/orders",
+            url=url,
             total=total,
             page=page,
             step=self._items_per_page,
             url_args=url_args,
         )
-        orders = SaleOrder._int_portal_orders_page(
+        orders = SaleOrder.search(
             domain,
-            sortings[sortby]["order"],
-            user.int_pinned_order_ids.ids,
-            self._items_per_page,
-            pager_values["offset"],
-            first_ids=backordered_ids if show_backorders else None,
-        )
+            order=sortings[sortby]["order"],
+            limit=self._items_per_page,
+            offset=pager_values["offset"],
+        ) if can_read else SaleOrder
         values = self._prepare_portal_layout_values()
         values.update({
             "date": date_begin,
@@ -82,29 +83,54 @@ class CustomerPortal(CustomerPortal):
             "orders": orders.sudo(),
             "page_name": "order",
             "pager": pager_values,
-            "default_url": "/my/orders",
+            "default_url": url,
             "sortby": sortby,
             "search": search,
             "search_in": search_in,
             "filterby": filterby,
             "int_search_error": kwargs.get("int_error") or "",
-            "int_show_backorders": show_backorders,
-            "int_backordered_ids": set(backordered_ids),
+            "int_backordered_ids": set(SaleOrder._int_portal_backordered_ids(commercial)),
+            "int_fav_by_order": self._int_favorites_by_order(orders),
         })
+        values.update(self._int_order_tab_values(tab))
         return values
 
-    @staticmethod
-    def _int_show_backorders(kwargs):
-        """The My Orders "Show backorders" box. Ticked unless the form says otherwise.
+    # My Orders tabs: All Orders, Favorite Orders, Backorders, Quotes.
 
-        The form always sends ``int_bo``, so an unticked box is told apart from
-        a first visit. The old Backordered filter still shows them.
-        """
-        if (kwargs.get("filterby") or "") == "backordered":
-            return True
-        if not kwargs.get("int_bo"):
-            return True
-        return kwargs.get("backorders") == "1"
+    def _int_company(self):
+        return request.website.company_id or request.env.company
+
+    def _int_order_tab_values(self, tab):
+        user = request.env.user
+        commercial = user.partner_id.commercial_partner_id
+        SaleOrder = request.env["sale.order"]
+        can_read = SaleOrder.has_access("read")
+        counts = {"all": 0, "favorites": 0, "backorders": 0, "quotes": 0}
+        if can_read:
+            counts["all"] = SaleOrder.search_count(SaleOrder._int_portal_order_domain(commercial))
+            counts["backorders"] = SaleOrder.search_count(
+                SaleOrder._int_portal_order_domain(commercial, filterby="backordered")
+            )
+            counts["quotes"] = SaleOrder.search_count(self._prepare_quotations_domain(user.partner_id))
+        counts["favorites"] = len(request.env["int.favorite.order"]._int_for_user(user, self._int_company()))
+        return {
+            "int_tab": tab,
+            "int_tab_counts": counts,
+            "int_can_edit_favorites": user.int_portal_can("pin_orders"),
+            "int_can_order": user.int_portal_can("place_orders") and not user.int_portal_ordering_blocked(),
+            "int_fav_notice": self._int_favorite_notice(),
+        }
+
+    def _int_favorites_by_order(self, orders):
+        user = request.env.user
+        if user._is_public():
+            return {}
+        return request.env["int.favorite.order"]._int_by_order(user, self._int_company(), orders)
+
+    def _int_favorite_notice(self):
+        return request.env["int.favorite.order"]._int_notice(
+            request.env.user, self._int_company(), request.params,
+        )
 
     def _int_owned_order(self, order_id):
         order = request.env["sale.order"].browse(order_id).exists()
@@ -147,7 +173,6 @@ class CustomerPortal(CustomerPortal):
             filterby=kwargs.get("filterby") or "all",
             date_begin=kwargs.get("date_begin"),
             date_end=kwargs.get("date_end"),
-            backorders=self._int_show_backorders(kwargs),
         )
         orders = request.env["sale.order"].search(domain, limit=10001)
         rows = orders.sudo()._int_export_rows()
@@ -167,10 +192,18 @@ class CustomerPortal(CustomerPortal):
             ("Content-Disposition", f"attachment; filename={filename}"),
         ])
 
-    @route(["/my/deliveries", "/my/deliveries/page/<int:page>", "/my/backorders"], type="http", auth="user", website=True)
+    @route(["/my/deliveries", "/my/deliveries/page/<int:page>"], type="http", auth="user", website=True)
     def int_portal_deliveries(self, **kwargs):
-        """The Deliveries list is gone. Backorders are on My Orders."""
-        return request.redirect("/my/orders")
+        """The Deliveries list is gone. Backorders have their own tab on My Orders."""
+        return request.redirect("/my/backorders")
+
+    @route(["/my/backorders", "/my/backorders/page/<int:page>"], type="http", auth="user", website=True)
+    def int_portal_backorders(self, **kwargs):
+        kwargs["int_tab"] = "backorders"
+        values = self._prepare_sale_portal_rendering_values(quotation_page=False, **kwargs)
+        if not isinstance(values, dict):
+            return values
+        return request.render("sale.portal_my_orders", values)
 
     @route("/my/deliveries/<int:picking_id>", type="http", auth="user", website=True)
     def int_portal_delivery(self, picking_id, **kwargs):
@@ -187,16 +220,207 @@ class CustomerPortal(CustomerPortal):
             "delivery": delivery,
         })
 
-    @route("/my/orders/<int:order_id>/pin", type="http", auth="user", website=True, methods=["POST"])
-    def int_order_pin(self, order_id, **kwargs):
+    # Favorite orders: saved product lists, shared by the dealer's logins.
+
+    @staticmethod
+    def _int_back(url, default):
+        """Only send people back to a My Portal page or the cart."""
+        url = url or ""
+        if url.startswith(("/my/", "/shop/cart")) and not url.startswith("//") and "\\" not in url:
+            return url
+        return default
+
+    @staticmethod
+    def _int_with_param(url, key, value):
+        separator = "&" if "?" in url else "?"
+        return f"{url}{separator}{key}={quote(str(value))}"
+
+    def _int_favorite(self, favorite_id, active=True):
+        return request.env["int.favorite.order"]._int_for_user(
+            request.env.user, self._int_company(), favorite_id, active=active,
+        )
+
+    def _int_live_prices(self, products):
+        """{product id: price} as the shop shows it to this customer today."""
+        prices = {}
+        for product in products:
+            if product.id not in prices:
+                prices[product.id] = product._get_combination_info_variant()["price"]
+        return prices
+
+    def _int_error_redirect(self, url, exc):
+        return request.redirect(self._int_with_param(url, "int_error", exc.args[0]))
+
+    @route("/my/favorites", type="http", auth="user", website=True)
+    def int_portal_favorites(self, **kwargs):
+        user = request.env.user
+        if user.share and not user.int_portal_can("view_orders"):
+            return request.redirect("/my")
+        favorites = request.env["int.favorite.order"]._int_for_user(user, self._int_company())
+        prices = self._int_live_prices(favorites.line_ids.product_id)
+        totals = {
+            favorite.id: sum(prices[line.product_id.id] * line.quantity for line in favorite.line_ids)
+            for favorite in favorites
+        }
+        values = self._prepare_portal_layout_values()
+        values.update(self._int_order_tab_values("favorites"))
+        values.update({
+            "page_name": "order",
+            "favorites": favorites,
+            "int_prices": prices,
+            "int_totals": totals,
+            "int_open_id": int(kwargs["open"]) if str(kwargs.get("open", "")).isdigit() else False,
+            "int_error": kwargs.get("int_error") or "",
+            "int_owned_orders": favorites.source_order_id.filtered(lambda order: order._int_owned_by(user)),
+        })
+        return request.render("int_sale_customizations.portal_my_favorites", values)
+
+    @route("/my/favorites/<int:favorite_id>/edit", type="http", auth="user", website=True)
+    def int_portal_favorite_edit(self, favorite_id, **kwargs):
+        user = request.env.user
+        favorite = self._int_favorite(favorite_id)
+        if not favorite or not user.int_portal_can("pin_orders"):
+            return request.redirect("/my/favorites")
+        values = self._prepare_portal_layout_values()
+        values.update(self._int_order_tab_values("favorites"))
+        values.update({
+            "page_name": "int_favorite",
+            "favorite": favorite,
+            "int_prices": self._int_live_prices(favorite.line_ids.product_id),
+            "int_error": kwargs.get("int_error") or "",
+        })
+        return request.render("int_sale_customizations.portal_favorite_edit", values)
+
+    @route("/my/favorites/<int:favorite_id>/save", type="http", auth="user", website=True, methods=["POST"])
+    def int_portal_favorite_save(self, favorite_id, name=None, **post):
+        favorite = self._int_favorite(favorite_id)
+        if not favorite:
+            return request.redirect("/my/favorites")
+        quantities, removed, added = {}, set(), {}
+        for key, value in post.items():
+            if key.startswith("qty_") and key[4:].isdigit():
+                quantities[int(key[4:])] = value
+            elif key.startswith("remove_") and key[7:].isdigit() and value == "1":
+                removed.add(int(key[7:]))
+            elif key.startswith("add_") and key[4:].isdigit():
+                added[int(key[4:])] = value
+        try:
+            favorite._int_apply_edit(
+                request.env.user, name=name, quantities=quantities, removed=removed,
+                added=added, website=request.website,
+            )
+        except UserError as exc:
+            return self._int_error_redirect(f"/my/favorites/{favorite.id}/edit", exc)
+        return request.redirect(f"/my/favorites?open={favorite.id}&int_fav_saved={favorite.id}")
+
+    @route("/my/favorites/<int:favorite_id>/delete", type="http", auth="user", website=True, methods=["POST"])
+    def int_portal_favorite_delete(self, favorite_id, redirect=None, **kwargs):
+        back = self._int_back(redirect, "/my/favorites")
+        favorite = self._int_favorite(favorite_id)
+        if not favorite:
+            return request.redirect(back)
+        try:
+            favorite._int_archive(request.env.user)
+        except UserError as exc:
+            return self._int_error_redirect(back, exc)
+        return request.redirect(self._int_with_param(back, "int_fav_removed", favorite.id))
+
+    @route("/my/favorites/<int:favorite_id>/restore", type="http", auth="user", website=True, methods=["POST"])
+    def int_portal_favorite_restore(self, favorite_id, redirect=None, **kwargs):
+        back = self._int_back(redirect, "/my/favorites")
+        favorite = self._int_favorite(favorite_id, active=False)
+        if not favorite:
+            return request.redirect(back)
+        try:
+            favorite._int_restore(request.env.user, self._int_company())
+        except UserError as exc:
+            return self._int_error_redirect(back, exc)
+        return request.redirect(back)
+
+    @route("/my/favorites/<int:favorite_id>/cart", type="http", auth="user", website=True, methods=["POST"])
+    def int_portal_favorite_cart(self, favorite_id, confirm=None, **post):
+        user = request.env.user
+        favorite = self._int_favorite(favorite_id)
+        if not favorite or not user.int_portal_can("place_orders") or user.int_portal_ordering_blocked():
+            return request.redirect("/my/favorites")
+        selected = None
+        if post.get("selected") == "1":
+            selected = {}
+            for key, value in post.items():
+                if key.startswith("line_") and key[5:].isdigit():
+                    line_id = int(key[5:])
+                    selected[line_id] = post.get(f"qty_{line_id}", value)
+        addable, skipped = favorite._int_cart_plan(request.website, selected)
+        if skipped and not confirm:
+            return request.render("int_sale_customizations.portal_favorite_review", {
+                "page_name": "int_favorite",
+                "favorite": favorite,
+                "int_addable": addable,
+                "int_skipped": skipped,
+                "int_selected": selected,
+            })
+        if not addable:
+            return request.redirect(self._int_with_param(
+                "/my/favorites", "int_error", _("None of the selected products can be ordered online."),
+            ))
+        cart = self._int_cart()
+        for product, qty in addable:
+            cart._cart_add(product_id=product.id, quantity=qty)
+        return request.redirect("/shop/cart")
+
+    @route("/my/favorites/products", type="http", auth="user", website=True, methods=["GET"])
+    def int_portal_favorite_products(self, q="", **kwargs):
+        """Products to add to a favorite: name or SKU, on this website, at today's price."""
+        if not request.env.user.int_portal_can("pin_orders"):
+            return request.make_json_response({"products": []}, status=403)
+        term = " ".join((q or "").split())[:60]
+        if len(term) < 2:
+            return request.make_json_response({"products": []})
+        company = self._int_company()
+        candidates = request.env["product.product"].sudo().search([
+            ("sale_ok", "=", True),
+            ("company_id", "in", [company.id, False]),
+            "|", ("name", "ilike", term), ("default_code", "ilike", term),
+        ], limit=30)
+        SaleOrder = request.env["sale.order"]
+        products = candidates.filtered(
+            lambda product: SaleOrder._int_product_on_website(product, request.website)
+        )[:8]
+        prices = self._int_live_prices(products)
+        currency = request.website.currency_id
+        return request.make_json_response({"products": [{
+            "id": product.id,
+            "name": product.with_context(display_default_code=False).display_name,
+            "sku": product.default_code or "",
+            "price": prices[product.id],
+            "price_label": formatLang(request.env, prices[product.id], currency_obj=currency),
+            "image": f"/web/image/product.product/{product.id}/image_128",
+        } for product in products]})
+
+    @route("/my/orders/<int:order_id>/favorite", type="http", auth="user", website=True, methods=["POST"])
+    def int_order_favorite(self, order_id, name=None, redirect=None, **kwargs):
+        back = self._int_back(redirect, "/my/orders")
         order = self._int_owned_order(order_id)
         if not order:
-            return request.redirect("/my/orders")
+            return request.redirect(back)
         try:
-            request.env.user.int_portal_toggle_pin(order)
+            favorite = request.env["int.favorite.order"]._int_create_from_order(
+                request.env.user, self._int_company(), order, name=name,
+            )
         except UserError as exc:
-            return request.redirect("/my/orders?int_error=%s" % quote(str(exc.args[0])))
-        return request.redirect(kwargs.get("redirect") or "/my/orders")
+            return self._int_error_redirect(back, exc)
+        return request.redirect(self._int_with_param(back, "int_fav_saved", favorite.id))
+
+    @route("/shop/cart/favorite", type="http", auth="user", website=True, methods=["POST"])
+    def int_cart_favorite(self, name=None, **kwargs):
+        cart = request.website._get_and_cache_current_cart()
+        try:
+            favorite = request.env["int.favorite.order"]._int_create_from_cart(
+                request.env.user, self._int_company(), cart, name=name,
+            )
+        except UserError as exc:
+            return self._int_error_redirect("/shop/cart", exc)
+        return request.redirect(self._int_with_param("/shop/cart", "int_fav_saved", favorite.id))
 
     @route("/my/orders/<int:order_id>/reorder", type="http", auth="user", website=True, methods=["POST"])
     def int_order_reorder(self, order_id, confirm=None, **kwargs):
