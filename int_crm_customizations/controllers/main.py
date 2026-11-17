@@ -8,11 +8,13 @@ from odoo.addons.website.controllers.form import WebsiteForm
 
 REASON_FIELD = "x_tax_exemption_reason"
 DOCUMENT_FIELD = "x_tax_exemption_document"
+# Extension -> content types it may be detected as. Older libmagic calls BMP image/x-ms-bmp.
 ALLOWED_DOCUMENTS = {
-    ".pdf": "application/pdf",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".png": "image/png",
+    ".pdf": {"application/pdf"},
+    ".jpg": {"image/jpeg"},
+    ".jpeg": {"image/jpeg"},
+    ".png": {"image/png"},
+    ".bmp": {"image/bmp", "image/x-ms-bmp"},
 }
 
 
@@ -60,8 +62,8 @@ def int_tax_exemption_error(env, params):
         extension = "." + document.filename.rsplit(".", 1)[-1].lower()
         content = document.stream.read(1024)
         document.stream.seek(0)
-        if ALLOWED_DOCUMENTS.get(extension) != guess_mimetype(content):
-            return env._("Your tax exemption certificate must be a PDF, JPG or PNG file.")
+        if guess_mimetype(content) not in ALLOWED_DOCUMENTS.get(extension, ()):
+            return env._("Your tax exemption certificate must be a PDF, JPG, PNG or BMP file.")
     return None
 
 

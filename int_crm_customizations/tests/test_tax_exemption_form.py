@@ -42,13 +42,25 @@ class TestTaxExemptionForm(TransactionCase):
         missing = {"x_is_tax_exempt": "Yes", "x_tax_exemption_reason": self._reason()}
         self.assertIn("upload", int_tax_exemption_error(self.env, missing))
 
+    def test_bmp_certificate_is_accepted(self):
+        # A 1x1 BMP: 14-byte file header, 40-byte info header, one padded pixel.
+        bmp = (b"BM" + (58).to_bytes(4, "little") + b"\0\0\0\0" + (54).to_bytes(4, "little")
+               + (40).to_bytes(4, "little") + (1).to_bytes(4, "little") + (1).to_bytes(4, "little")
+               + (1).to_bytes(2, "little") + (24).to_bytes(2, "little") + b"\0" * 24 + b"\xff\xff\xff\0")
+        params = {
+            "x_is_tax_exempt": "Yes",
+            "x_tax_exemption_reason": self._reason(),
+            "Exemption Certificate[0][0]": self._file("certificate.BMP", bmp),
+        }
+        self.assertIsNone(int_tax_exemption_error(self.env, params))
+
     def test_wrong_file_type_is_refused(self):
         params = {
             "x_is_tax_exempt": "Yes",
             "x_tax_exemption_reason": self._reason(),
             "Exemption Certificate[0][0]": self._file("certificate.pdf", b"not a pdf at all"),
         }
-        self.assertIn("PDF, JPG or PNG", int_tax_exemption_error(self.env, params))
+        self.assertIn("PDF, JPG, PNG or BMP", int_tax_exemption_error(self.env, params))
 
     def test_unticked_box_drops_the_certificate(self):
         params = {

@@ -8,7 +8,7 @@ export class TaxExemptionUpload extends Interaction {
         "input[type='file']:is([name='x_tax_exemption_document'], [name='Exemption Certificate'], [name='Tax Exemption Certificate'])";
 
     start() {
-        this.el.accept = ".pdf,.jpg,.jpeg,.png";
+        this.el.accept = ".pdf,.jpg,.jpeg,.png,.bmp";
     }
 }
 
