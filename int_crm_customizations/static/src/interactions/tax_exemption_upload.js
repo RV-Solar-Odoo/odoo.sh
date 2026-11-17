@@ -3,7 +3,9 @@ import { registry } from "@web/core/registry";
 
 // The website editor has no setting for which file types an upload accepts.
 export class TaxExemptionUpload extends Interaction {
-    static selector = "input[type='file'][name='x_tax_exemption_document']";
+    // The live form's upload is a custom field named "Exemption Certificate".
+    static selector =
+        "input[type='file']:is([name='x_tax_exemption_document'], [name='Exemption Certificate'], [name='Tax Exemption Certificate'])";
 
     start() {
         this.el.accept = ".pdf,.jpg,.jpeg,.png";
