@@ -69,3 +69,17 @@ class TestTaxExemptionForm(TransactionCase):
         }
         self.assertIsNone(int_tax_exemption_error(self.env, params))
         self.assertEqual(params, {})
+
+    def test_studio_checkbox_counts_as_the_claim(self):
+        # The form once used the old Studio "Tax Exempt" box with the custom upload.
+        params = {
+            "x_studio_tax_exempt": "Yes",
+            "x_tax_exemption_reason": self._reason(),
+            "Exemption Certificate[1][0]": self._file(),
+        }
+        self.assertIsNone(int_tax_exemption_error(self.env, params))
+        self.assertEqual(params["x_is_tax_exempt"], "Yes")
+        self.assertIn(DOCUMENT_FIELD + "[1][0]", params)
+        self.assertEqual(params["x_tax_exemption_reason"], self._reason())
+        missing = {"x_studio_tax_exempt": "Yes", "x_tax_exemption_reason": self._reason()}
+        self.assertIn("upload", int_tax_exemption_error(self.env, missing))

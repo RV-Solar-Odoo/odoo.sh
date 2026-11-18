@@ -6,6 +6,9 @@ from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.website.controllers.form import WebsiteForm
 
+EXEMPT_FIELD = "x_is_tax_exempt"
+# The pre-module Studio checkbox. The live form has used it in place of EXEMPT_FIELD.
+STUDIO_EXEMPT_FIELD = "x_studio_tax_exempt"
 REASON_FIELD = "x_tax_exemption_reason"
 DOCUMENT_FIELD = "x_tax_exemption_document"
 # Extension -> content types it may be detected as. Older libmagic calls BMP image/x-ms-bmp.
@@ -43,9 +46,13 @@ def int_bind_tax_exemption_document(params):
 def int_tax_exemption_error(env, params):
     """Check the claim, and drop what a dealer filled in before unticking the box."""
     int_bind_tax_exemption_document(params)
+    # Either checkbox counts, and the lead gets the module's tick so the
+    # Tax Exemption tab and Grant Tax Exemption see the claim.
+    if params.get(STUDIO_EXEMPT_FIELD) and not params.get(EXEMPT_FIELD):
+        params[EXEMPT_FIELD] = params[STUDIO_EXEMPT_FIELD]
     # The website form sends a file under an indexed name, like field[0][0].
     document_keys = [key for key in params if _int_base_name(key) == DOCUMENT_FIELD]
-    if not params.get("x_is_tax_exempt"):
+    if not params.get(EXEMPT_FIELD):
         params.pop(REASON_FIELD, None)
         for key in document_keys:
             params.pop(key)
