@@ -17,15 +17,15 @@
                 <span class="badge text-bg-success mb-2" invisible="not x_tax_exemption_approved">Exemption Approved</span>
             </xpath>
             <xpath expr="//page[@name='internal_notes']" position="after">
+                <page string="Documents" name="int_documents">
+                    <field name="int_document_ids" widget="int_lead_documents" nolabel="1"/>
+                </page>
                 <page string="Tax Exemption" name="tax_exemption">
                     <group>
                         <group>
                             <field name="x_is_tax_exempt"/>
                             <field name="x_tax_exemption_reason" invisible="not x_is_tax_exempt"/>
-                            <field name="x_tax_exemption_document_filename" invisible="1"/>
-                            <field name="x_tax_exemption_document"
-                                   filename="x_tax_exemption_document_filename"
-                                   invisible="not x_is_tax_exempt"/>
+                            <field name="int_tax_certificate_status" invisible="not x_is_tax_exempt" readonly="1"/>
                             <field name="x_tax_exemption_approved" invisible="not x_is_tax_exempt"/>
                         </group>
                     </group>

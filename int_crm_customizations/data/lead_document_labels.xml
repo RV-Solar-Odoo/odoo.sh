@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="lead_document_label_business_license" model="int.lead.document.label">
+        <field name="name">Copy of Business License</field>
+        <field name="code">business_license</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="lead_document_label_tax_certificate" model="int.lead.document.label">
+        <field name="name">Tax Exemption Certificate</field>
+        <field name="code">tax_certificate</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="lead_document_label_storefront" model="int.lead.document.label">
+        <field name="name">Business Storefront + Interior</field>
+        <field name="code">storefront</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="lead_document_label_other" model="int.lead.document.label">
+        <field name="name">Other Attachments</field>
+        <field name="code">other</field>
+        <field name="sequence">1000</field>
+    </record>
+</odoo>

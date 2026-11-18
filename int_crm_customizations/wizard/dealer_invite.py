@@ -112,6 +112,14 @@ class IntDealerInvite(models.TransientModel):
                 record.message_post(body=notice, subtype_xmlid="mail.mt_note")
                 noted |= record
         lead.message_post(body=notice, subtype_xmlid="mail.mt_note")
+        copied = lead._int_copy_documents_to_partner(commercial)
+        if copied:
+            notice = _(
+                "%(notice)s Copied %(count)s reviewed document(s) to %(name)s.",
+                notice=notice,
+                count=len(copied),
+                name=commercial.display_name,
+            )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",

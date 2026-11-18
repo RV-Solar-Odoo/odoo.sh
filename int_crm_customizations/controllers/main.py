@@ -83,3 +83,37 @@ class IntTaxExemptionForm(WebsiteForm):
             if error:
                 return json.dumps({"error": error})
         return super().website_form(model_name, **kwargs)
+
+    def insert_attachment(self, model_sudo, id_record, files):
+        """Put each form upload on the lead's Documents tab, labelled by its form field."""
+        is_lead = model_sudo.model == "crm.lead"
+        field_labels = [getattr(file, "field_name", "") for file in files] if is_lead else []
+        res = super().insert_attachment(model_sudo, id_record, files)
+        if is_lead and files:
+            int_documents_from_form(model_sudo.env, id_record, field_labels)
+        return res
+
+
+def int_documents_from_form(env, lead_id, field_labels):
+    """Create a lead document for each attachment the form just added, in upload order.
+
+    Odoo creates one attachment per uploaded file, in the order of ``files``, so the
+    lead's new attachments line up with the field each file came from.
+    """
+    lead = env["crm.lead"].sudo().browse(lead_id).exists()
+    if not lead:
+        return
+    Document = env["int.lead.document"].sudo().with_context(int_document_no_log=True)
+    taken = Document.search([("lead_id", "=", lead.id)]).attachment_id
+    attachments = env["ir.attachment"].sudo().search([
+        ("res_model", "=", "crm.lead"),
+        ("res_id", "=", lead.id),
+        ("id", "not in", taken.ids),
+    ], order="id")
+    Label = env["int.lead.document.label"].sudo()
+    for attachment, field_label in zip(attachments, field_labels):
+        Document.create({
+            "lead_id": lead.id,
+            "label_id": Label._int_for_form_field(field_label).id,
+            "attachment_id": attachment.id,
+        })

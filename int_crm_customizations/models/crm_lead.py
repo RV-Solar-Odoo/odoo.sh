@@ -21,6 +21,21 @@ class CrmLead(models.Model):
     )
     x_tax_exemption_document = fields.Binary(string="Tax Exemption Certificate", attachment=True)
     x_tax_exemption_document_filename = fields.Char()
+    int_document_ids = fields.One2many("int.lead.document", "lead_id", string="Documents")
+    int_tax_certificate_id = fields.Many2one(
+        "int.lead.document",
+        string="Tax Exemption Certificate Document",
+        compute="_compute_int_tax_certificate",
+    )
+    int_tax_certificate_status = fields.Selection(
+        [
+            ("missing", "Missing: upload it on the Documents tab"),
+            ("pending", "Not reviewed yet: see the Documents tab"),
+            ("reviewed", "Reviewed ✓"),
+        ],
+        string="Certificate",
+        compute="_compute_int_tax_certificate",
+    )
     x_tax_exemption_approved = fields.Boolean(
         string="Exemption Approved",
         compute="_compute_x_tax_exemption_approved",
@@ -34,6 +49,72 @@ class CrmLead(models.Model):
         for lead in self:
             if not lead.x_is_tax_exempt:
                 lead.x_tax_exemption_reason = False
+
+    @api.depends("int_document_ids.label_id", "int_document_ids.reviewed")
+    def _compute_int_tax_certificate(self):
+        label = self.env["int.lead.document.label"]._int_by_code("tax_certificate")
+        for lead in self:
+            certificates = lead.int_document_ids.filtered(lambda doc: doc.label_id == label)
+            # A reviewed certificate wins over a newer unreviewed upload.
+            certificate = certificates.filtered("reviewed")[-1:] or certificates[-1:]
+            lead.int_tax_certificate_id = certificate
+            if not certificate:
+                lead.int_tax_certificate_status = "missing"
+            else:
+                lead.int_tax_certificate_status = "reviewed" if certificate.reviewed else "pending"
+
+    def _int_document_log(self, body):
+        self.ensure_one()
+        self.sudo().message_post(body=body, subtype_xmlid="mail.mt_note")
+
+    def _int_certificate_to_document(self):
+        """Move an uploaded Tax Exemption Certificate onto the Documents tab.
+
+        The website form and older leads put it in x_tax_exemption_document, which
+        the chatter's Files area does not show. It becomes a plain attachment instead.
+        """
+        label = self.env["int.lead.document.label"]._int_by_code("tax_certificate")
+        Document = self.env["int.lead.document"].sudo().with_context(int_document_no_log=True)
+        for lead in self.sudo().with_context(bin_size=False):
+            data = lead.x_tax_exemption_document
+            if not data or not label:
+                continue
+            Document.create({
+                "lead_id": lead.id,
+                "label_id": label.id,
+                "upload": data,
+                "upload_name": lead.x_tax_exemption_document_filename or label.name,
+            })
+            lead.write({"x_tax_exemption_document": False, "x_tax_exemption_document_filename": False})
+
+    def _int_copy_documents_to_partner(self, partner, documents=None):
+        """Copy reviewed documents to partner and note what was copied and what was skipped."""
+        self.ensure_one()
+        documents = self.int_document_ids if documents is None else documents
+        copied = documents._int_copy_to_partner(partner)
+        skipped = documents.filtered(lambda doc: not doc.reviewed)
+        if not copied and not skipped:
+            return copied
+        lines = []
+        if copied:
+            lines.append(self.env._(
+                "Copied to %(partner)s: %(files)s.",
+                partner=partner.display_name,
+                files=", ".join(f"{doc.label_id.name} ({doc.name})" for doc in copied),
+            ))
+        if skipped:
+            lines.append(self.env._(
+                "Not copied because they are not reviewed: %(files)s.",
+                files=", ".join(f"{doc.label_id.name} ({doc.name})" for doc in skipped),
+            ))
+        body = " ".join(lines)
+        self._int_document_log(body)
+        if copied:
+            partner.sudo().message_post(
+                body=self.env._("Documents from %(lead)s: %(body)s", lead=self.name, body=body),
+                subtype_xmlid="mail.mt_note",
+            )
+        return copied
 
     @api.depends("x_is_tax_exempt")
     def _compute_x_tax_exemption_approved(self):
@@ -53,12 +134,20 @@ class CrmLead(models.Model):
         for vals in vals_list:
             self._int_check_can_approve(vals)
         leads = super().create(vals_list)
+        leads.filtered("x_tax_exemption_document")._int_certificate_to_document()
         for lead in leads.filtered("x_tax_exemption_approved"):
             lead._int_apply_tax_exemption()
         return leads
 
     def write(self, vals):
         self._int_check_can_approve(vals)
+        if vals.get("x_tax_exemption_document"):
+            res = self._int_write_approval(vals)
+            self._int_certificate_to_document()
+            return res
+        return self._int_write_approval(vals)
+
+    def _int_write_approval(self, vals):
         if "partner_id" not in vals and "x_tax_exemption_approved" not in vals:
             return super().write(vals)
         # Conversion and linking a contact both arrive here. Comparing with the old values
@@ -146,8 +235,14 @@ class CrmLead(models.Model):
                 raise UserError(self.env._("Tick Tax Exempt? before granting the exemption."))
             if not lead.x_tax_exemption_reason:
                 raise UserError(self.env._("Choose a Tax Exemption Reason before granting the exemption."))
-            if not lead.x_tax_exemption_document:
-                raise UserError(self.env._("Add the Tax Exemption Certificate before granting the exemption."))
+            if lead.int_tax_certificate_status == "missing":
+                raise UserError(self.env._(
+                    "Upload the Tax Exemption Certificate on the Documents tab before granting the exemption."
+                ))
+            if lead.int_tax_certificate_status != "reviewed":
+                raise UserError(self.env._(
+                    "Review the Tax Exemption Certificate on the Documents tab first."
+                ))
             lead.write({"x_tax_exemption_approved": True})
             lead.message_post(
                 body=self.env._(
@@ -179,11 +274,12 @@ class CrmLead(models.Model):
             ))
         # A form call can carry bin_size, which would copy the file's size in place of the file.
         lead = self.sudo().with_context(bin_size=False)
+        certificate = lead.int_tax_certificate_id
         target.with_company(company).write({
             "x_is_tax_exempt": True,
             "x_tax_exemption_reason": lead.x_tax_exemption_reason,
-            "x_tax_exemption_document": lead.x_tax_exemption_document,
-            "x_tax_exemption_document_filename": lead.x_tax_exemption_document_filename,
+            "x_tax_exemption_document": certificate._int_datas() if certificate else False,
+            "x_tax_exemption_document_filename": certificate.name if certificate else False,
             "property_account_position_id": position.id,
         })
         target.message_post(

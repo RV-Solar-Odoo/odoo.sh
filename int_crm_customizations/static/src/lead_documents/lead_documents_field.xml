@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="int_crm_customizations.LeadDocumentsField">
+        <div class="o_int_lead_documents">
+            <div t-if="!leadId" class="text-muted">Save the lead to add documents.</div>
+            <t t-else="">
+                <div t-if="!props.readonly" class="mb-3">
+                    <button type="button" class="btn btn-secondary" t-on-click="onUpload">
+                        <i class="fa fa-upload me-1"/>Upload Document
+                    </button>
+                </div>
+                <div t-if="!state.loading and !state.documents.length" class="text-muted">
+                    No documents yet. Files from the dealer application show up here.
+                </div>
+                <section t-foreach="groups" t-as="group" t-key="group.id" class="o_int_doc_group">
+                    <h5 class="o_int_doc_label" t-out="group.name"/>
+                    <div t-foreach="group.documents" t-as="doc" t-key="doc.id" class="o_int_doc">
+                        <a href="#" class="o_int_doc_name" t-att-title="doc.name" t-on-click.prevent="() => this.onView(doc)">
+                            <i t-attf-class="fa {{ doc.mimetype === 'application/pdf' ? 'fa-file-pdf-o' : (doc.mimetype and doc.mimetype.startsWith('image/') ? 'fa-file-image-o' : 'fa-file-o') }} me-1"/>
+                            <t t-out="doc.name"/>
+                        </a>
+                        <div class="o_int_doc_actions">
+                            <a t-if="isViewable(doc)" href="#" t-on-click.prevent="() => this.onView(doc)">View</a>
+                            <a t-att-href="downloadUrl(doc)">Download</a>
+                            <a t-if="!props.readonly" href="#" t-on-click.prevent="() => this.onChangeLabel(doc)">Change Label</a>
+                            <a t-if="!props.readonly and doc.reviewed and !doc.partner_attachment_id and hasContact" href="#"
+                               t-on-click.prevent="() => this.onCopyToContact(doc)">Copy to Contact</a>
+                            <span t-if="doc.partner_attachment_id" class="text-muted">Copied to contact</span>
+                            <a t-if="state.canDelete and !props.readonly" href="#" class="text-danger"
+                               t-on-click.prevent="() => this.onDelete(doc)">Delete</a>
+                        </div>
+                        <div class="form-check o_int_doc_reviewed">
+                            <input type="checkbox" class="form-check-input" t-att-id="'int_doc_reviewed_' + doc.id"
+                                   t-att-checked="doc.reviewed" t-att-disabled="props.readonly"
+                                   t-on-change="(ev) => this.onToggleReviewed(doc, ev)"/>
+                            <label class="form-check-label" t-att-for="'int_doc_reviewed_' + doc.id">Reviewed</label>
+                            <span t-if="doc.review_note" class="text-muted ms-2" t-out="doc.review_note"/>
+                        </div>
+                    </div>
+                </section>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="int_crm_customizations.LeadDocumentDialog">
+        <Dialog title="props.title" size="'md'">
+            <div class="mb-3">
+                <label class="form-label" for="int_doc_label">Label</label>
+                <select id="int_doc_label" class="form-select" t-model="state.label">
+                    <option t-foreach="props.labels" t-as="label" t-key="label.id" t-att-value="label.id" t-out="label.name"/>
+                    <option t-att-value="NEW_LABEL">New label…</option>
+                </select>
+            </div>
+            <div t-if="state.label === NEW_LABEL" class="mb-3">
+                <label class="form-label" for="int_doc_new_label">New label</label>
+                <input id="int_doc_new_label" class="form-control" t-model="state.newLabel" placeholder="e.g. W-9"/>
+            </div>
+            <div t-if="props.withFiles" class="mb-3">
+                <label class="form-label" for="int_doc_files">File</label>
+                <input id="int_doc_files" type="file" class="form-control" multiple="multiple" t-on-change="onFiles"/>
+            </div>
+            <div t-if="state.error" class="alert alert-warning mb-0" role="alert" t-out="state.error"/>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="state.saving" t-on-click="onSave">
+                    <t t-if="props.withFiles">Upload</t>
+                    <t t-else="">Save Label</t>
+                </button>
+                <button class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

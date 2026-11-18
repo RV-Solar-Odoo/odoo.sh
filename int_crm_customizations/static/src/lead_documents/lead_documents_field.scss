@@ -1,0 +1,37 @@
+.o_int_lead_documents {
+    .o_int_doc_group + .o_int_doc_group {
+        margin-top: 1.25rem;
+    }
+
+    .o_int_doc_label {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid $border-color;
+    }
+
+    .o_int_doc {
+        padding: 0.5rem 0;
+
+        & + .o_int_doc {
+            border-top: 1px dashed $border-color;
+        }
+    }
+
+    .o_int_doc_name {
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .o_int_doc_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1rem;
+        margin: 0.25rem 0;
+        font-size: 0.9em;
+    }
+
+    .o_int_doc_reviewed .form-check-input,
+    .o_int_doc_reviewed .form-check-label {
+        cursor: pointer;
+    }
+}
