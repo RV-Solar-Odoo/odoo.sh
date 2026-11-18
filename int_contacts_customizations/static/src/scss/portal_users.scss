@@ -1,0 +1,11 @@
+// My Portal → Users: the sent state of Resend Invite reads as done, not greyed-out broken.
+.o_int_invite_sent.btn.disabled {
+    color: $success;
+    opacity: 1;
+    cursor: default;
+    text-decoration: none;
+}
+
+.o_int_resend_btn:disabled {
+    cursor: progress;
+}

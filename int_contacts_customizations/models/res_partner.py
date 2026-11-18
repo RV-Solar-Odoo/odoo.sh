@@ -204,6 +204,7 @@ class ResPartner(models.Model):
         else:
             user.partner_id.signup_prepare()
             template = self.env.ref(SET_PASSWORD_TEMPLATE)
+            user.sudo().int_invite_sent_at = fields.Datetime.now()
         template.sudo().send_mail(user.id, force_send=True)
 
     def _int_dealer_account_email_notice(self, code, user, owner):

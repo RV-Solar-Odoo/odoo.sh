@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.image import image_data_uri
@@ -23,6 +25,9 @@ INT_PORTAL_PERMISSIONS = {
     "manage_users": {"owner"},
 }
 
+# How long Resend Invite stays at "Invite Sent" before it can be clicked again.
+INT_INVITE_COOLDOWN = timedelta(minutes=10)
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
@@ -31,6 +36,12 @@ class ResUsers(models.Model):
         default=0,
         copy=False,
         help="Raised when the portal role changes so the old session cannot keep the previous permissions.",
+    )
+    int_invite_sent_at = fields.Datetime(
+        string="Invite Last Sent",
+        copy=False,
+        readonly=True,
+        help="When this login was last emailed a create-password link.",
     )
     int_portal_role = fields.Selection(
         related="partner_id.int_portal_role",
@@ -127,3 +138,43 @@ class ResUsers(models.Model):
             "phone_href": f"tel:{digits}" if digits else False,
             "image": image_data_uri(image) if image else False,
         }
+
+    def _int_invite_state(self):
+        """Resend Invite on My Portal → Users.
+
+        ``ready``: can be sent. ``sent``: sent less than INT_INVITE_COOLDOWN ago.
+        False: no button, because the login is disabled or has already signed in.
+        """
+        self.ensure_one()
+        if not self.active or self.login_date:
+            return False
+        sent = self.int_invite_sent_at
+        if sent and fields.Datetime.now() - sent < INT_INVITE_COOLDOWN:
+            return "sent"
+        return "ready"
+
+    def int_portal_resend_invite(self, actor):
+        """Email this login its create-password link again. Never re-enables it."""
+        self.ensure_one()
+        if not self.active:
+            raise UserError(_("%(user)s is disabled. Enable the login before sending an invite.", user=self.name))
+        if self.login_date:
+            raise UserError(_("%(user)s already signs in. No invite was sent.", user=self.name))
+        if self._int_invite_state() == "sent":
+            left = INT_INVITE_COOLDOWN - (fields.Datetime.now() - self.int_invite_sent_at)
+            minutes = max(1, -(-int(left.total_seconds()) // 60))
+            raise UserError(_(
+                "An invite already went to %(user)s. You can send another in %(minutes)s min.",
+                user=self.name,
+                minutes=minutes,
+            ))
+        if not (self.email or "").strip():
+            raise UserError(_("%(user)s has no email address. Contact us to fix it.", user=self.name))
+        # The login's own contact, never a lookup by email that could find someone else.
+        self.partner_id.sudo()._int_email_dealer_account(self.sudo())
+        self.partner_id.commercial_partner_id.sudo().message_post(body=_(
+            "%(actor)s resent the invite to %(user)s (%(email)s).",
+            actor=actor.name,
+            user=self.name,
+            email=self.email,
+        ))

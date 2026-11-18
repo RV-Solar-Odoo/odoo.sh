@@ -104,7 +104,15 @@ class CustomerPortal(CustomerPortal):
             "int_users": users,
             "int_roles": user.partner_id._fields["int_portal_role"].selection,
             "int_error": kwargs.get("error") or "",
+            "int_sent_user": self._int_sent_notice_user(kwargs.get("sent")),
         })
+
+    def _int_sent_notice_user(self, sent):
+        """The family login named in ?sent=, for the "invite sent" notice."""
+        if not sent or not str(sent).isdigit():
+            return request.env["res.users"]
+        target = self._int_family_user(int(sent))
+        return target if target and target.int_invite_sent_at else request.env["res.users"]
 
     @route("/my/users/invite", type="http", auth="user", website=True, methods=["POST"])
     def int_portal_users_invite(self, name="", email="", role="buyer", **kwargs):
@@ -151,9 +159,13 @@ class CustomerPortal(CustomerPortal):
         if not actor.int_portal_can("manage_users"):
             return request.redirect("/my")
         target = self._int_family_user(user_id)
-        if target:
-            target.partner_id._int_send_dealer_account_email()
-        return request.redirect("/my/users")
+        if not target:
+            return request.redirect("/my/users")
+        try:
+            target.int_portal_resend_invite(actor)
+        except UserError as exc:
+            return request.redirect("/my/users?error=%s" % quote(str(exc.args[0])))
+        return request.redirect("/my/users?sent=%s" % target.id)
 
     @route("/my/addresses/export", type="http", auth="user", website=True)
     def int_addresses_export(self, export_format="xlsx", **kwargs):

@@ -1,6 +1,6 @@
 {
     "name": "Contacts Customizations",
-    "version": "19.0.1.4.3",
+    "version": "19.0.1.5.0",
     "category": "Sales/CRM",
     "summary": "Dealer account email, portal role, and the sales rep card on My Portal",
     "author": "Internal",
@@ -17,6 +17,8 @@
             "int_contacts_customizations/static/src/scss/portal_sales_rep.scss",
             "int_contacts_customizations/static/src/scss/portal_addresses.scss",
             "int_contacts_customizations/static/src/js/address_tabs.js",
+            "int_contacts_customizations/static/src/scss/portal_users.scss",
+            "int_contacts_customizations/static/src/js/portal_users.js",
         ],
     },
 }

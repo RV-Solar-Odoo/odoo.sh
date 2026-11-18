@@ -48,6 +48,9 @@
             <h3>Users</h3>
             <p class="text-muted">People who sign in for this dealer. The role controls invoices, payments, credit, and ordering.</p>
             <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <div t-if="int_sent_user" class="alert alert-success" role="status">
+                We sent the invite to <strong t-out="int_sent_user.email or int_sent_user.login"/> again.
+            </div>
             <form action="/my/users/invite" method="post" class="row g-2 mb-4">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <div class="col-md-4">
@@ -99,14 +102,25 @@
                         </td>
                         <td>
                             <span t-if="not portal_user.active">Disabled</span>
-                            <span t-elif="not portal_user.login_date">Invited</span>
+                            <t t-elif="not portal_user.login_date">
+                                <span>Invited</span>
+                                <div t-if="portal_user.int_invite_sent_at" class="small text-muted">
+                                    <t t-if="portal_user._int_invite_state() == 'sent'">Sent</t>
+                                    <t t-else="">Last sent</t>
+                                    <span t-field="portal_user.int_invite_sent_at"/>
+                                </div>
+                            </t>
                             <span t-else="">Active</span>
                         </td>
                         <td class="text-end">
-                            <form t-attf-action="/my/users/{{ portal_user.id }}/resend" method="post" class="d-inline">
+                            <t t-set="int_invite" t-value="portal_user._int_invite_state()"/>
+                            <form t-if="int_invite == 'ready'" t-attf-action="/my/users/{{ portal_user.id }}/resend" method="post" class="d-inline o_int_resend_form">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                <button class="btn btn-link" type="submit">Resend invite</button>
+                                <button class="btn btn-link o_int_resend_btn" type="submit">Resend Invite</button>
                             </form>
+                            <span t-elif="int_invite == 'sent'" class="btn btn-link disabled o_int_invite_sent" aria-disabled="true">
+                                <i class="fa fa-check me-1" role="img" aria-hidden="true"/>Invite Sent
+                            </span>
                             <form t-attf-action="/my/users/{{ portal_user.id }}/active" method="post" class="d-inline">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="active" t-att-value="'0' if portal_user.active else '1'"/>

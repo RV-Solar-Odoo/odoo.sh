@@ -22,3 +22,14 @@ The button is limited to sales users. An internal user's email is refused.
 My addresses has three tabs: My Business Locations, My Billing Addresses, and Customer Addresses (drop-ship), each with a count. A business location can be moved to Customer Addresses from its card; customer addresses have no move link (change it in the address form). The open tab is kept in the address (`?tab=`), and adding or editing an address returns to that tab. Add Address on Customer Addresses starts the form as a customer address. Each card lists the address with tags (Business or Customer, Commercial or Residential, Loading dock, Forklift) styled like the shop's product tags; checkout cards show the same tags. A residential address clears the dock and forklift. The company address stays a business location. Viewers and accountants can look, and cannot edit.
 
 **Your Sales Rep** is at the top of My Portal. It uses the salesperson on the company contact, so an extra login sees the same person. Email and phone are links. The card is hidden when no salesperson is set. Phone uses `work_phone` when that field exists, otherwise phone, otherwise mobile.
+
+## Resend Invite (My Portal → Users)
+
+- Shown only for logins that are enabled and have never signed in (Status "Invited").
+- Emails that login's own contact the create-password link again. It never re-enables a disabled login.
+- After sending, the button reads **Invite Sent** for 10 minutes (`INT_INVITE_COOLDOWN` in `models/res_users.py`), then returns to **Resend Invite**. Under the status, "Sent …" / "Last sent …" shows the time from `res.users.int_invite_sent_at`, which every create-password email sets, including the first invite.
+- The page shows "We sent the invite to … again." Each resend is logged on the dealer company's chatter.
+
+### Decisions made during build
+
+- 2026-11-18: the sent state comes from the server, not only the browser, so it survives a reload and shows for every owner. A 10-minute cooldown stops repeat emails. See SPEC.md decision 35.
