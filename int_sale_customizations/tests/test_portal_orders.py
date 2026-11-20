@@ -125,11 +125,38 @@ class TestPortalOrders(TransactionCase):
         board = owner._int_portal_dashboard()
         self.assertIn(order, board["orders"])
         self.assertIn(order, board["saved"])
+        self.assertEqual(owner.int_portal_name_saved_order(order, "Job trailer"), "Job trailer")
+        board = owner._int_portal_dashboard()
+        self.assertEqual(board["saved_names"][order.id], "Job trailer")
+        self.assertIn("tickets", board)
         self.assertTrue(board["show_invoices"])
         self.assertFalse(board["to_pay"])
         SaleOrder = self.env["sale.order"].with_user(owner)
         saved = SaleOrder.search(SaleOrder._int_portal_order_domain(dealer, filterby="saved"))
         self.assertIn(order, saved)
+
+    def test_saved_name_belongs_to_the_person_who_pinned_it(self):
+        self.company.int_max_pinned = 5
+        dealer = self.env["res.partner"].create({"name": "Named Pin Dealer", "is_company": True})
+        order = self._order(dealer, "NAME-1")
+        owner = self._portal(dealer, "named-pin@example.com", "buyer")
+        other = self._portal(
+            self.env["res.partner"].create({"name": "Other Named Dealer", "is_company": True}),
+            "named-pin-other@example.com",
+            "buyer",
+        )
+        with self.assertRaises(UserError):
+            owner.int_portal_name_saved_order(order, "Before pin")
+        self.assertEqual(owner.int_portal_toggle_pin(order), "pinned")
+        self.assertEqual(owner.int_portal_name_saved_order(order, "  Spring   kit  "), "Spring kit")
+        self.assertEqual(owner._int_portal_saved_name(order), "Spring kit")
+        self.assertEqual(other._int_portal_saved_name(order), "")
+        self.assertEqual(owner.int_portal_name_saved_order(order, "   "), "")
+        self.assertEqual(owner._int_portal_saved_name(order), "")
+        owner.int_portal_name_saved_order(order, "x" * 100)
+        self.assertEqual(len(owner._int_portal_saved_name(order)), 80)
+        self.assertEqual(owner.int_portal_toggle_pin(order), "unpinned")
+        self.assertEqual(owner._int_portal_saved_name(order), "")
 
     def test_pin_limit(self):
         user = self.env.user

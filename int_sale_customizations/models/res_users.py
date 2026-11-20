@@ -2,6 +2,8 @@ from odoo import _, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Command
 
+SAVED_NAME_LIMIT = 80
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
@@ -27,12 +29,80 @@ class ResUsers(models.Model):
             raise UserError(_("You cannot pin this order."))
         if order in self.int_pinned_order_ids:
             self.sudo().write({"int_pinned_order_ids": [Command.unlink(order.id)]})
+            self.env["int.saved.order"].sudo().search([
+                ("user_id", "=", self.id),
+                ("order_id", "=", order.id),
+            ]).unlink()
             return "unpinned"
         limit = self._int_pin_limit()
         if len(self.int_pinned_order_ids) >= limit:
             raise UserError(_("You can pin up to %(limit)s orders. Unpin one first.", limit=limit))
         self.sudo().write({"int_pinned_order_ids": [Command.link(order.id)]})
         return "pinned"
+
+    def int_portal_name_saved_order(self, order, name):
+        """Set or clear the name this user sees for a pinned order."""
+        self.ensure_one()
+        order.ensure_one()
+        if not self.int_portal_can("pin_orders") or not order._int_owned_by(self):
+            raise UserError(_("You cannot name this order."))
+        if order not in self.int_pinned_order_ids:
+            raise UserError(_("Pin the order before naming it."))
+        label = " ".join((name or "").split())[:SAVED_NAME_LIMIT]
+        Saved = self.env["int.saved.order"].sudo()
+        existing = Saved.search([
+            ("user_id", "=", self.id),
+            ("order_id", "=", order.id),
+        ], limit=1)
+        if not label:
+            existing.unlink()
+            return ""
+        if existing:
+            existing.name = label
+        else:
+            Saved.create({"user_id": self.id, "order_id": order.id, "name": label})
+        return label
+
+    def _int_portal_saved_names(self, orders):
+        """Saved names for these orders, for the current user."""
+        self.ensure_one()
+        if not orders:
+            return {}
+        rows = self.env["int.saved.order"].sudo().search([
+            ("user_id", "=", self.id),
+            ("order_id", "in", orders.ids),
+        ])
+        return {row.order_id.id: row.name for row in rows}
+
+    def _int_portal_saved_name(self, order):
+        self.ensure_one()
+        return self._int_portal_saved_names(order).get(order.id, "")
+
+    def _int_portal_dashboard_tickets(self, commercial, company):
+        """Open tickets first, then closed ones. Empty when helpdesk is absent."""
+        if "helpdesk.ticket" not in self.env:
+            return []
+        Ticket = self.env["helpdesk.ticket"]
+        domain = [
+            ("partner_id", "child_of", commercial.id),
+            ("company_id", "=", company.id),
+        ]
+        try:
+            open_tickets = Ticket.search(
+                domain + ["|", ("stage_id", "=", False), ("stage_id.fold", "=", False)],
+                order="create_date desc, id desc",
+                limit=5,
+            )
+            closed = Ticket.browse()
+            if len(open_tickets) < 5:
+                closed = Ticket.search(
+                    domain + [("stage_id.fold", "=", True)],
+                    order="create_date desc, id desc",
+                    limit=5 - len(open_tickets),
+                )
+        except AccessError:
+            return Ticket.browse()
+        return open_tickets + closed
 
     def _int_pin_limit(self):
         self.ensure_one()
@@ -86,6 +156,7 @@ class ResUsers(models.Model):
         saved = self.int_pinned_order_ids.filtered(
             lambda order: order.partner_id.commercial_partner_id == commercial and order.state in ("sale", "cancel")
         )
+        tickets = self._int_portal_dashboard_tickets(commercial, company)
         show_invoices = self.int_portal_can("view_invoices")
         invoices = to_pay = self.env["account.move"]
         if show_invoices:
@@ -113,6 +184,8 @@ class ResUsers(models.Model):
             "orders": orders,
             "deliveries": deliveries,
             "saved": saved,
+            "saved_names": self._int_portal_saved_names(saved),
+            "tickets": tickets,
             "show_invoices": show_invoices,
             "invoices": invoices,
             "to_pay": to_pay,

@@ -93,6 +93,7 @@ class CustomerPortal(CustomerPortal):
             "search_in": search_in,
             "filterby": filterby,
             "int_search_error": kwargs.get("int_error") or "",
+            "int_saved_names": user._int_portal_saved_names(orders),
         })
         return values
 
@@ -216,6 +217,24 @@ class CustomerPortal(CustomerPortal):
         except UserError as exc:
             return request.redirect("/my/orders?int_error=%s" % quote(str(exc.args[0])))
         return request.redirect(kwargs.get("redirect") or "/my/orders")
+
+    @route("/my/orders/<int:order_id>/name", type="http", auth="user", website=True, methods=["POST"])
+    def int_order_saved_name(self, order_id, name="", redirect=None, **kwargs):
+        order = self._int_owned_order(order_id)
+        fallback = order.get_portal_url() if order else "/my/orders"
+        if not order:
+            return request.redirect("/my/orders")
+        try:
+            request.env.user.int_portal_name_saved_order(order, name)
+        except UserError as exc:
+            return request.redirect("%s%s" % (
+                fallback,
+                "&" if "?" in fallback else "?",
+            ) + "int_error=%s" % quote(str(exc.args[0])))
+        target = redirect or fallback
+        if not target.startswith("/my/") or target.startswith("//") or "\\" in target:
+            target = fallback
+        return request.redirect(target)
 
     @route("/my/orders/<int:order_id>/reorder", type="http", auth="user", website=True, methods=["POST"])
     def int_order_reorder(self, order_id, confirm=None, **kwargs):

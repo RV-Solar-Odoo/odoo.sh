@@ -143,6 +143,24 @@
                         </section>
                     </div>
                     <div class="col-12 col-lg-6">
+                        <section id="int_dashboard_tickets" class="o_int_dash_panel">
+                            <div class="o_int_dash_head">
+                                <h2>Tickets</h2>
+                                <a href="/my/tickets">View all</a>
+                            </div>
+                            <p t-if="not int_dashboard['tickets']" class="text-muted mb-0">No tickets yet.</p>
+                            <ul t-else="" class="o_int_dash_list">
+                                <li t-foreach="int_dashboard['tickets']" t-as="ticket">
+                                    <a t-att-href="ticket.get_portal_url()" t-out="ticket.name"/>
+                                    <span class="o_int_dash_meta">
+                                        <span t-field="ticket.create_date" t-options="{'widget': 'date'}"/>
+                                    </span>
+                                    <span t-attf-class="badge rounded-pill {{ ticket.stage_id.fold and 'text-bg-secondary' or 'text-bg-primary' }}" t-out="ticket.stage_id.name"/>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div class="col-12 col-lg-6">
                         <section id="int_dashboard_saved" class="o_int_dash_panel">
                             <div class="o_int_dash_head">
                                 <h2>Saved orders</h2>
@@ -151,8 +169,13 @@
                             <p t-if="not int_dashboard['saved']" class="text-muted mb-0">No saved orders. Pin one from My Orders.</p>
                             <ul t-else="" class="o_int_dash_list">
                                 <li t-foreach="int_dashboard['saved']" t-as="order">
-                                    <a t-att-href="order.get_portal_url()" t-out="order.name"/>
-                                    <span class="o_int_dash_meta"><span t-field="order.amount_total"/></span>
+                                    <a t-att-href="order.get_portal_url()">
+                                        <t t-out="int_dashboard['saved_names'].get(order.id) or order.name"/>
+                                    </a>
+                                    <span class="o_int_dash_meta">
+                                        <span t-if="int_dashboard['saved_names'].get(order.id)" t-out="order.name"/>
+                                        <span t-field="order.amount_total"/>
+                                    </span>
                                 </li>
                             </ul>
                         </section>
@@ -239,6 +262,11 @@
                 <t t-call="int_sale_customizations.portal_order_pin"/>
             </td>
         </xpath>
+        <xpath expr="//a[@t-att-href='order.get_portal_url()']" position="after">
+            <t t-call="int_sale_customizations.portal_saved_name_form">
+                <t t-set="int_label" t-value="int_saved_names.get(order.id, '')"/>
+            </t>
+        </xpath>
         <xpath expr="//th[@name='order_total']" position="after">
             <th t-if="request.env.user.int_portal_can('place_orders')" class="text-end"><span class="visually-hidden">Reorder</span></th>
         </xpath>
@@ -267,11 +295,23 @@
         </form>
     </template>
 
+    <template id="portal_saved_name_form" name="Saved order name">
+        <form t-if="order in request.env.user.int_pinned_order_ids and request.env.user.int_portal_can('pin_orders')" t-attf-action="/my/orders/{{ order.id }}/name" method="post" class="o_int_saved_name">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="redirect" t-att-value="request.httprequest.full_path"/>
+            <input class="form-control form-control-sm" type="text" name="name" maxlength="80" placeholder="Name this order" t-att-value="int_label or ''"/>
+            <button class="btn btn-sm btn-light" type="submit">Save</button>
+        </form>
+    </template>
+
     <template id="portal_order_actions" name="Order pin and reorder">
         <span class="d-inline-flex align-items-center gap-3">
             <t t-call="int_sale_customizations.portal_order_pin"/>
             <t t-call="int_sale_customizations.portal_order_reorder"/>
         </span>
+        <t t-call="int_sale_customizations.portal_saved_name_form">
+            <t t-set="int_label" t-value="request.env.user._int_portal_saved_name(order)"/>
+        </t>
     </template>
 
     <template id="portal_order_cancel" name="Request cancellation" inherit_id="sale.sale_order_portal_content">

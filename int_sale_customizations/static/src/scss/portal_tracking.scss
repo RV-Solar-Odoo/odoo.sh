@@ -18,6 +18,18 @@
     color: #e0a100;
 }
 
+.o_int_saved_name {
+    align-items: center;
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    max-width: 18rem;
+
+    input {
+        min-width: 0;
+    }
+}
+
 .o_int_tracking {
     white-space: normal;
 
