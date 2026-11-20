@@ -253,3 +253,72 @@ class TestPortalTracking(TransactionCase):
             waiting,
         )
         self.assertFalse(Picking.with_user(stranger)._int_portal_owned_delivery(stranger, waiting.id))
+
+    def test_a_pick_that_feeds_a_delivery_is_one_shipment(self):
+        product = self.env["product.product"].create({
+            "name": "Combined portal item",
+            "type": "consu",
+            "is_storable": True,
+            "list_price": 5,
+        })
+        dealer = self._partner("Combined Dealer", is_company=True)
+        order = self.env["sale.order"].create({
+            "partner_id": dealer.id,
+            "order_line": [Command.create({
+                "product_id": product.id,
+                "product_uom_qty": 2,
+            })],
+        })
+        order.action_confirm()
+        outgoing = order.picking_ids.filtered(lambda picking: picking.picking_type_code == "outgoing")[:1]
+        self.assertTrue(outgoing)
+        pick = self.env["stock.picking"].create({
+            "picking_type_id": self.warehouse.int_type_id.id,
+            "location_id": self.warehouse.lot_stock_id.id,
+            "location_dest_id": outgoing.location_id.id,
+        })
+        move = self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 2,
+            "product_uom": product.uom_id.id,
+            "picking_id": pick.id,
+            "location_id": pick.location_id.id,
+            "location_dest_id": pick.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+            "move_dest_ids": [Command.set(outgoing.move_ids.ids)],
+        })
+        pick.write({"state": "done"})
+        move.write({"state": "done"})
+        Picking = self.env["stock.picking"]
+        self.assertEqual(pick._int_portal_shipment(), outgoing)
+        self.assertEqual(outgoing._int_portal_shipment(), outgoing)
+        rows = Picking._int_portal_delivery_rows(dealer)
+        self.assertIn(outgoing, rows)
+        self.assertNotIn(pick, rows)
+        self.assertEqual(outgoing._int_portal_delivery_status()[:2], ("picked", "Ready to ship"))
+        stages = outgoing._int_portal_delivery_stages()
+        self.assertIn(pick, stages)
+        self.assertEqual(stages[-1], outgoing)
+        self.assertEqual(pick._int_portal_step_state(), "Picked")
+        self.assertEqual(outgoing._int_portal_step_state(), "In progress")
+        shipments = order.picking_ids._int_portal_as_shipments()
+        self.assertIn(outgoing, shipments)
+        self.assertNotIn(pick, shipments)
+        lone = self.env["stock.picking"].create({
+            "picking_type_id": self.warehouse.int_type_id.id,
+            "location_id": self.warehouse.lot_stock_id.id,
+            "location_dest_id": self.customers.id,
+        })
+        self.env["stock.move"].create({
+            "name": product.name,
+            "product_id": product.id,
+            "product_uom_qty": 1,
+            "product_uom": product.uom_id.id,
+            "picking_id": lone.id,
+            "location_id": lone.location_id.id,
+            "location_dest_id": lone.location_dest_id.id,
+            "sale_line_id": order.order_line.id,
+        })
+        self.assertIn(lone, Picking._int_portal_delivery_rows(dealer))
+        self.assertEqual(lone._int_portal_delivery_status()[1], "Picking")

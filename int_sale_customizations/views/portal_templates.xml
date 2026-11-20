@@ -31,7 +31,7 @@
 
     <template id="portal_delivery_orders_all" name="All delivery orders on the order page" inherit_id="sale_stock.sale_order_portal_content_inherit_sale_stock">
         <xpath expr="//t[@t-set='delivery_orders']" position="attributes">
-            <attribute name="t-value">sale_order.picking_ids.filtered(lambda picking: picking.state != 'cancel' and picking.picking_type_id.code in ('outgoing', 'internal', 'dropship'))</attribute>
+            <attribute name="t-value">sale_order.picking_ids._int_portal_as_shipments()</attribute>
         </xpath>
         <xpath expr="//t[@t-set='latest_delivery_orders']" position="attributes">
             <attribute name="t-value">delivery_orders.sorted('create_date', reverse=True)</attribute>
@@ -476,6 +476,13 @@
                     <p t-if="delivery.backorder_id" class="mb-1">
                         Backorder of <t t-out="delivery.backorder_id.name"/>
                     </p>
+                    <ul t-if="len(delivery._int_portal_delivery_stages()) &gt; 1" class="list-unstyled mb-2">
+                        <li t-foreach="delivery._int_portal_delivery_stages()" t-as="stage">
+                            <span t-out="stage._int_portal_step_name()"/>
+                            <span t-out="stage.name"/>
+                            — <span t-out="stage._int_portal_step_state()"/>
+                        </li>
+                    </ul>
                     <p class="mb-1" t-if="delivery.sale_id">
                         Order:
                         <a t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>

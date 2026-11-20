@@ -112,15 +112,132 @@ class StockPicking(models.Model):
             limit=1,
         )
 
+    def _int_portal_downstream_shipments(self):
+        """Delivery orders this transfer feeds, following the move chain."""
+        self.ensure_one()
+        dest = self.move_ids.move_dest_ids
+        seen = self.env["stock.move"]
+        shipments = self.env["stock.picking"]
+        while dest:
+            dest = dest - seen
+            if not dest:
+                break
+            seen |= dest
+            shipments |= dest.picking_id.filtered(
+                lambda picking: picking.picking_type_code in ("outgoing", "dropship")
+            )
+            dest = dest.move_dest_ids
+        return shipments
+
+    def _int_portal_upstream_picks(self):
+        """Picks that feed this transfer, following the move chain."""
+        self.ensure_one()
+        orig = self.move_ids.move_orig_ids
+        seen = self.env["stock.move"]
+        picks = self.env["stock.picking"]
+        while orig:
+            orig = orig - seen
+            if not orig:
+                break
+            seen |= orig
+            picks |= orig.picking_id.filtered(
+                lambda picking: picking.picking_type_code == "internal" and picking.state != "cancel"
+            )
+            orig = orig.move_orig_ids
+        return picks
+
+    def _int_portal_shipment(self):
+        """The customer shipment this transfer belongs to.
+
+        A pick that feeds a delivery order is a stage of that delivery order.
+        A delivery order, a dropship, or a pick that has not reached shipping
+        yet is its own shipment.
+        """
+        self.ensure_one()
+        if self.picking_type_code in ("outgoing", "dropship"):
+            return self
+        shipments = self._int_portal_downstream_shipments().filtered(lambda picking: picking.state != "cancel")
+        if not shipments:
+            return self
+        open_shipments = shipments.filtered(lambda picking: picking.state != "done")
+        return (open_shipments or shipments).sorted("id")[-1]
+
+    def _int_portal_delivery_stages(self):
+        """Pick steps, then the shipment, in warehouse order."""
+        self.ensure_one()
+        shipment = self._int_portal_shipment()
+        picks = shipment._int_portal_upstream_picks().sorted("id")
+        stages = [pick for pick in picks]
+        if shipment not in picks:
+            stages.append(shipment)
+        return stages
+
+    def _int_portal_step_name(self):
+        self.ensure_one()
+        if self.picking_type_code == "internal":
+            return "Pick"
+        return "Shipment"
+
+    def _int_portal_step_state(self):
+        self.ensure_one()
+        if self.state == "done" and self.picking_type_code == "internal":
+            return "Picked"
+        if self.state == "done":
+            return "Shipped"
+        return "In progress"
+
+    @api.model
+    def _int_portal_delivery_rows(self, commercial, filterby="all"):
+        """One row per customer shipment.
+
+        Picks that feed a delivery order are left out of the list. Their stage
+        is shown on that delivery. A pick with no delivery order yet stays, so
+        an order still being picked is visible.
+        """
+        pickings = self.sudo().search(self._int_portal_delivery_domain(commercial))
+        pickings.mapped("move_ids.move_dest_ids.picking_id")
+        rows = self.browse()
+        for picking in pickings:
+            rows |= picking._int_portal_shipment()
+        if filterby == "shipped":
+            rows = rows.filtered(lambda picking: picking._int_portal_delivery_status()[0] == "shipped")
+        elif filterby == "open":
+            rows = rows.filtered(lambda picking: picking._int_portal_delivery_status()[0] != "shipped")
+        elif filterby == "backordered":
+            rows = rows.filtered(lambda picking: picking._int_portal_delivery_status()[0] == "backordered")
+        return rows.sorted(
+            key=lambda picking: (picking.scheduled_date or picking.create_date, picking.id),
+            reverse=True,
+        )
+
+    def _int_portal_as_shipments(self):
+        """Portal deliveries on an order: one row per customer shipment."""
+        visible = self.filtered(
+            lambda picking: picking.state != "cancel" and picking.picking_type_code in ("outgoing", "internal", "dropship")
+        )
+        visible.mapped("move_ids.move_dest_ids.picking_id")
+        rows = self.browse()
+        for picking in visible:
+            rows |= picking._int_portal_shipment()
+        return rows
+
     def _int_portal_delivery_status(self):
         """``(code, label, badge class)`` for the portal list and page."""
         self.ensure_one()
-        if self.state == "done" and self.picking_type_code == "outgoing":
+        if self.state == "done" and self.picking_type_code in ("outgoing", "dropship"):
             return ("shipped", "Shipped", "text-bg-success")
+        if self.state != "done" and self.picking_type_code in ("outgoing", "dropship"):
+            picks = self._int_portal_upstream_picks()
+            if picks and all(pick.state == "done" for pick in picks):
+                return ("picked", "Ready to ship", "text-bg-info")
+            if picks:
+                return ("open", "Picking", "text-bg-info")
         if self.state == "done":
             return ("picked", "Picked", "text-bg-success")
         if self.backorder_id:
             return ("backordered", "Backordered", "text-bg-warning")
+        if self.picking_type_code == "internal":
+            return ("open", "Picking", "text-bg-info")
         return ("open", "Preparation", "text-bg-info")
 
     def _int_portal_delivery_moves(self):

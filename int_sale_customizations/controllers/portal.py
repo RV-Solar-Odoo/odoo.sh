@@ -17,9 +17,7 @@ class CustomerPortal(CustomerPortal):
         if "int_delivery_count" in counters:
             commercial = request.env.user.partner_id.commercial_partner_id
             Picking = request.env["stock.picking"]
-            values["int_delivery_count"] = Picking.sudo().search_count(
-                Picking._int_portal_delivery_domain(commercial)
-            )
+            values["int_delivery_count"] = len(Picking._int_portal_delivery_rows(commercial))
         return values
 
     def _get_sale_searchbar_sortings(self):
@@ -166,8 +164,8 @@ class CustomerPortal(CustomerPortal):
             filterby = "all"
         commercial = user.partner_id.commercial_partner_id
         Picking = request.env["stock.picking"]
-        domain = Picking._int_portal_delivery_domain(commercial, filterby)
-        total = Picking.sudo().search_count(domain)
+        deliveries = Picking._int_portal_delivery_rows(commercial, filterby)
+        total = len(deliveries)
         pager_values = portal_pager(
             url="/my/deliveries",
             total=total,
@@ -175,12 +173,7 @@ class CustomerPortal(CustomerPortal):
             step=self._items_per_page,
             url_args={"filterby": filterby},
         )
-        deliveries = Picking.sudo().search(
-            domain,
-            order="scheduled_date desc, id desc",
-            limit=self._items_per_page,
-            offset=pager_values["offset"],
-        )
+        deliveries = deliveries[pager_values["offset"]:pager_values["offset"] + self._items_per_page]
         return request.render("int_sale_customizations.portal_deliveries", {
             "page_name": "int_delivery",
             "deliveries": deliveries,
@@ -196,6 +189,9 @@ class CustomerPortal(CustomerPortal):
         delivery = request.env["stock.picking"]._int_portal_owned_delivery(user, picking_id)
         if not delivery:
             return request.redirect("/my/deliveries")
+        shipment = delivery._int_portal_shipment()
+        if shipment != delivery:
+            return request.redirect("/my/deliveries/%s" % shipment.id)
         if delivery.sale_id:
             delivery.sale_id.sudo()._portal_ensure_token()
         return request.render("int_sale_customizations.portal_delivery", {

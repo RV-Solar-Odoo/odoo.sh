@@ -148,11 +148,7 @@ class ResUsers(models.Model):
             limit=5,
         )
         Picking = self.env["stock.picking"]
-        deliveries = Picking.sudo().search(
-            Picking._int_portal_delivery_domain(commercial),
-            order="scheduled_date desc, id desc",
-            limit=5,
-        )
+        deliveries = Picking._int_portal_delivery_rows(commercial)[:5]
         saved = self.int_pinned_order_ids.filtered(
             lambda order: order.partner_id.commercial_partner_id == commercial and order.state in ("sale", "cancel")
         )
