@@ -113,11 +113,16 @@ class StockPicking(models.Model):
         )
 
     def _int_portal_downstream_shipments(self):
-        """Delivery orders this transfer feeds, following the move chain."""
+        """Delivery orders this transfer feeds, following the move chain.
+
+        Portal users cannot read stock moves. The caller has already limited
+        this to one of their shipments.
+        """
         self.ensure_one()
-        dest = self.move_ids.move_dest_ids
-        seen = self.env["stock.move"]
-        shipments = self.env["stock.picking"]
+        picking = self.sudo()
+        dest = picking.move_ids.move_dest_ids
+        seen = picking.env["stock.move"]
+        shipments = picking.env["stock.picking"]
         while dest:
             dest = dest - seen
             if not dest:
@@ -130,11 +135,16 @@ class StockPicking(models.Model):
         return shipments
 
     def _int_portal_upstream_picks(self):
-        """Picks that feed this transfer, following the move chain."""
+        """Picks that feed this transfer, following the move chain.
+
+        Portal users cannot read stock moves. The caller has already limited
+        this to one of their shipments.
+        """
         self.ensure_one()
-        orig = self.move_ids.move_orig_ids
-        seen = self.env["stock.move"]
-        picks = self.env["stock.picking"]
+        picking = self.sudo()
+        orig = picking.move_ids.move_orig_ids
+        seen = picking.env["stock.move"]
+        picks = picking.env["stock.picking"]
         while orig:
             orig = orig - seen
             if not orig:
@@ -154,11 +164,12 @@ class StockPicking(models.Model):
         yet is its own shipment.
         """
         self.ensure_one()
-        if self.picking_type_code in ("outgoing", "dropship"):
-            return self
-        shipments = self._int_portal_downstream_shipments().filtered(lambda picking: picking.state != "cancel")
+        picking = self.sudo()
+        if picking.picking_type_code in ("outgoing", "dropship"):
+            return picking
+        shipments = picking._int_portal_downstream_shipments().filtered(lambda picking: picking.state != "cancel")
         if not shipments:
-            return self
+            return picking
         open_shipments = shipments.filtered(lambda picking: picking.state != "done")
         return (open_shipments or shipments).sorted("id")[-1]
 
@@ -196,7 +207,7 @@ class StockPicking(models.Model):
         """
         pickings = self.sudo().search(self._int_portal_delivery_domain(commercial))
         pickings.mapped("move_ids.move_dest_ids.picking_id")
-        rows = self.browse()
+        rows = self.sudo().browse()
         for picking in pickings:
             rows |= picking._int_portal_shipment()
         if filterby == "shipped":
@@ -212,11 +223,11 @@ class StockPicking(models.Model):
 
     def _int_portal_as_shipments(self):
         """Portal deliveries on an order: one row per customer shipment."""
-        visible = self.filtered(
+        visible = self.sudo().filtered(
             lambda picking: picking.state != "cancel" and picking.picking_type_code in ("outgoing", "internal", "dropship")
         )
         visible.mapped("move_ids.move_dest_ids.picking_id")
-        rows = self.browse()
+        rows = self.sudo().browse()
         for picking in visible:
             rows |= picking._int_portal_shipment()
         return rows
@@ -243,7 +254,7 @@ class StockPicking(models.Model):
     def _int_portal_delivery_moves(self):
         """Product lines to show on the delivery page. Cancelled lines are left out."""
         self.ensure_one()
-        return self.move_ids.filtered(lambda move: move.state != "cancel")
+        return self.sudo().move_ids.filtered(lambda move: move.state != "cancel")
 
     def _int_portal_tracking_links(self):
         """Tracking numbers on this shipment, each with a link when one exists.

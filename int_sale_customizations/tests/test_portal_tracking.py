@@ -253,6 +253,13 @@ class TestPortalTracking(TransactionCase):
             waiting,
         )
         self.assertFalse(Picking.with_user(stranger)._int_portal_owned_delivery(stranger, waiting.id))
+        as_dealer = Picking.with_user(portal)
+        rows = as_dealer._int_portal_delivery_rows(dealer)
+        self.assertTrue(rows)
+        for row in as_dealer.browse(rows.ids):
+            row._int_portal_delivery_status()
+            row._int_portal_delivery_stages()
+            row._int_portal_delivery_moves()
 
     def test_a_pick_that_feeds_a_delivery_is_one_shipment(self):
         product = self.env["product.product"].create({
