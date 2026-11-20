@@ -58,6 +58,8 @@ class TestPortalSalesRep(TransactionCase):
         contact = self.env.ref("portal.portal_contact").get_combined_arch()
         self.assertIn("sales_user.partner_id.avatar_128", contact)
         self.assertIn("rounded-circle", contact)
+        self.assertIn("Get Support", contact)
+        self.assertIn('href="/help"', contact)
         home = self.env.ref("portal.portal_my_home").get_combined_arch()
         self.assertNotIn("portal_sales_rep_card", home)
         side = self.env.ref("portal.side_content").get_combined_arch()

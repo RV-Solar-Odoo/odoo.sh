@@ -25,6 +25,9 @@
                 <h6 class="mb-0" t-esc="sales_user.name"/>
             </div>
         </xpath>
+        <xpath expr="//div[hasclass('o_portal_contact_details')]" position="inside">
+            <a class="o_int_get_support" href="/help">Get Support →</a>
+        </xpath>
     </template>
 
     <template id="portal_side_content_no_photo" inherit_id="portal.side_content" name="Remove account photo">

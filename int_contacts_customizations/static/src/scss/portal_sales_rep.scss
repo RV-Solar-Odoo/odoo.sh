@@ -58,3 +58,17 @@
     color: #0054a8;
     overflow-wrap: anywhere;
 }
+
+.o_int_get_support {
+    color: #0054a8;
+    display: inline-block;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+        color: #0054a8;
+        text-decoration: underline;
+    }
+}
