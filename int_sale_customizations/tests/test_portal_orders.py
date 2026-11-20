@@ -104,6 +104,30 @@ class TestPortalOrders(TransactionCase):
         hidden = SaleOrder._int_portal_orders_page(cancelled, order, user.int_pinned_order_ids.ids, 20, 0)
         self.assertNotIn(older, hidden)
 
+    def test_dashboard_is_for_approved_dealers(self):
+        company = self.env.company
+        public = self.env.ref("base.public_user").partner_id.commercial_partner_id
+        public_pl = public.with_company(company).property_product_pricelist
+        if not public_pl:
+            public_pl = self.env["product.pricelist"].create({"name": "Dashboard public"})
+            public.with_company(company).specific_property_product_pricelist = public_pl
+        dealer_pl = self.env["product.pricelist"].create({"name": "Dashboard dealer"})
+        dealer = self.env["res.partner"].create({"name": "Dashboard Dealer", "is_company": True})
+        retail = self.env["res.partner"].create({"name": "Dashboard Retail", "is_company": True})
+        dealer.with_company(company).specific_property_product_pricelist = dealer_pl
+        retail.with_company(company).specific_property_product_pricelist = public_pl
+        owner = self._portal(dealer, "dash-owner@example.com", "owner")
+        shopper = self._portal(retail, "dash-retail@example.com", "owner")
+        self.assertFalse(shopper._int_portal_dashboard())
+        order = self._order(dealer, "DASH-1")
+        self.company.int_max_pinned = 5
+        self.assertEqual(owner.int_portal_toggle_pin(order), "pinned")
+        board = owner._int_portal_dashboard()
+        self.assertIn(order, board["orders"])
+        self.assertIn(order, board["saved"])
+        self.assertTrue(board["show_invoices"])
+        self.assertFalse(board["to_pay"])
+
     def test_pin_limit(self):
         user = self.env.user
         first = self._order(user.partner_id, "PIN-1")

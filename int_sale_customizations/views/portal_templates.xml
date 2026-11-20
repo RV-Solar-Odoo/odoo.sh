@@ -78,6 +78,108 @@
         </xpath>
     </template>
 
+    <template id="portal_my_home_dashboard" name="Dealer home dashboard" inherit_id="portal.portal_my_home" priority="20">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="int_dashboard" t-value="request.env.user._int_portal_dashboard()"/>
+            <div t-if="int_dashboard" id="int_portal_dashboard" class="o_int_dashboard mb-4">
+                <section t-if="int_dashboard['show_invoices']" id="int_dashboard_pay" class="o_int_dash_pay">
+                    <div class="o_int_dash_pay_head">
+                        <h2>Invoices to pay</h2>
+                        <a href="/my/invoices?filterby=overdue_invoices">All invoices</a>
+                    </div>
+                    <p t-if="not int_dashboard['to_pay']" class="o_int_dash_clear mb-0">No invoices to pay.</p>
+                    <ul t-else="" class="o_int_dash_list">
+                        <li t-foreach="int_dashboard['to_pay']" t-as="invoice">
+                            <a t-att-href="invoice.get_portal_url()" t-out="invoice.name"/>
+                            <span class="o_int_dash_meta">
+                                <span t-if="invoice.invoice_date_due" t-field="invoice.invoice_date_due"/>
+                                <span t-field="invoice.amount_residual"/>
+                            </span>
+                            <a class="btn btn-sm o_int_dash_pay_btn" t-att-href="invoice.get_portal_url()">Pay</a>
+                        </li>
+                    </ul>
+                </section>
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <section class="o_int_dash_panel">
+                            <div class="o_int_dash_head">
+                                <h2>Latest orders</h2>
+                                <a href="/my/orders">View all</a>
+                            </div>
+                            <p t-if="not int_dashboard['orders']" class="text-muted mb-0">No orders yet.</p>
+                            <ul t-else="" class="o_int_dash_list">
+                                <li t-foreach="int_dashboard['orders']" t-as="order">
+                                    <a t-att-href="order.get_portal_url()" t-out="order.name"/>
+                                    <span class="o_int_dash_meta">
+                                        <span t-field="order.date_order" t-options="{'widget': 'date'}"/>
+                                        <span t-field="order.amount_total"/>
+                                    </span>
+                                    <span t-if="order.state == 'cancel'" class="badge rounded-pill text-bg-secondary">Cancelled</span>
+                                    <span t-elif="order.delivery_status == 'full'" class="badge rounded-pill text-bg-success">Delivered</span>
+                                    <span t-elif="order.delivery_status == 'partial'" class="badge rounded-pill text-bg-info">Partial</span>
+                                    <span t-elif="order.delivery_status == 'started'" class="badge rounded-pill text-bg-primary">Started</span>
+                                    <span t-else="" class="badge rounded-pill text-bg-warning">Open</span>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <section class="o_int_dash_panel">
+                            <div class="o_int_dash_head">
+                                <h2>Deliveries</h2>
+                                <a href="/my/deliveries">View all</a>
+                            </div>
+                            <p t-if="not int_dashboard['deliveries']" class="text-muted mb-0">No deliveries yet.</p>
+                            <ul t-else="" class="o_int_dash_list">
+                                <li t-foreach="int_dashboard['deliveries']" t-as="delivery">
+                                    <t t-set="int_status" t-value="delivery._int_portal_delivery_status()"/>
+                                    <a t-attf-href="/my/deliveries/{{ delivery.id }}" t-out="delivery.name"/>
+                                    <span class="o_int_dash_meta">
+                                        <a t-if="delivery.sale_id" t-att-href="delivery.sale_id.get_portal_url()" t-out="delivery.sale_id.name"/>
+                                    </span>
+                                    <span t-attf-class="badge rounded-pill {{ int_status[2] }}" t-out="int_status[1]"/>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <section id="int_dashboard_saved" class="o_int_dash_panel">
+                            <div class="o_int_dash_head">
+                                <h2>Saved orders</h2>
+                                <a href="/my/orders">My Orders</a>
+                            </div>
+                            <p t-if="not int_dashboard['saved']" class="text-muted mb-0">No saved orders. Pin one from My Orders.</p>
+                            <ul t-else="" class="o_int_dash_list">
+                                <li t-foreach="int_dashboard['saved']" t-as="order">
+                                    <a t-att-href="order.get_portal_url()" t-out="order.name"/>
+                                    <span class="o_int_dash_meta"><span t-field="order.amount_total"/></span>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div t-if="int_dashboard['show_invoices']" class="col-12 col-lg-6">
+                        <section class="o_int_dash_panel">
+                            <div class="o_int_dash_head">
+                                <h2>Recent invoices</h2>
+                                <a href="/my/invoices">View all</a>
+                            </div>
+                            <p t-if="not int_dashboard['invoices']" class="text-muted mb-0">No invoices yet.</p>
+                            <ul t-else="" class="o_int_dash_list">
+                                <li t-foreach="int_dashboard['invoices']" t-as="invoice">
+                                    <a t-att-href="invoice.get_portal_url()" t-out="invoice.name"/>
+                                    <span class="o_int_dash_meta">
+                                        <span t-if="invoice.invoice_date" t-field="invoice.invoice_date"/>
+                                        <span t-field="invoice.amount_total"/>
+                                    </span>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
     <template id="portal_my_orders_tools" name="My Orders search, pins, and export" inherit_id="sale.portal_my_orders">
         <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
             <div t-if="int_search_error" class="alert alert-warning" role="alert" t-out="int_search_error"/>

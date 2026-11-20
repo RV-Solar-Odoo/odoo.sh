@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Approved dealers only. Shoppers and retail accounts keep Home / Shop / About. -->
+    <template id="dealer_nav" inherit_id="website.layout" name="Dealer portal menu">
+        <xpath expr="//header[@id='top']" position="after">
+            <t t-set="int_dealer_nav" t-value="website and not request.env.user._is_public() and request.env['product.template']._int_is_dealer_contact(request.env.user.partner_id, website)"/>
+            <nav t-if="int_dealer_nav" class="o_int_dealer_menu" aria-label="Dealer">
+                <t t-set="int_path" t-value="request.httprequest.path or ''"/>
+                <t t-set="int_serial" t-value="request.params.get('search_in') == 'serial'"/>
+                <t t-set="int_user" t-value="request.env.user"/>
+                <t t-set="int_order_here" t-value="not int_serial and (int_path.startswith('/shop') or int_path.startswith('/my/orders') or int_path.startswith('/my/invoices') or int_path.startswith('/my/deliveries'))"/>
+                <div class="dropdown">
+                    <a href="#" t-attf-class="o_int_dealer_link dropdown-toggle #{int_order_here and 'o_int_dealer_current' or ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">Order</a>
+                    <ul class="dropdown-menu">
+                        <li t-if="int_user.int_portal_can('place_orders')">
+                            <a class="dropdown-item" href="/shop">Order</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('view_orders')">
+                            <a class="dropdown-item" href="/my/orders">Sales Orders</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('view_invoices')">
+                            <a class="dropdown-item" href="/my/invoices">Invoices</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('view_credit') or int_user.int_portal_can('view_store_credit')">
+                            <a class="dropdown-item" href="/my#int_portal_summary">Credits</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('view_orders')">
+                            <a class="dropdown-item" href="/my/deliveries">Deliveries</a>
+                        </li>
+                    </ul>
+                </div>
+                <a t-attf-class="o_int_dealer_link #{int_path.startswith('/help') and 'o_int_dealer_current' or ''}" href="/help">Support</a>
+                <a t-if="int_user.int_portal_can('view_orders')" t-attf-class="o_int_dealer_link #{int_serial and 'o_int_dealer_current' or ''}" href="/my/orders?search_in=serial">Serial Numbers</a>
+                <a t-attf-class="o_int_dealer_link #{int_path.startswith('/my/address') and 'o_int_dealer_current' or ''}" href="/my/addresses">Addresses</a>
+                <a t-if="int_user.int_portal_can('upload_po')" t-attf-class="o_int_dealer_link #{int_path.startswith('/my/po-upload') and 'o_int_dealer_current' or ''}" href="/my/po-upload">Upload a PO</a>
+            </nav>
+        </xpath>
+    </template>
+</odoo>

@@ -895,6 +895,7 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 27 | Deliveries instead of a Backorders tile | Grant, 2026-11-14: My Portal has Deliveries, not Backorders. The tile is the third card, directly under Your Orders. The list is every outgoing shipment for the commercial partner, including backorders, and each row opens that delivery. Cancelled shipments stay off the list. | ☑ Grant |
 | 28 | Pinned orders in the main list | Grant, 2026-11-14: no separate Pinned section. Pinned orders sort to the top of My Orders. | ☑ Grant |
 | 29 | Deliveries include picks | Grant, 2026-11-14: Deliveries lists every pick and outgoing shipment on the dealer's orders, done or not, including backorders. Vendor receipts stay off the list. Cancelled shipments stay off the list. | ☑ Grant |
+| 30 | Dealer menu and home dashboard, staging only | Grant, 2026-11-19: an approved dealer (pricelist is not the public pricelist) gets a dark menu in place of Home, Contact Us, Shop, and About Us. Items: Order (shop, sales orders, invoices, credits, deliveries), Support, Serial Numbers, Addresses, Upload a PO. My Portal adds a dashboard: invoices to pay, latest orders, deliveries, saved (pinned) orders, and recent invoices. Shoppers and retail accounts keep the shop menu. Resources and Memos are not added until those pages exist. This stays on staging until Grant says to put it on main. | ☑ Grant |
 
 ---
 

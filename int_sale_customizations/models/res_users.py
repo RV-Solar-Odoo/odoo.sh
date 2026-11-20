@@ -57,3 +57,63 @@ class ResUsers(models.Model):
         ], limit=1)
         currency = program.currency_id or company.currency_id
         return {"amount": card.points if card else 0.0, "currency": currency}
+
+    def _int_portal_dashboard(self):
+        """Home-page lists for an approved dealer, or False for everyone else.
+
+        Approved means the commercial partner's pricelist is not the public one.
+        Invoice rows are read as this user, so a buyer or viewer gets none.
+        """
+        self.ensure_one()
+        if self._is_public() or not self.has_group("base.group_portal"):
+            return False
+        company = self._int_portal_company() if hasattr(self, "_int_portal_company") else self.env.company
+        if not self._int_portal_is_dealer(company):
+            return False
+        commercial = self.partner_id.commercial_partner_id
+        SaleOrder = self.env["sale.order"]
+        orders = SaleOrder.sudo().search(
+            SaleOrder._int_portal_order_domain(commercial),
+            order="date_order desc, id desc",
+            limit=5,
+        )
+        Picking = self.env["stock.picking"]
+        deliveries = Picking.sudo().search(
+            Picking._int_portal_delivery_domain(commercial),
+            order="scheduled_date desc, id desc",
+            limit=5,
+        )
+        saved = self.int_pinned_order_ids.filtered(
+            lambda order: order.partner_id.commercial_partner_id == commercial and order.state in ("sale", "cancel")
+        )
+        show_invoices = self.int_portal_can("view_invoices")
+        invoices = to_pay = self.env["account.move"]
+        if show_invoices:
+            Move = self.env["account.move"]
+            posted = [
+                ("state", "=", "posted"),
+                ("partner_id", "child_of", commercial.id),
+                ("company_id", "=", company.id),
+            ]
+            invoices = Move.search(
+                posted + [("move_type", "in", ("out_invoice", "out_refund"))],
+                order="invoice_date desc, id desc",
+                limit=5,
+            )
+            to_pay = Move.search(
+                posted + [
+                    ("move_type", "=", "out_invoice"),
+                    ("payment_state", "in", ("not_paid", "partial")),
+                    ("amount_residual", ">", 0),
+                ],
+                order="invoice_date_due asc, id asc",
+                limit=8,
+            )
+        return {
+            "orders": orders,
+            "deliveries": deliveries,
+            "saved": saved,
+            "show_invoices": show_invoices,
+            "invoices": invoices,
+            "to_pay": to_pay,
+        }

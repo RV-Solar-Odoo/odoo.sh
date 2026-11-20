@@ -126,6 +126,13 @@ class TestPortalSecurity(TransactionCase):
             self.assertNotIn("••••", html.tostring(field, encoding="unicode"))
             self.assertIn('value=""', html.tostring(field, encoding="unicode"))
 
+    def test_dealer_menu_is_added_after_the_header(self):
+        arch = self._arch("website.layout")
+        self.assertIn("o_int_dealer_menu", arch)
+        self.assertIn("Serial Numbers", arch)
+        self.assertIn("/my/deliveries", arch)
+        self.assertIn("header[@id='top']", self.env.ref("int_website_customizations.dealer_nav").arch)
+
     def test_layout_marks_approved_dealers(self):
         arch = self._arch("website.layout")
         self.assertIn("o_int_approved_dealer", arch)
