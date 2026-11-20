@@ -128,31 +128,36 @@ class TestPortalSecurity(TransactionCase):
 
     def test_dealer_menu_uses_the_header_nav(self):
         arch = self._arch("website.navbar_nav")
-        self.assertLess(arch.find(">Home<"), arch.find(">Orders<"))
+        self.assertLess(arch.find(">Home<"), arch.find(">Shop<"))
+        self.assertLess(arch.find(">Shop<"), arch.find(">Orders<"))
         self.assertIn('href="/my"', arch)
+        self.assertIn('href="/shop"', arch)
         for label in (
             "Saved Orders",
-            ">Shop<",
-            "Quotations",
             "Deliveries",
             "Upload a PO",
-            "Your Invoices",
-            "Invoices to pay",
+            ">Invoices<",
             "Payment methods",
             "Help &amp; Feedback",
-            "Tickets",
+            "Your tickets",
             "Addresses",
             "Users",
             "Password &amp; Security",
+            "Documents",
+        ):
+            self.assertIn(label, arch)
+        for label in (
+            "Quotations",
+            "Invoices to pay",
+            "Your Invoices",
             "Projects",
             "Tasks",
             "Signatures",
-            "Documents",
             "Knowledge",
+            "Serial Numbers",
+            "Credits",
         ):
-            self.assertIn(label, arch)
-        self.assertNotIn("Serial Numbers", arch)
-        self.assertNotIn("Credits", arch)
+            self.assertNotIn(label, arch)
         home = self._arch("portal.portal_my_home")
         self.assertIn("o_portal_docs", home)
         self.assertIn("_int_is_dealer_contact", home)
