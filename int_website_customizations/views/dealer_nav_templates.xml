@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Approved dealers only. The links use the same header menu as Home / Shop / About. -->
+    <!-- Approved dealers only. The links use the same header menu as Home / Shop / About.
+         Every My Portal tile has a link here, so the home page can be the dashboard. -->
     <template id="dealer_nav" inherit_id="website.navbar_nav" name="Dealer portal menu">
         <xpath expr="//t[@t-out='0']" position="replace">
             <t t-if="website and not request.env.user._is_public() and request.env['product.template']._int_is_dealer_contact(request.env.user.partner_id, website)">
                 <t t-set="int_user" t-value="request.env.user"/>
                 <t t-set="int_path" t-value="request.httprequest.path or ''"/>
-                <t t-set="int_orders_here" t-value="int_path.startswith('/shop') or int_path.startswith('/my/orders') or int_path.startswith('/my/invoices') or int_path.startswith('/my/deliveries') or int_path.startswith('/my/po-upload')"/>
                 <t t-set="int_home_here" t-value="int_path in ('/my', '/my/')"/>
+                <t t-set="int_orders_here" t-value="int_path.startswith('/shop') or int_path.startswith('/my/orders') or int_path.startswith('/my/quotes') or int_path.startswith('/my/deliveries') or int_path.startswith('/my/po-upload')"/>
+                <t t-set="int_invoices_here" t-value="int_path.startswith('/my/invoices') or int_path.startswith('/my/payment_method')"/>
+                <t t-set="int_support_here" t-value="int_path.startswith('/help') or int_path.startswith('/my/tickets')"/>
+                <t t-set="int_account_here" t-value="int_path.startswith('/my/users') or int_path.startswith('/my/security') or int_path.startswith('/my/projects') or int_path.startswith('/my/tasks') or int_path.startswith('/my/signatures') or int_path.startswith('/knowledge') or int_path.startswith('/odoo/documents')"/>
                 <li class="nav-item" role="presentation">
                     <a t-attf-class="nav-link #{int_home_here and 'active' or ''}" href="/my" role="menuitem">Home</a>
                 </li>
@@ -23,8 +27,8 @@
                         <li t-if="int_user.int_portal_can('view_orders')" role="presentation">
                             <a class="dropdown-item" href="/my/orders" role="menuitem">Sales Orders</a>
                         </li>
-                        <li t-if="int_user.int_portal_can('view_invoices')" role="presentation">
-                            <a class="dropdown-item" href="/my/invoices" role="menuitem">Invoices</a>
+                        <li t-if="int_user.int_portal_can('view_orders')" role="presentation">
+                            <a class="dropdown-item" href="/my/quotes" role="menuitem">Quotations</a>
                         </li>
                         <li t-if="int_user.int_portal_can('view_orders')" role="presentation">
                             <a class="dropdown-item" href="/my/deliveries" role="menuitem">Deliveries</a>
@@ -34,14 +38,68 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <a t-attf-class="nav-link #{int_path.startswith('/help') and 'active' or ''}" href="/help" role="menuitem">Support</a>
+                <li t-if="int_user.int_portal_can('view_invoices') or int_user.int_portal_can('make_payments')" class="nav-item dropdown" role="presentation">
+                    <a href="#" t-attf-class="nav-link dropdown-toggle #{int_invoices_here and 'active' or ''}" data-bs-toggle="dropdown" role="menuitem" aria-expanded="false">Invoices</a>
+                    <ul t-attf-class="dropdown-menu #{is_vertical_nav and 'position-relative rounded-0' or ''}" role="menu">
+                        <li t-if="int_user.int_portal_can('view_invoices')" role="presentation">
+                            <a class="dropdown-item" href="/my/invoices?filterby=invoices" role="menuitem">Your Invoices</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('view_invoices')" role="presentation">
+                            <a class="dropdown-item" href="/my/invoices?filterby=overdue_invoices" role="menuitem">Invoices to pay</a>
+                        </li>
+                        <li t-if="int_user.int_portal_can('make_payments')" role="presentation">
+                            <a class="dropdown-item" href="/my/payment_method" role="menuitem">Payment methods</a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown" role="presentation">
+                    <a href="#" t-attf-class="nav-link dropdown-toggle #{int_support_here and 'active' or ''}" data-bs-toggle="dropdown" role="menuitem" aria-expanded="false">Support</a>
+                    <ul t-attf-class="dropdown-menu #{is_vertical_nav and 'position-relative rounded-0' or ''}" role="menu">
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/help" role="menuitem">Help &amp; Feedback</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/my/tickets" role="menuitem">Tickets</a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a t-attf-class="nav-link #{int_path.startswith('/my/address') and 'active' or ''}" href="/my/addresses" role="menuitem">Addresses</a>
                 </li>
+                <li class="nav-item dropdown" role="presentation">
+                    <a href="#" t-attf-class="nav-link dropdown-toggle #{int_account_here and 'active' or ''}" data-bs-toggle="dropdown" role="menuitem" aria-expanded="false">Account</a>
+                    <ul t-attf-class="dropdown-menu #{is_vertical_nav and 'position-relative rounded-0' or ''}" role="menu">
+                        <li t-if="int_user.int_portal_can('manage_users')" role="presentation">
+                            <a class="dropdown-item" href="/my/users" role="menuitem">Users</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/my/security" role="menuitem">Password &amp; Security</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/my/projects" role="menuitem">Projects</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/my/tasks" role="menuitem">Tasks</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/my/signatures" role="menuitem">Signatures</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/odoo/documents_portal" role="menuitem">Documents</a>
+                        </li>
+                        <li role="presentation">
+                            <a class="dropdown-item" href="/knowledge/home" role="menuitem">Knowledge</a>
+                        </li>
+                    </ul>
+                </li>
             </t>
             <t t-else="" t-out="0"/>
+        </xpath>
+    </template>
+
+    <template id="portal_my_home_hide_tiles" inherit_id="portal.portal_my_home" name="Dealer home is the dashboard">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="attributes">
+            <attribute name="t-if">not (website and not request.env.user._is_public() and request.env['product.template']._int_is_dealer_contact(request.env.user.partner_id, website))</attribute>
         </xpath>
     </template>
 </odoo>

@@ -16,6 +16,21 @@
         </div>
     </template>
 
+    <!-- The sidebar "Your contact" is the salesperson. Same photo treatment as the
+         account picture that used to sit above it. -->
+    <template id="portal_contact_photo" inherit_id="portal.portal_contact" name="Your contact photo">
+        <xpath expr="//h6" position="replace">
+            <div class="d-flex justify-content-start align-items-center gap-3 mb-2">
+                <img class="rounded object-fit-cover" t-att-src="image_data_uri(sales_user.partner_id.avatar_128)" alt="Contact" width="50"/>
+                <h6 class="mb-0" t-esc="sales_user.name"/>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="portal_side_content_no_photo" inherit_id="portal.side_content" name="Remove account photo">
+        <xpath expr="//img[@width='50']" position="replace"/>
+    </template>
+
     <template id="portal_my_home_sales_rep" name="My Portal sales rep" inherit_id="portal.portal_my_home">
         <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
             <div class="o_int_portal_summary" id="int_portal_summary">

@@ -53,3 +53,9 @@ class TestPortalSalesRep(TransactionCase):
         self.assertEqual(shown["email"], "casey.rep.portal@example.com")
         self.assertEqual(shown["phone"], "555-0100")
         self.assertEqual(shown["phone_href"], "tel:5550100")
+
+    def test_your_contact_shows_the_photo_and_the_account_photo_is_gone(self):
+        contact = self.env.ref("portal.portal_contact").get_combined_arch()
+        self.assertIn("sales_user.partner_id.avatar_128", contact)
+        side = self.env.ref("portal.side_content").get_combined_arch()
+        self.assertNotIn("user_id.partner_id.avatar_128", side)
