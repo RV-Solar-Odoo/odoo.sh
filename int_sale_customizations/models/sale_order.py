@@ -138,6 +138,9 @@ class SaleOrder(models.Model):
         elif filterby == "backordered":
             moves = self.env["stock.picking"]._int_portal_backorder_moves(commercial)
             domain += [("state", "=", "sale"), ("id", "in", moves.sale_line_id.order_id.ids)]
+        elif filterby == "saved":
+            pinned = self.env.user.int_pinned_order_ids.ids
+            domain += [("state", "in", ("sale", "cancel")), ("id", "in", pinned or [0])]
         else:
             domain.append(("state", "in", ("sale", "cancel")))
         if date_begin:

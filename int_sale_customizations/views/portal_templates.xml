@@ -146,7 +146,7 @@
                         <section id="int_dashboard_saved" class="o_int_dash_panel">
                             <div class="o_int_dash_head">
                                 <h2>Saved orders</h2>
-                                <a href="/my/orders">My Orders</a>
+                                <a href="/my/orders?filterby=saved">My Orders</a>
                             </div>
                             <p t-if="not int_dashboard['saved']" class="text-muted mb-0">No saved orders. Pin one from My Orders.</p>
                             <ul t-else="" class="o_int_dash_list">
@@ -209,6 +209,7 @@
                 <div class="col-md-4">
                     <select class="form-select" name="filterby">
                         <option value="all" t-att-selected="filterby == 'all'">All</option>
+                        <option value="saved" t-att-selected="filterby == 'saved'">Saved</option>
                         <option value="open" t-att-selected="filterby == 'open'">Open</option>
                         <option value="shipped" t-att-selected="filterby == 'shipped'">Shipped</option>
                         <option value="backordered" t-att-selected="filterby == 'backordered'">Backordered</option>

@@ -127,6 +127,9 @@ class TestPortalOrders(TransactionCase):
         self.assertIn(order, board["saved"])
         self.assertTrue(board["show_invoices"])
         self.assertFalse(board["to_pay"])
+        SaleOrder = self.env["sale.order"].with_user(owner)
+        saved = SaleOrder.search(SaleOrder._int_portal_order_domain(dealer, filterby="saved"))
+        self.assertIn(order, saved)
 
     def test_pin_limit(self):
         user = self.env.user
