@@ -128,6 +128,8 @@ class TestPortalSecurity(TransactionCase):
 
     def test_dealer_menu_uses_the_header_nav(self):
         arch = self._arch("website.navbar_nav")
+        self.assertLess(arch.find(">Home<"), arch.find(">Orders<"))
+        self.assertIn('href="/my"', arch)
         self.assertIn("Saved Orders", arch)
         self.assertIn(">Shop<", arch)
         self.assertIn("Upload a PO", arch)

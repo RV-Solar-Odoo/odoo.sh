@@ -7,6 +7,10 @@
                 <t t-set="int_user" t-value="request.env.user"/>
                 <t t-set="int_path" t-value="request.httprequest.path or ''"/>
                 <t t-set="int_orders_here" t-value="int_path.startswith('/shop') or int_path.startswith('/my/orders') or int_path.startswith('/my/invoices') or int_path.startswith('/my/deliveries') or int_path.startswith('/my/po-upload')"/>
+                <t t-set="int_home_here" t-value="int_path in ('/my', '/my/')"/>
+                <li class="nav-item" role="presentation">
+                    <a t-attf-class="nav-link #{int_home_here and 'active' or ''}" href="/my" role="menuitem">Home</a>
+                </li>
                 <li class="nav-item dropdown" role="presentation">
                     <a href="#" t-attf-class="nav-link dropdown-toggle #{int_orders_here and 'active' or ''}" data-bs-toggle="dropdown" role="menuitem" aria-expanded="false">Orders</a>
                     <ul t-attf-class="dropdown-menu #{is_vertical_nav and 'position-relative rounded-0' or ''}" role="menu">
