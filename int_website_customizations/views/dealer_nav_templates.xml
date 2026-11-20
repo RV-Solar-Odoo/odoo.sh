@@ -21,10 +21,7 @@
                     <a href="#" t-attf-class="nav-link dropdown-toggle #{int_orders_here and 'active' or ''}" data-bs-toggle="dropdown" role="menuitem" aria-expanded="false">Orders</a>
                     <ul t-attf-class="dropdown-menu #{is_vertical_nav and 'position-relative rounded-0' or ''}" role="menu">
                         <li t-if="int_user.int_portal_can('view_orders')" role="presentation">
-                            <a class="dropdown-item" href="/my/orders?filterby=saved" role="menuitem">Saved Orders</a>
-                        </li>
-                        <li t-if="int_user.int_portal_can('view_orders')" role="presentation">
-                            <a class="dropdown-item" href="/my/orders" role="menuitem">Sales Orders</a>
+                            <a class="dropdown-item" href="/my/orders" role="menuitem">My Orders</a>
                         </li>
                         <li t-if="int_user.int_portal_can('view_invoices')" role="presentation">
                             <a class="dropdown-item" href="/my/invoices?filterby=invoices" role="menuitem">Invoices</a>

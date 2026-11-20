@@ -133,7 +133,7 @@ class TestPortalSecurity(TransactionCase):
         self.assertIn('href="/my"', arch)
         self.assertIn('href="/shop"', arch)
         for label in (
-            "Saved Orders",
+            ">My Orders<",
             "Deliveries",
             "Upload a PO",
             ">Invoices<",
@@ -147,6 +147,8 @@ class TestPortalSecurity(TransactionCase):
         ):
             self.assertIn(label, arch)
         for label in (
+            "Saved Orders",
+            "Sales Orders",
             "Quotations",
             "Invoices to pay",
             "Your Invoices",
