@@ -1,11 +1,11 @@
 {
     "name": "CRM Customizations",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.6.0",
     "category": "Sales/CRM",
     "summary": "Dealer application documents and tax exemption claims, reviewed on the lead and applied to the customer",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["crm", "account", "website_crm", "int_contacts_customizations"],
+    "depends": ["crm", "account", "website_crm", "int_contacts_customizations", "int_account_customizations"],
     "application": False,
     "data": [
         "security/ir.model.access.csv",

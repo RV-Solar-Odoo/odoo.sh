@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_order_form_backorder" model="ir.ui.view">
+        <field name="name">sale.order.form.int.backorder</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="int_has_open_backorder" invisible="1"/>
+                <button name="action_int_release_backorder" type="object"
+                        string="Release Backorder for Invoicing"
+                        invisible="not int_has_open_backorder or state != 'sale'"
+                        groups="sales_team.group_sale_salesman"
+                        confirm="Has the backordered stock arrived? Its lines become invoiceable. Nothing is emailed to the customer."/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_uom_qty']" position="after">
+                <field name="int_backorder" optional="show" readonly="1"/>
+                <field name="int_backorder_released" optional="hide" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_search_backorder" model="ir.ui.view">
+        <field name="name">purchase.order.search.int.backorder</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_purchases']" position="after">
+                <filter name="int_backorder_po" string="Backorders" domain="[('int_backorder_po', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_form_backorder" model="ir.ui.view">
+        <field name="name">purchase.order.form.int.backorder</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <field name="int_backorder_po" invisible="1"/>
+                <span class="badge text-bg-warning mb-2" invisible="not int_backorder_po">Backorder</span>
+            </xpath>
+        </field>
+    </record>
+</odoo>

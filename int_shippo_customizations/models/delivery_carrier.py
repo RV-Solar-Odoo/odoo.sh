@@ -105,7 +105,11 @@ class DeliveryCarrier(models.Model):
         return paid * (before / line.price_unit)
 
     def _int_merchandise_before_discount(self, order):
-        """Product total before discounts. Shipping and reward lines are not included."""
+        """Product total before discounts, for what ships with this quote.
+
+        Shipping and reward lines are not included. Backordered items ship later, so they
+        don't count towards free shipping.
+        """
         if order._name != "sale.order":
             return 0.0
         total = 0.0
@@ -114,7 +118,10 @@ class DeliveryCarrier(models.Model):
                 continue
             if getattr(line, "reward_id", False) or line._is_global_discount():
                 continue
-            total += self._int_line_amount_before_discount(line)
+            amount = self._int_line_amount_before_discount(line)
+            if line.product_uom_qty:
+                amount *= min(line._int_shipping_quote_qty() / line.product_uom_qty, 1.0)
+            total += amount
         return total
 
     def _int_shippo_checkout_price(self, order, price):

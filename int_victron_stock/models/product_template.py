@@ -4,6 +4,7 @@ from collections import defaultdict
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
+from odoo.http import request
 
 # Supplier stock above this is shown as "20+". Our own warehouse quantity is never capped.
 VICTRON_PUBLIC_CAP = 20
@@ -186,14 +187,45 @@ class ProductTemplate(models.Model):
             return 0.0
         return sum(website._get_product_available_qty(item) for item in variants)
 
+    def _int_backorderable(self, variant=None):
+        """Storable products with "Sell when Out-of-Stock" on can be backordered.
+
+        Unticking that box on a product keeps the old rule: the shop only sells what
+        we or Victron have.
+        """
+        self.ensure_one()
+        if not self.is_storable:
+            return False
+        product = variant if variant else self
+        return bool(product.sudo().allow_out_of_stock_order)
+
     def _int_can_order_online(self, variant=None):
-        """True when the shop can sell this product from our warehouse or Victron."""
+        """True when the shop can sell this product from our warehouse, Victron, or as a backorder."""
         self.ensure_one()
         if not self.is_storable:
             return True
         if self._int_own_available_qty(variant) > 0:
             return True
-        return self._int_victron_available_qty() > 0
+        if self._int_victron_available_qty() > 0:
+            return True
+        return self._int_backorderable(variant)
+
+    def _int_backorder_for(self, variant, quantity):
+        """True when adding ``quantity`` to the cart would put some of it on backorder.
+
+        Answers yes or no only, so the product page never learns Victron's figure.
+        """
+        self.ensure_one()
+        if not variant or not self._int_backorderable(variant):
+            return False
+        in_cart = 0.0
+        cart = getattr(request, "cart", None) if request else None
+        if cart:
+            in_cart = cart._get_cart_qty(variant.id)
+        wanted = in_cart + max(float(quantity or 0.0), 0.0)
+        own = max(self._int_own_available_qty(variant), 0.0)
+        victron = self._int_victron_available_qty()
+        return wanted > own + victron + 1e-6
 
     def _website_show_quick_add(self):
         return super()._website_show_quick_add() and self._int_can_order_online()
@@ -241,11 +273,19 @@ class ProductTemplate(models.Model):
             variant = None
         own = max(self._int_own_available_qty(variant), 0.0)
         victron = self._int_victron_available_qty()
+        immediate = self._int_availability_line(
+            "immediate", "fa-check", own > 0, self._int_format_qty(own),
+            self.env._("ships immediately"),
+        )
+        if own <= 0 and victron <= 0 and self._int_backorderable(variant):
+            backorder = self._int_availability_line(
+                "backorder", "fa-clock-o", False, "", self.env._("Backorder · no ETA yet"),
+            )
+            backorder["css"] = "text-bg-warning"
+            backorder["label"] = backorder["detail"] = backorder["text"]
+            return [immediate, backorder]
         return [
-            self._int_availability_line(
-                "immediate", "fa-check", own > 0, self._int_format_qty(own),
-                self.env._("ships immediately"),
-            ),
+            immediate,
             self._int_availability_line(
                 "backup", "fa-truck", victron > 0, self._int_public_victron_qty(victron),
                 self.env._("ships in 7 days"),
@@ -280,4 +320,8 @@ class ProductTemplate(models.Model):
         elif template._int_victron_available_qty() > 0:
             res["allow_out_of_stock_order"] = True
             res["show_availability"] = False
+        elif template._int_backorderable(variant):
+            res["allow_out_of_stock_order"] = True
+            res["show_availability"] = False
+        res["int_backorder"] = template._int_backorder_for(variant, quantity)
         return res

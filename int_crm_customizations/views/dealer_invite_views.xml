@@ -16,10 +16,11 @@
                     <field name="credit_limit_other"
                            invisible="credit_limit_choice != 'other'"
                            required="credit_limit_choice == 'other'"/>
+                    <field name="payment_term_id" options="{'no_create': True, 'no_open': True}"/>
                 </group>
                 <p class="text-muted">
-                    This sets the pricelist, the credit limit (if one is chosen) and the RVSB Dealer tag, then emails a link to create a password.
-                    An existing login is kept.
+                    This sets the pricelist, the credit limit (if one is chosen), the payment terms and the RVSB Dealer tag, then emails a link to create a password.
+                    An existing login is kept. Ordering on account at checkout needs both payment terms and a credit limit.
                 </p>
                 <footer>
                     <button name="action_confirm" type="object" string="Send invite" class="btn-primary"/>

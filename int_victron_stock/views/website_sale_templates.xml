@@ -8,6 +8,7 @@
             <attribute name="t-att-class"
                        add="(' d-none out_of_stock' if product and not product._int_can_order_online(product_variant) else '')"
                        separator=" + "/>
+            <attribute name="t-att-data-int-backorder">'1' if product and product_variant and product._int_backorder_for(product_variant, 1) else ''</attribute>
         </xpath>
     </template>
 

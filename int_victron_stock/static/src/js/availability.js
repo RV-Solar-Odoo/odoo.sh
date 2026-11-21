@@ -26,7 +26,7 @@ patch(ClickAndCollectAvailability.prototype, {
     },
 
     get supplierLine() {
-        return (this.state.availabilityLines || []).find((line) => line.status === "backup");
+        return (this.state.availabilityLines || []).find((line) => ["backup", "backorder"].includes(line.status));
     },
 });
 
@@ -61,10 +61,18 @@ function renderAvailability(parent, combination) {
     }
 }
 
+function flagBackorder(parent, combination) {
+    const wrapper = parent.querySelector("#o_wsale_cta_wrapper");
+    if (wrapper && "int_backorder" in combination) {
+        wrapper.dataset.intBackorder = combination.int_backorder ? "1" : "";
+    }
+}
+
 const stockChange = VariantMixin._onChangeCombinationStock;
 VariantMixin._onChangeCombinationStock = async function (ev, parent, combination) {
     if (stockChange) {
         await stockChange.call(this, ev, parent, combination);
     }
     renderAvailability(parent, combination);
+    flagBackorder(parent, combination);
 };

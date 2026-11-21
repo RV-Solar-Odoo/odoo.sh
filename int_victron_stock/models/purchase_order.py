@@ -5,6 +5,7 @@ from odoo import api, fields, models
 _logger = logging.getLogger(__name__)
 
 ACTIVITY_SUMMARY = "Finish PO and send to Victron"
+BACKORDER_ACTIVITY_SUMMARY = "Review backorder PO"
 
 
 class PurchaseOrder(models.Model):
@@ -15,6 +16,13 @@ class PurchaseOrder(models.Model):
         copy=False,
         index=True,
         help="Drafted automatically for the part of a sales order the warehouse could not fill.",
+    )
+    int_backorder_po = fields.Boolean(
+        string="Backorder",
+        copy=False,
+        index=True,
+        help="Drafted automatically for items that were out of stock with us and Victron when "
+             "the customer ordered. Kept apart from the Victron shortfall RFQs.",
     )
 
     @api.model_create_multi
@@ -137,11 +145,136 @@ class PurchaseOrder(models.Model):
         return created or touched
 
     @api.model
+    def _int_backorder_vendor(self, product, victron_vendor):
+        """The product's main vendor, otherwise Victron for products with a Victron SKU."""
+        seller = product.seller_ids.filtered(
+            lambda info: info.partner_id and (not info.product_id or info.product_id == product)
+        )[:1]
+        if seller:
+            return seller.partner_id
+        if product.product_tmpl_id.sudo().victron_sku and victron_vendor:
+            return victron_vendor
+        return self.env["res.partner"]
+
+    @api.model
+    def _int_add_backorders(self, sale_lines):
+        """Put Backorder sale lines on one shared draft backorder PO per vendor and company."""
+        victron_vendor, victron_buyer = self.env["sale.order"]._int_victron_parties()
+        groups = {}
+        missing = self.env["sale.order.line"]
+        for line in sale_lines.filtered(lambda item: item.int_backorder and item.product_uom_qty):
+            vendor = self._int_backorder_vendor(line.product_id.with_company(line.company_id), victron_vendor)
+            if not vendor:
+                missing |= line
+                continue
+            groups.setdefault((line.company_id, vendor), self.env["sale.order.line"])
+            groups[(line.company_id, vendor)] |= line
+        for order in missing.order_id:
+            names = ", ".join(missing.filtered(lambda item: item.order_id == order).product_id.mapped("display_name"))
+            order.message_post(
+                body=order.env._(
+                    "No backorder purchase order was drafted for %(products)s: the product has no "
+                    "vendor. Add a vendor on the product's Purchase tab, then order it by hand.",
+                    products=names,
+                ),
+                subtype_xmlid="mail.mt_note",
+            )
+        touched = self.browse()
+        for (company, vendor), lines in groups.items():
+            buyer = vendor.buyer_id or victron_buyer
+            po = self.search([
+                ("int_backorder_po", "=", True),
+                ("state", "=", "draft"),
+                ("partner_id", "=", vendor.id),
+                ("company_id", "=", company.id),
+            ], limit=1, order="id desc")
+            if not po:
+                warehouse = lines.order_id.warehouse_id[:1] or self.env["stock.warehouse"].search(
+                    [("company_id", "=", company.id)], limit=1
+                )
+                po = self.with_company(company).create({
+                    "partner_id": vendor.id,
+                    "company_id": company.id,
+                    "user_id": buyer.id if buyer else False,
+                    "int_backorder_po": True,
+                    "origin": ", ".join(lines.order_id.mapped("name")),
+                    "picking_type_id": warehouse.in_type_id.id,
+                })
+            origins = set(filter(None, (po.origin or "").split(", ")))
+            for line in lines:
+                qty = line.product_uom_id._compute_quantity(line.product_uom_qty, line.product_id.uom_id)
+                existing = po.order_line.filtered(
+                    lambda item: item.int_source_sale_line_id == line and not item.display_type
+                )
+                if existing:
+                    existing.product_qty += qty
+                else:
+                    self.env["purchase.order.line"].create({
+                        "order_id": po.id,
+                        "product_id": line.product_id.id,
+                        "product_qty": qty,
+                        "product_uom_id": line.product_id.uom_id.id,
+                        "int_source_sale_line_id": line.id,
+                    })
+                origins.add(line.order_id.name)
+            po.origin = ", ".join(sorted(origins))
+            touched |= po
+            if buyer:
+                po._int_backorder_schedule_activity(buyer)
+        return touched
+
+    def _int_backorder_schedule_activity(self, user):
+        summary = self.env._(BACKORDER_ACTIVITY_SUMMARY)
+        note = self.env._(
+            "Customers ordered these while they were out of stock with us and our suppliers. "
+            "Check quantities and price, then confirm the purchase order. Nothing has been sent."
+        )
+        for order in self:
+            if order.activity_ids.filtered(lambda act: act.user_id == user and act.summary == summary):
+                continue
+            order.activity_schedule("mail.mail_activity_data_todo", summary=summary, note=note, user_id=user.id)
+
+    @api.model
+    def _int_backorder_drop_lines(self, sale_lines):
+        """Take cancelled backorder lines off draft POs. A confirmed PO gets a note to review."""
+        lines = self.env["purchase.order.line"].search([
+            ("int_source_sale_line_id", "in", sale_lines.ids),
+            ("order_id.int_backorder_po", "=", True),
+            ("order_id.state", "!=", "cancel"),
+        ])
+        draft_lines = lines.filtered(lambda line: line.order_id.state in ("draft", "sent"))
+        confirmed = lines - draft_lines
+        draft_orders = draft_lines.order_id
+        draft_lines.unlink()
+        draft_orders.filtered(lambda order: not order.order_line).unlink()
+        for order in confirmed.order_id:
+            order.message_post(
+                body=order.env._(
+                    "A customer cancelled backordered items on this purchase: %(orders)s. "
+                    "Review the quantities with the vendor.",
+                    orders=", ".join(sale_lines.order_id.mapped("name")),
+                ),
+                subtype_xmlid="mail.mt_note",
+            )
+        return confirmed
+
+    @api.model
+    def _int_backorder_confirmed_lines(self, sale_lines):
+        """Backorder sale lines whose purchase is already confirmed with the vendor."""
+        lines = self.env["purchase.order.line"].sudo().search([
+            ("int_source_sale_line_id", "in", sale_lines.ids),
+            ("order_id.int_backorder_po", "=", True),
+            ("order_id.state", "in", ("purchase", "done")),
+        ])
+        return lines.int_source_sale_line_id
+
+    @api.model
     def _int_victron_on_sale_cancel(self, orders):
         """Drop draft lines that belonged to a cancelled sale. Leave a confirmed PO alone."""
         sources = orders.order_line
         if not sources:
             return
+        self._int_backorder_drop_lines(sources.filtered("int_backorder"))
         lines = self.env["purchase.order.line"].search([
             ("int_source_sale_line_id", "in", sources.ids),
             ("order_id.int_victron_rfq", "=", True),

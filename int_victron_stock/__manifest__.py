@@ -1,8 +1,8 @@
 {
     "name": "Victron Stock",
-    "version": "19.0.1.27.0",
+    "version": "19.0.1.28.0",
     "category": "Inventory/Inventory",
-    "summary": "Show warehouse and Victron availability on the shop, and draft a purchase order for the shortfall",
+    "summary": "Show warehouse and Victron availability on the shop, draft a purchase order for the shortfall, and take backorders",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": ["stock", "website_sale", "website_sale_stock", "website_sale_collect", "website_sale_wishlist", "purchase_stock"],
@@ -14,12 +14,14 @@
         "views/victron_feed_views.xml",
         "views/res_config_settings_views.xml",
         "views/website_sale_templates.xml",
+        "views/sale_order_views.xml",
     ],
     "assets": {
         "web.assets_frontend": [
             "int_victron_stock/static/src/scss/shop_availability.scss",
             "int_victron_stock/static/src/js/availability.js",
             "int_victron_stock/static/src/interactions/ship_filter.js",
+            "int_victron_stock/static/src/interactions/backorder_notice.js",
             "int_victron_stock/static/src/xml/click_and_collect_availability.xml",
         ],
     },

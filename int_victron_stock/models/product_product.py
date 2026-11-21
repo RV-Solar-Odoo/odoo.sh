@@ -28,4 +28,6 @@ class ProductProduct(models.Model):
             return 0
         if self.is_storable and template._int_victron_feed_qty() > 0:
             return None
+        if self.is_storable and template._int_backorderable(self):
+            return None
         return super()._get_max_quantity(website, sale_order, **kwargs)

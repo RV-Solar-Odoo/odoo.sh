@@ -452,6 +452,19 @@ class CustomerPortal(CustomerPortal):
             return request.redirect(f"{url}{separator}int_error={quote(str(exc.args[0]))}")
         return request.redirect(order.get_portal_url())
 
+    @route("/my/orders/<int:order_id>/cancel-backorder", type="http", auth="user", website=True, methods=["POST"])
+    def int_order_cancel_backorder(self, order_id, reason="", note="", **kwargs):
+        order = self._int_owned_order(order_id)
+        if not order:
+            return request.redirect("/my/orders")
+        url = order.get_portal_url()
+        separator = "&" if "?" in url else "?"
+        try:
+            outcome = order.int_portal_cancel_backorder(request.env.user, reason, note)
+        except UserError as exc:
+            return request.redirect(f"{url}{separator}int_error={quote(str(exc.args[0]))}")
+        return request.redirect(f"{url}{separator}int_backorder={outcome}")
+
     @route("/my/po-template.xlsx", type="http", auth="user", website=True)
     def int_po_template(self, **kwargs):
         if not request.env.user.int_portal_can("upload_po"):

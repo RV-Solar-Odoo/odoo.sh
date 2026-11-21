@@ -332,7 +332,10 @@ class SaleOrder(models.Model):
         if self.user_id and not self.user_id.share:
             users |= self.user_id
         commercial = self.partner_id.commercial_partner_id
-        subject = _("Cancel request: %(order)s – %(dealer)s", order=self.name, dealer=commercial.name)
+        if self.int_cancel_scope == "backorder":
+            subject = _("Cancel backordered items: %(order)s – %(dealer)s", order=self.name, dealer=commercial.name)
+        else:
+            subject = _("Cancel request: %(order)s – %(dealer)s", order=self.name, dealer=commercial.name)
         body = _(
             "Order %(order)s is %(state)s. Deliveries: %(pickings)s. Payment: %(payment)s. "
             "Reason: %(reason)s.",

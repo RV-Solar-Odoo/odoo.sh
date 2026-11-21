@@ -50,4 +50,6 @@ class WebsiteSale(WebsiteSale):
     def shop_checkout(self, try_skip_step=None, **query_params):
         if request.env.user.int_portal_ordering_blocked():
             return request.redirect("/shop/cart?int_error=%s" % quote(_("Ask your account owner to order.")))
+        if request.cart:
+            request.cart._int_backorder_merge()
         return super().shop_checkout(try_skip_step=try_skip_step, **query_params)

@@ -32,6 +32,10 @@ and copies it to the contact's Tax Exemption Certificate field.
 Copies reviewed documents to the dealer's company contact (its Files), named
 "Label – file name", once each. Unreviewed files are listed in the chatter note as skipped.
 
+Sets the company contact's payment terms, Net 10th by default (`int_account_customizations.payment_term_net_10th`,
+due the 10th of the month after the invoice). Clearing the field leaves the contact's terms as they are. With terms
+and a credit limit, the dealer can use Place Order on Account at checkout (SPEC decision 37).
+
 ## Settings and manual steps
 
 - CRM → Configuration → **Document Labels** (sales managers): rename, reorder, or hide labels.

@@ -238,39 +238,51 @@ class TestVictronShop(TransactionCase):
         self.assertIn("20+", rendered)
         self.assertNotIn("45", rendered)
 
-    def test_add_to_cart_hides_only_when_both_stocks_are_zero(self):
+    def test_add_to_cart_hides_only_when_nothing_can_be_sold(self):
+        # "Sell when Out-of-Stock" off: nothing with us or Victron means nothing to sell.
         empty = self._product("Empty", on_hand=0, victron=0)
-        empty.allow_out_of_stock_order = True
+        # On: the same product is sold as a backorder.
+        backorder = self._product("Backorder Me", on_hand=0, victron=0)
+        backorder.allow_out_of_stock_order = True
         supplier = self._product("Supplier Only", on_hand=0, victron=8)
         supplier.allow_out_of_stock_order = True
         ours = self._product("Warehouse Only", on_hand=2, victron=0)
         ours.allow_out_of_stock_order = True
 
-        for product in (empty, supplier, ours):
+        for product in (empty, backorder, supplier, ours):
             product.website_published = True
         self.assertFalse(empty.product_tmpl_id._int_can_order_online(empty))
+        self.assertTrue(backorder.product_tmpl_id._int_can_order_online(backorder))
         self.assertTrue(supplier.product_tmpl_id._int_can_order_online(supplier))
         self.assertTrue(ours.product_tmpl_id._int_can_order_online(ours))
 
+        def info(product, qty=1.0):
+            return product.product_tmpl_id.with_context(
+                website_sale_stock_get_quantity=True
+            )._get_additionnal_combination_info(
+                product, qty, product.uom_id, fields.Datetime.now(), self.website
+            )
+
         with MockRequest(self.env, website=self.website):
-            empty_info = empty.product_tmpl_id.with_context(
-                website_sale_stock_get_quantity=True
-            )._get_additionnal_combination_info(
-                empty, 1.0, empty.uom_id, fields.Datetime.now(), self.website
-            )
-            supplier_info = supplier.product_tmpl_id.with_context(
-                website_sale_stock_get_quantity=True
-            )._get_additionnal_combination_info(
-                supplier, 1.0, supplier.uom_id, fields.Datetime.now(), self.website
-            )
+            empty_info = info(empty)
+            backorder_info = info(backorder)
+            supplier_info = info(supplier)
+            supplier_many = info(supplier, 9.0)
             self.assertFalse(empty.product_tmpl_id._website_show_quick_add())
             self.assertFalse(empty._website_show_quick_add())
             self.assertFalse(empty._is_add_to_cart_allowed())
+            self.assertTrue(backorder._is_add_to_cart_allowed())
             self.assertTrue(supplier._website_show_quick_add())
             self.assertTrue(ours.product_tmpl_id._website_show_quick_add())
         self.assertFalse(empty_info["allow_out_of_stock_order"])
+        self.assertTrue(backorder_info["allow_out_of_stock_order"])
         self.assertTrue(supplier_info["allow_out_of_stock_order"])
         self.assertNotIn("victron_qty", empty_info)
+        # The product page only learns yes or no, never Victron's count.
+        self.assertTrue(backorder_info["int_backorder"])
+        self.assertFalse(supplier_info["int_backorder"])
+        self.assertTrue(supplier_many["int_backorder"])
+        self.assertFalse(empty_info["int_backorder"])
 
         wishlist = self.env.ref("website_sale_wishlist.product_wishlist")
         arch = etree.fromstring(wishlist.get_combined_arch())
@@ -296,6 +308,15 @@ class TestVictronShop(TransactionCase):
         blocked = self._order(empty, 1)
         self.assertFalse(blocked.order_line._check_availability())
         self.assertEqual(blocked.order_line._get_max_line_qty(), 0)
+
+        qty, warning = order._verify_updated_quantity(
+            self.env["sale.order.line"], backorder.id, 4, backorder.uom_id.id
+        )
+        self.assertEqual((qty, warning), (4, ""))
+        taken = self._order(backorder, 4)
+        self.assertTrue(taken.order_line._check_availability())
+        self.assertIsNone(taken.order_line._get_max_line_qty())
+        self.assertIsNone(backorder._get_max_quantity(self.website, taken))
 
         allowed, allowed_warning = order._verify_updated_quantity(
             self.env["sale.order.line"], supplier.id, 3, supplier.uom_id.id

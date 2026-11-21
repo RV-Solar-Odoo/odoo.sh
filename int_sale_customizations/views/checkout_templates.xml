@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Payment step: pay now for what ships now, on account for dealers on terms. -->
+    <template id="payment_backorder_and_terms" inherit_id="website_sale.payment" name="Pay Now and Pay on Account">
+        <xpath expr="//div[@name='website_sale_non_free_cart']" position="before">
+            <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <t t-set="int_currency" t-value="website_sale_order.currency_id"/>
+            <div t-if="not errors and website_sale_order._int_backorder_lines()" class="card mb-3 o_int_pay_summary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <span>Pay now</span>
+                        <strong t-out="int_pay_now" t-options="{'widget': 'monetary', 'display_currency': int_currency}"/>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted">
+                        <span>Backordered, billed when it arrives</span>
+                        <span t-out="int_backorder_amount" t-options="{'widget': 'monetary', 'display_currency': int_currency}"/>
+                    </div>
+                    <p class="small text-muted mb-0 mt-2">
+                        Backordered items ship on their own once they arrive. We'll invoice them, with their
+                        shipping, before they ship. There's no ETA yet.
+                    </p>
+                </div>
+            </div>
+            <div t-if="not errors and int_terms and int_terms['on_terms'] and int_pay_now" class="card mb-3 o_int_on_account">
+                <div class="card-body">
+                    <h5 class="card-title">Pay on Account</h5>
+                    <t t-if="int_terms['eligible']">
+                        <p class="mb-2">
+                            Place this order on your account. We'll invoice it on your
+                            <strong t-out="int_terms['term'].display_name"/> terms.
+                        </p>
+                        <form action="/shop/int_on_account" method="post" class="o_int_on_account_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button type="submit" class="btn btn-primary w-100">Place Order on Account</button>
+                        </form>
+                        <p class="small text-muted mb-0 mt-2">Or pay by card below.</p>
+                    </t>
+                    <p t-else="" class="mb-0 text-muted" t-out="int_terms['reason']"/>
+                </div>
+            </div>
+        </xpath>
+        <xpath expr="//div[@name='website_sale_non_free_cart']" position="attributes">
+            <attribute name="t-if">not errors and website_sale_order._int_pay_now_amount()</attribute>
+        </xpath>
+        <xpath expr="//div[@name='website_sale_non_free_cart']/following-sibling::h4[1]" position="replace">
+            <h4 t-else="" class="mb-3">
+                <t t-if="website_sale_order._int_backorder_lines()">Place backorder</t>
+                <t t-else="">Confirm order</t>
+            </h4>
+        </xpath>
+    </template>
+
+    <!-- An all-backorder cart uses Odoo's free-cart button, relabelled. -->
+    <template id="navigation_buttons_backorder" inherit_id="website_sale.navigation_buttons" name="Place Backorder Button">
+        <xpath expr="//div[@name='o_website_sale_free_cart']" position="attributes">
+            <attribute name="t-if">not errors and not website_sale_order._int_pay_now_amount()</attribute>
+        </xpath>
+        <xpath expr="//div[@name='o_website_sale_free_cart']//t[@t-set='submit_button_label']" position="replace">
+            <t t-set="submit_button_label"><t t-if="website_sale_order._int_backorder_lines()">Place Backorder</t><t t-else="">Confirm Order</t></t>
+        </xpath>
+    </template>
+
+    <template id="confirmation_backorder_and_terms" inherit_id="website_sale.confirmation" name="Backorder and Account Notes">
+        <xpath expr="//div[@id='order_name']/preceding-sibling::div[1]" position="attributes">
+            <attribute name="t-if">tx_sudo.state in ['pending', 'done'] or not order.amount_total or (order.state == 'sale' and not tx_sudo)</attribute>
+        </xpath>
+        <xpath expr="//div[@id='order_name']" position="after">
+            <div t-if="order.int_on_account" class="alert alert-info" role="status">
+                Placed on your account. We'll invoice you on your
+                <t t-out="order.payment_term_id.display_name or 'payment'"/> terms.
+            </div>
+            <div t-if="order.order_line.filtered('int_backorder')" class="alert alert-warning" role="status">
+                Some items are on backorder, with no ETA yet. You haven't been charged for them.
+                We'll invoice you once they arrive at our warehouse, before they ship.
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Order page: backorder notice and Cancel Backordered Items. -->
+    <template id="portal_order_backorder" inherit_id="sale.sale_order_portal_content" name="Backordered items">
+        <xpath expr="//div[@id='introduction']" position="after">
+            <t t-set="int_backorder_lines" t-value="sale_order._int_cancellable_backorder_lines() if sale_order.state == 'sale' else sale_order.order_line.browse()"/>
+            <div t-if="int_backorder_lines" class="alert alert-warning d-flex flex-wrap align-items-center gap-2" role="status">
+                <span>
+                    <t t-out="', '.join(int_backorder_lines.product_id.mapped('display_name'))"/>
+                    <t t-if="len(int_backorder_lines) == 1"> is</t><t t-else=""> are</t>
+                    on backorder, with no ETA yet. We'll invoice
+                    <t t-if="len(int_backorder_lines) == 1">it</t><t t-else="">them</t>
+                    once the stock arrives, before shipping.
+                </span>
+                <button t-if="report_type != 'pdf' and sale_order._int_can_cancel_backorder(request.env.user)"
+                        type="button" class="btn btn-link btn-sm p-0 ms-md-auto"
+                        data-bs-toggle="modal" data-bs-target="#int_cancel_backorder_modal">Cancel Backordered Items</button>
+            </div>
+            <div t-if="report_type != 'pdf' and int_backorder_lines and sale_order._int_can_cancel_backorder(request.env.user)"
+                 class="modal fade" id="int_cancel_backorder_modal" tabindex="-1"
+                 aria-labelledby="int_cancel_backorder_title" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form t-attf-action="/my/orders/{{ sale_order.id }}/cancel-backorder" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="int_cancel_backorder_title">Cancel Backordered Items</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                            </div>
+                            <div class="modal-body">
+                                <p>This cancels only the backordered items. Everything else on the order stays as it is.</p>
+                                <ul class="mb-3">
+                                    <li t-foreach="int_backorder_lines" t-as="int_line">
+                                        <t t-out="int_line.product_id.display_name"/> ×
+                                        <t t-out="int_line.product_id.product_tmpl_id._int_format_qty(int_line.product_uom_qty)"/>
+                                    </li>
+                                </ul>
+                                <label class="col-form-label" for="int_cancel_backorder_reason">Reason</label>
+                                <select class="form-select mb-2" name="reason" id="int_cancel_backorder_reason" required="required">
+                                    <option value="no_longer_needed">No longer needed</option>
+                                    <option value="ordered_wrong_item">Ordered the wrong item</option>
+                                    <option value="found_elsewhere">Found it elsewhere</option>
+                                    <option value="delay">Delay</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <label class="col-form-label" for="int_cancel_backorder_note">Note</label>
+                                <textarea class="form-control" name="note" id="int_cancel_backorder_note"/>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Keep Them</button>
+                                <button class="btn btn-primary" type="submit">Cancel Backordered Items</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div t-if="request.params.get('int_backorder') == 'cancelled'" class="alert alert-success" role="status">
+                The backordered items are cancelled.
+            </div>
+        </xpath>
+    </template>
+</odoo>

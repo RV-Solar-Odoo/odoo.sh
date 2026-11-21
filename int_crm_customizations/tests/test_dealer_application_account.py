@@ -1,3 +1,4 @@
+from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 from odoo.tools import email_normalize
@@ -81,6 +82,32 @@ class TestDealerApplicationAccount(TransactionCase):
         # No limit leaves what is already there.
         self._invite(lead, pricelist, company)
         self.assertEqual(commercial.credit_limit, 2500)
+
+    def test_invite_puts_the_dealer_on_net_10th_unless_cleared(self):
+        company = self.env.company
+        net_10th = self.env.ref("int_account_customizations.payment_term_net_10th")
+        line = net_10th.line_ids
+        self.assertEqual((line.delay_type, line.nb_days, line.days_next_month), ("days_end_of_month_on_the", 0, "10"))
+        self.assertEqual(line._get_due_date(fields.Date.to_date("2026-11-21")), fields.Date.to_date("2026-12-10"))
+        self.assertEqual(line._get_due_date(fields.Date.to_date("2026-12-03")), fields.Date.to_date("2027-01-10"))
+
+        pricelist = self._pricelist("Terms Invite", company)
+        lead = self._lead("terms-invite@example.com", company)
+        action = lead.action_int_open_dealer_invite()
+        wizard = self.env["int.dealer.invite"].with_context(**action["context"]).create({
+            "pricelist_id": pricelist.id,
+        })
+        self.assertEqual(wizard.payment_term_id, net_10th)
+        wizard.action_confirm()
+        commercial = lead.partner_id.commercial_partner_id.sudo().with_company(company)
+        self.assertEqual(commercial.property_payment_term_id, net_10th)
+
+        thirty = self.env.ref("account.account_payment_term_30days")
+        self._invite(lead, pricelist, company, payment_term_id=thirty.id)
+        self.assertEqual(commercial.property_payment_term_id, thirty)
+        # Clearing the field leaves the contact's terms alone.
+        self._invite(lead, pricelist, company, payment_term_id=False)
+        self.assertEqual(commercial.property_payment_term_id, thirty)
 
     def test_other_credit_limit_needs_an_amount(self):
         company = self.env.company

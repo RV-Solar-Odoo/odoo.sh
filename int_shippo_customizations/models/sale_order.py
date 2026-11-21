@@ -25,12 +25,14 @@ class SaleOrder(models.Model):
     )
 
     def _int_shippo_order_lines(self):
+        """Lines the website shipping quote covers. Backordered items ship later and are left out."""
         self.ensure_one()
         return self.order_line.filtered(
             lambda line: line.product_id
             and line.product_id.type != "service"
             and not line.display_type
             and not line.is_delivery
+            and line._int_shipping_quote_qty() > 0
         )
 
     def _int_order_product_categories(self):
@@ -118,7 +120,7 @@ class SaleOrder(models.Model):
         self.ensure_one()
         picking = self.env["stock.picking"]
         return sum(
-            picking._int_shippo_product_weight_lb(line.product_id, line.product_uom_qty)
+            picking._int_shippo_product_weight_lb(line.product_id, line._int_shipping_quote_qty())
             for line in self._int_shippo_order_lines()
         )
 
@@ -126,7 +128,7 @@ class SaleOrder(models.Model):
         self.ensure_one()
         picking = self.env["stock.picking"]
         items = [
-            (*picking._int_shippo_product_dims_in(line.product_id), line.product_uom_qty)
+            (*picking._int_shippo_product_dims_in(line.product_id), line._int_shipping_quote_qty())
             for line in self._int_shippo_order_lines()
         ]
         return self.env["int.shippo.box"].suggest_for_items(items, self._int_shippo_content_weight_lb())
@@ -165,7 +167,7 @@ class SaleOrder(models.Model):
                 "warehouse": self.warehouse_id.id,
                 "parcels": self._int_shippo_parcels(),
                 "lines": sorted(
-                    (line.product_id.id, line.product_uom_qty)
+                    (line.product_id.id, line._int_shipping_quote_qty())
                     for line in self._int_shippo_order_lines()
                 ),
             },
@@ -293,3 +295,16 @@ class SaleOrder(models.Model):
             })
         request_cache[key] = rates
         return rates
+
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    def _int_shipping_quote_qty(self):
+        """Quantity the website shipping quote is for, in the line's unit.
+
+        Sales Customizations lowers it for backordered items, which ship later and are
+        charged shipping then.
+        """
+        self.ensure_one()
+        return self.product_uom_qty

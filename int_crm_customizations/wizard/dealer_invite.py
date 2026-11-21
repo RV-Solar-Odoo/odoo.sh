@@ -36,6 +36,16 @@ class IntDealerInvite(models.TransientModel):
     )
     credit_limit_other = fields.Monetary(string="Credit limit amount", currency_field="currency_id")
     currency_id = fields.Many2one(related="company_id.currency_id")
+    payment_term_id = fields.Many2one(
+        "account.payment.term",
+        string="Payment terms",
+        default=lambda self: self.env.ref(
+            "int_account_customizations.payment_term_net_10th", raise_if_not_found=False
+        ),
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
+        help="Lets the dealer place orders on account at checkout, up to their credit limit. "
+             "Leave empty to have them pay by card.",
+    )
 
     @api.constrains("credit_limit_choice", "credit_limit_other")
     def _check_credit_limit_other(self):
@@ -93,6 +103,8 @@ class IntDealerInvite(models.TransientModel):
                 "credit_limit": limit,
                 "use_partner_credit_limit": True,
             })
+        if self.payment_term_id:
+            commercial.sudo().with_company(self.company_id).property_payment_term_id = self.payment_term_id
         _title, message, level = partner._int_dealer_account_email_notice(code, user, owner)
         notice = _(
             "%(message)s Pricelist on %(name)s is now %(pricelist)s. Tagged RVSB Dealer.",
@@ -105,6 +117,12 @@ class IntDealerInvite(models.TransientModel):
                 "%(notice)s Credit limit set to %(limit)s.",
                 notice=notice,
                 limit=self.company_id.currency_id.format(limit),
+            )
+        if self.payment_term_id:
+            notice = _(
+                "%(notice)s Payment terms set to %(term)s.",
+                notice=notice,
+                term=self.payment_term_id.display_name,
             )
         noted = self.env["res.partner"]
         for record in (commercial, owner, partner):
