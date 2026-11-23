@@ -1,7 +1,11 @@
+import logging
+
 from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 from .sale_order import CANCEL_REASONS
+
+_logger = logging.getLogger(__name__)
 
 
 class SaleOrder(models.Model):
@@ -50,17 +54,50 @@ class SaleOrder(models.Model):
         """
         self.ensure_one()
         empty = {"on_terms": False, "eligible": False, "reason": False, "term": False, "available": 0.0}
-        if user._is_public() or not user.share:
+        if user._is_public():
+            return empty
+        if not user.share:
+            self._int_log_terms(user, "internal user, not a portal login")
             return empty
         commercial = user.partner_id.commercial_partner_id
         if self.partner_id.commercial_partner_id != commercial:
+            self._int_log_terms(user, "cart belongs to another customer")
             return empty
         if user.int_portal_ordering_blocked():
+            self._int_log_terms(user, "this login's role can't place orders")
             return empty
-        return commercial._int_terms_status(
+        status = commercial._int_terms_status(
             self.company_id,
             self._int_pay_now_amount(),
             show_figures=user.int_portal_can("view_credit"),
+        )
+        if not status["eligible"]:
+            self._int_log_terms(user, status["reason"] or "no payment terms for this company")
+        return status
+
+    def _int_log_terms(self, user, why):
+        """Server log line saying why checkout didn't offer Pay on Account.
+
+        The page hides the option for customers not on terms, so this is how staff
+        find out which record and company it read.
+        """
+        commercial = user.partner_id.commercial_partner_id
+        per_company = "; ".join(
+            "%s: terms=%s limit=%s credit limits %s" % (
+                company.name,
+                commercial.sudo().with_company(company).property_payment_term_id.display_name or "none",
+                commercial.sudo().with_company(company).credit_limit,
+                "on" if company.sudo().account_use_credit_limit else "off",
+            )
+            for company in self.env["res.company"].sudo().search([])
+        )
+        _logger.info(
+            "No Pay on Account for %s on %s: %s. Login %s (id %s) -> contact %s (id %s) -> "
+            "terms read from %s (id %s). Cart company %s. Cart customer %s (id %s). %s",
+            user.login, self.name, why, user.login, user.id,
+            user.partner_id.display_name, user.partner_id.id,
+            commercial.display_name, commercial.id, self.company_id.name,
+            self.partner_id.display_name, self.partner_id.id, per_company,
         )
 
     def _int_place_without_payment(self, mode, user):
