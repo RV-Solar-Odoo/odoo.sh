@@ -31,6 +31,19 @@ class DeliveryCarrier(models.Model):
              "Faster methods are unchanged.",
     )
 
+    int_checkout_role = fields.Selection(
+        [
+            ("backorder", "Backorder: shipping charged later"),
+            ("freight", "Freight: quoted later"),
+        ],
+        string="Checkout role",
+        help="Backorder: offered only when nothing in the cart ships now. Its shipping is "
+             "invoiced with the backordered items. Freight: offered only when the cart is too "
+             "heavy or too big for parcel carriers. Staff add the freight charge before it "
+             "ships. Website checkout hides every other method except store pickup in both "
+             "cases.",
+    )
+
     def _int_is_ground_method(self):
         includes = self._int_shippo_service_tokens(self.int_shippo_service_include)
         return "ground" in includes and "saver" not in " ".join(includes)
@@ -38,6 +51,17 @@ class DeliveryCarrier(models.Model):
     def _is_available_for_order(self, order):
         if not super()._is_available_for_order(order):
             return False
+        if order._name == "sale.order" and order._int_website_checkout_cart():
+            later = order._int_nothing_ships_now()
+            freight = not later and order._int_shippo_needs_freight()
+            if self.int_checkout_role == "backorder":
+                return later
+            if self.int_checkout_role == "freight":
+                return freight
+            if (later or freight) and self.delivery_type != "in_store":
+                return False
+        elif self.int_checkout_role:
+            return True
         if (
             order._name == "sale.order"
             and order._int_requires_ground_shipping()

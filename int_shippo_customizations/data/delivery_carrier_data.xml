@@ -111,4 +111,32 @@
         <field name="sequence">26</field>
         <field name="is_published" eval="True"/>
     </record>
+    <!-- Offered by checkout in place of parcel rates. See the Checkout role field. -->
+    <record id="product_product_delivery_later" model="product.product">
+        <field name="name">Shipping (charged later)</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+    </record>
+    <record id="delivery_carrier_backorder_later" model="delivery.carrier">
+        <field name="name">Ships When Backorder Arrives</field>
+        <field name="delivery_type">fixed</field>
+        <field name="fixed_price">0.0</field>
+        <field name="int_checkout_role">backorder</field>
+        <field name="carrier_description">Nothing ships today. We'll invoice shipping with your backordered items, before they ship.</field>
+        <field name="product_id" ref="product_product_delivery_later"/>
+        <field name="sequence">90</field>
+        <field name="is_published" eval="True"/>
+    </record>
+    <record id="delivery_carrier_freight_quote" model="delivery.carrier">
+        <field name="name">Freight: We'll Quote Shipping</field>
+        <field name="delivery_type">fixed</field>
+        <field name="fixed_price">0.0</field>
+        <field name="int_checkout_role">freight</field>
+        <field name="carrier_description">This order is too large for parcel shipping. We'll quote freight and add it before your order ships.</field>
+        <field name="product_id" ref="product_product_delivery_later"/>
+        <field name="sequence">91</field>
+        <field name="is_published" eval="True"/>
+    </record>
 </odoo>

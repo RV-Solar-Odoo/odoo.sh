@@ -1,8 +1,12 @@
+from types import SimpleNamespace
+
 from lxml import etree
 
 from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
+
+from odoo.addons.website_sale.tests.common import MockRequest
 
 
 @tagged("post_install", "-at_install")
@@ -105,7 +109,8 @@ class TestBackorderCheckout(TransactionCase):
                 for product, qty in lines
             ],
         })
-        order._set_delivery_method(self.carrier)
+        later = self.env.ref("int_shippo_customizations.delivery_carrier_backorder_later")
+        order._set_delivery_method(later if order._int_nothing_ships_now() else self.carrier)
         return order
 
     def test_pay_now_leaves_out_the_backorder_and_its_shipping_and_coupons(self):
@@ -216,3 +221,51 @@ class TestBackorderCheckout(TransactionCase):
         self.assertIn("Cancel Backordered Items", order_page)
         confirmation = self.env.ref("website_sale.confirmation").get_combined_arch()
         self.assertIn("Placed on your account", confirmation)
+
+    def test_all_backorder_cart_ships_later_and_needs_no_parcel_quote(self):
+        product = self._product("Checkout Later")
+        cart = self._cart(self.owner, (product, 2))
+        later = self.env.ref("int_shippo_customizations.delivery_carrier_backorder_later")
+        self.assertTrue(cart._int_nothing_ships_now())
+        methods = cart._get_delivery_methods()
+        self.assertIn(later, methods)
+        self.assertNotIn(self.carrier, methods)
+        self.assertEqual(cart.carrier_id, later)
+        self.assertEqual(cart.amount_delivery, 0.0)
+        in_stock = self._cart(self.owner, (self._product("Checkout Now", on_hand=5), 1))
+        self.assertFalse(later._is_available_for_order(in_stock))
+        self.assertIn(self.carrier, in_stock._get_delivery_methods())
+        cart._int_backorder_split()
+        cart._int_place_without_payment("backorder", self.owner)
+        self.assertEqual(cart.state, "sale")
+
+    def test_thank_you_page_counts_the_pay_now_amount_as_paid_in_full(self):
+        product = self._product("Checkout Partial", on_hand=1)
+        cart = self._cart(self.owner, (product, 3))
+        cart._int_backorder_split()
+        self.assertTrue(cart._int_payment_matches(SimpleNamespace(amount=cart._int_pay_now_amount())))
+        self.assertFalse(cart._int_payment_matches(SimpleNamespace(amount=cart.amount_total)))
+        plain = self._cart(self.owner, (self._product("Checkout Whole", on_hand=5), 1))
+        self.assertTrue(plain._int_payment_matches(SimpleNamespace(amount=plain.amount_total)))
+
+        status = self.env.ref("website_sale.payment_confirmation_status").get_combined_arch()
+        self.assertIn("_int_payment_matches", status)
+        self.assertNotIn("order.amount_total != tx_sudo.amount", status)
+
+    def _render_total(self, cart):
+        with MockRequest(self.env, website=self.website, sale_order_id=cart.id):
+            return str(self.env["ir.ui.view"]._render_template("website_sale.total", {
+                "website_sale_order": cart,
+                "hide_promotions": True,
+            }))
+
+    def test_order_summary_shows_due_today_for_a_split_cart(self):
+        product = self._product("Checkout Summary", on_hand=1)
+        cart = self._cart(self.owner, (product, 3))
+        cart._int_backorder_split()
+        html = self._render_total(cart)
+        self.assertIn("Due Today", html)
+        self.assertIn("Backordered, billed when it arrives", html)
+        self.assertIn("Delivery (ships now)", html)
+        cart._int_backorder_merge()
+        self.assertNotIn("Due Today", self._render_total(cart))

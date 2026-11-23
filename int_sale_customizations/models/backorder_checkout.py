@@ -46,6 +46,16 @@ class SaleOrder(models.Model):
             return 0.0
         return self._int_pay_now_amount()
 
+    def _int_payment_matches(self, tx):
+        """Whether ``tx`` paid what checkout asked for.
+
+        That is the order total, less the open backorder lines when there are any.
+        The thank-you page uses this instead of comparing with the full total.
+        """
+        self.ensure_one()
+        expected = self._int_pay_now_amount() if self._int_backorder_lines() else self.amount_total
+        return not self.currency_id.compare_amounts(tx.amount, expected)
+
     def _int_terms_for(self, user):
         """Whether ``user`` can place this cart on their company's payment terms.
 

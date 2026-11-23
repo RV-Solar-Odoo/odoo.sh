@@ -11,4 +11,19 @@
             </xpath>
         </field>
     </record>
+
+    <!-- A credit limit without customer payment terms doesn't give Pay on Account. -->
+    <record id="view_partner_property_form_terms_warning" model="ir.ui.view">
+        <field name="name">res.partner.form.int.terms.warning</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="account.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning mb-0" role="alert" invisible="not int_terms_warning"
+                     groups="account.group_account_invoice,account.group_account_readonly">
+                    <field name="int_terms_warning" readonly="1"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
 </odoo>

@@ -20,12 +20,25 @@ class ShippoBox(models.Model):
         """Pick the smallest box that fits item dimensions, volume, and weight.
 
         items: iterable of (length_in, width_in, height_in, qty)
+        Falls back to the smallest box when nothing fits.
         """
-        boxes = self.search([
+        box = self.fitting_box_for_items(items, weight_lb)
+        if box:
+            return box
+        return self._int_boxes().sorted(lambda b: b.length_in * b.width_in * b.height_in)[:1]
+
+    @api.model
+    def _int_boxes(self):
+        return self.search([
             ("length_in", ">", 0),
             ("width_in", ">", 0),
             ("height_in", ">", 0),
         ])
+
+    @api.model
+    def fitting_box_for_items(self, items, weight_lb):
+        """The smallest box the items really fit in, or an empty recordset."""
+        boxes = self._int_boxes()
         if not boxes:
             return self.browse()
         max_l = max_w = max_h = 0.0
@@ -47,6 +60,6 @@ class ShippoBox(models.Model):
                 continue
             fits.append((box.length_in * box.width_in * box.height_in, box))
         if not fits:
-            return boxes.sorted(lambda b: b.length_in * b.width_in * b.height_in)[:1]
+            return self.browse()
         fits.sort(key=lambda item: item[0])
         return fits[0][1]

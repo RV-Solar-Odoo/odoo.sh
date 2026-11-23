@@ -293,3 +293,93 @@ class TestShippoCheckout(TransactionCase):
         })
         with self.assertRaisesRegex(UserError, "No Phone Customer"):
             picking._int_shippo_check_label_phones()
+
+
+@tagged("post_install", "-at_install")
+class TestShippoBigCarts(TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        env["int.shippo.box"].search([]).active = False
+        cls.small_box = env["int.shippo.box"].create({
+            "name": "Test Small", "length_in": 12, "width_in": 10, "height_in": 8, "empty_lb": 0.5, "max_lb": 20,
+        })
+        cls.large_box = env["int.shippo.box"].create({
+            "name": "Test Large", "length_in": 24, "width_in": 18, "height_in": 16, "empty_lb": 1.5, "max_lb": 70,
+        })
+        env["ir.config_parameter"].sudo().set_param("int_shippo.freight_over_lb", "500")
+        cls.website = env["website"].search([("company_id", "=", env.company.id)], limit=1) or env["website"].create({
+            "name": "Big Cart Website", "company_id": env.company.id,
+        })
+        cls.customer = env["res.partner"].create({"name": "Big Cart Customer", "country_id": env.ref("base.us").id})
+        cls.light = env["product.product"].create({"name": "Big Cart Fuse", "type": "consu", "weight": 0.1})
+        cls.heavy = env["product.product"].create({"name": "Big Cart Battery", "type": "consu", "weight": 10.0})
+        cls.ground = env.ref("int_shippo_customizations.delivery_carrier_shippo_ups_ground")
+        cls.freight = env.ref("int_shippo_customizations.delivery_carrier_freight_quote")
+        cls.later = env.ref("int_shippo_customizations.delivery_carrier_backorder_later")
+
+    def _order(self, product, qty, website=True):
+        return self.env["sale.order"].create({
+            "partner_id": self.customer.id,
+            "website_id": self.website.id if website else False,
+            "order_line": [Command.create({"product_id": product.id, "product_uom_qty": qty})],
+        })
+
+    def _unit_lb(self, product):
+        return self.env["stock.picking"]._int_shippo_product_weight_lb(product, 1.0)
+
+    def test_small_cart_is_still_one_box(self):
+        order = self._order(self.light, 2)
+        parcels = order._int_shippo_parcels()
+        self.assertEqual(len(parcels), 1)
+        self.assertEqual(parcels[0]["length"], "12.00")
+
+    def test_heavy_cart_is_split_into_boxes_under_their_limits(self):
+        qty = int(200 // self._unit_lb(self.heavy)) + 1
+        order = self._order(self.heavy, qty)
+        total = self._unit_lb(self.heavy) * qty
+        self.assertGreater(total, 150)
+        parcels = order._int_shippo_parcels()
+        self.assertGreater(len(parcels), 1)
+        self.assertTrue(all(float(p["weight"]) <= 70.0 + 1e-6 for p in parcels))
+        packages = order._int_shippo_packages()
+        self.assertAlmostEqual(sum(content for _box, content, _dims in packages), total, places=2)
+        self.assertFalse(order._int_shippo_needs_freight())
+
+    def test_freight_over_the_weight_limit_hides_parcel_methods(self):
+        self.env["ir.config_parameter"].sudo().set_param("int_shippo.freight_over_lb", "100")
+        qty = int(120 // self._unit_lb(self.heavy)) + 1
+        order = self._order(self.heavy, qty)
+        self.assertTrue(order._int_shippo_needs_freight())
+        self.assertTrue(self.freight._is_available_for_order(order))
+        self.assertFalse(self.ground._is_available_for_order(order))
+        self.assertFalse(self.later._is_available_for_order(order))
+        self.assertIn(self.freight, order._get_delivery_methods())
+
+        # Backend quotations keep every method.
+        backend = self._order(self.heavy, qty, website=False)
+        self.assertTrue(self.freight._is_available_for_order(backend))
+
+    def test_freight_is_not_offered_for_a_normal_cart(self):
+        order = self._order(self.light, 1)
+        self.assertFalse(order._int_shippo_needs_freight())
+        self.assertFalse(self.freight._is_available_for_order(order))
+        self.assertFalse(self.later._is_available_for_order(order))
+
+    def test_an_item_over_150_lb_is_freight_whatever_the_limit(self):
+        self.env["ir.config_parameter"].sudo().set_param("int_shippo.freight_over_lb", "0")
+        crate = self.env["product.product"].create({"name": "Big Cart Pallet", "type": "consu", "weight": 1.0})
+        crate.weight = crate.weight * 151.0 / self._unit_lb(crate)
+        order = self._order(crate, 1)
+        self.assertTrue(order._int_shippo_needs_freight())
+
+    def test_confirming_a_freight_order_leaves_a_note(self):
+        self.env["ir.config_parameter"].sudo().set_param("int_shippo.freight_over_lb", "100")
+        qty = int(120 // self._unit_lb(self.heavy)) + 1
+        order = self._order(self.heavy, qty)
+        order._set_delivery_method(self.freight)
+        self.assertEqual(order.amount_delivery, 0.0)
+        order.action_confirm()
+        self.assertTrue(order.message_ids.filtered(lambda msg: "quote the freight" in (msg.body or "")))

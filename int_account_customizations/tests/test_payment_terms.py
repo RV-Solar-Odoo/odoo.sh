@@ -79,3 +79,19 @@ class TestDealerTerms(TransactionCase):
         status = self.buyer._int_terms_status(self.company, 100.0)
         self.assertTrue(status["eligible"])
         self.assertEqual(status["available"], 950.0)
+
+    def test_contact_warns_when_a_credit_limit_has_no_customer_terms(self):
+        dealer = self.dealer.with_company(self.company)
+        self._set(credit_limit=2000.0)
+        dealer.invalidate_recordset(["int_terms_warning"])
+        self.assertIn("no customer payment terms", dealer.int_terms_warning)
+
+        # Terms under Purchase don't count, and the warning says so.
+        self._set(property_supplier_payment_term_id=self.net_10th.id)
+        dealer.invalidate_recordset(["int_terms_warning"])
+        self.assertIn("under Purchase", dealer.int_terms_warning)
+
+        self._set(property_payment_term_id=self.net_10th.id)
+        dealer.invalidate_recordset(["int_terms_warning"])
+        self.assertFalse(dealer.int_terms_warning)
+        self.assertFalse(self.buyer.with_company(self.company).int_terms_warning)

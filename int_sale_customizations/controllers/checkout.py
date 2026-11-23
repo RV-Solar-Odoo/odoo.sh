@@ -46,6 +46,8 @@ class BackorderCheckout(WebsiteSale):
         pay_now = order._int_pay_now_amount()
         if order._int_backorder_lines():
             values["amount"] = pay_now
+            if pay_now:
+                values["submit_button_label"] = _("Pay %(amount)s Now", amount=order.currency_id.format(pay_now))
         values.update({
             "int_pay_now": pay_now,
             "int_backorder_amount": order._int_backorder_amount(),

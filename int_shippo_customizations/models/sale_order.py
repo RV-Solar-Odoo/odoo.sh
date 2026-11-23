@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 
 from odoo import fields, models
 from odoo.exceptions import UserError
@@ -9,6 +10,14 @@ _logger = logging.getLogger(__name__)
 # Quotes are reused for this long before Shippo is asked again. The cache is also
 # keyed on the cart and the delivery address, so any change refetches immediately.
 RATE_CACHE_MINUTES = 60
+
+# UPS and FedEx refuse single parcels heavier than this.
+PARCEL_MAX_LB = 150.0
+# Past this many boxes a shipment is freight, whatever it weighs.
+MAX_PARCELS = 20
+# Carts heavier than this go freight. Change it under Inventory > Settings > Shippo.
+DEFAULT_FREIGHT_OVER_LB = 500.0
+DEFAULT_PARCEL_IN = 10.0
 
 
 class SaleOrder(models.Model):
@@ -133,24 +142,146 @@ class SaleOrder(models.Model):
         ]
         return self.env["int.shippo.box"].suggest_for_items(items, self._int_shippo_content_weight_lb())
 
+    def _int_shippo_units(self):
+        """One (weight_lb, (length, width, height)) entry per unit that ships now."""
+        self.ensure_one()
+        picking = self.env["stock.picking"]
+        units = []
+        for line in self._int_shippo_order_lines():
+            qty = line._int_shipping_quote_qty()
+            unit_lb = picking._int_shippo_product_weight_lb(line.product_id, 1.0)
+            dims = picking._int_shippo_product_dims_in(line.product_id)
+            whole = int(math.floor(qty + 1e-6))
+            units.extend([(unit_lb, dims)] * whole)
+            if qty - whole > 1e-6:
+                units.append((unit_lb * (qty - whole), dims))
+        return units
+
+    def _int_shippo_packages(self):
+        """Boxes for the website quote: a list of (box, content_lb, dims) tuples.
+
+        The whole cart goes in one box when it fits. Otherwise units are packed
+        heaviest first into the largest box, each box kept under its own weight limit
+        and the carriers' 150 lb. A unit too big for every box ships on its own in its
+        own dimensions. ``box`` is empty for those, and when no boxes are set up.
+        """
+        self.ensure_one()
+        Box = self.env["int.shippo.box"]
+        items = [
+            (*self.env["stock.picking"]._int_shippo_product_dims_in(line.product_id), line._int_shipping_quote_qty())
+            for line in self._int_shippo_order_lines()
+        ]
+        weight_lb = self._int_shippo_content_weight_lb()
+        boxes = Box._int_boxes()
+        box = Box.fitting_box_for_items(items, weight_lb)
+        if box and weight_lb + (box.empty_lb or 0.0) <= PARCEL_MAX_LB:
+            return [(box, weight_lb, None)]
+        if not boxes:
+            if weight_lb <= PARCEL_MAX_LB:
+                return [(Box, weight_lb, None)]
+            count = int(math.ceil(weight_lb / PARCEL_MAX_LB))
+            return [(Box, weight_lb / count, None)] * count
+
+        largest = boxes.sorted(lambda b: b.length_in * b.width_in * b.height_in)[-1]
+        capacity_lb = min((largest.max_lb or PARCEL_MAX_LB) - (largest.empty_lb or 0.0), PARCEL_MAX_LB)
+        capacity_in3 = largest.length_in * largest.width_in * largest.height_in
+        packages = []
+        bins = []  # [content_lb, volume_in3, [items]]
+        fits_a_box = {}
+        for unit_lb, dims in sorted(self._int_shippo_units(), key=lambda unit: unit[0], reverse=True):
+            volume = dims[0] * dims[1] * dims[2]
+            if (unit_lb, dims) not in fits_a_box:
+                fits_a_box[unit_lb, dims] = bool(Box.fitting_box_for_items([(*dims, 1.0)], unit_lb))
+            if not fits_a_box[unit_lb, dims]:
+                packages.append((Box, unit_lb, dims if volume else None))
+                continue
+            for current in bins:
+                if current[0] + unit_lb <= capacity_lb + 1e-6 and current[1] + volume <= capacity_in3 + 1e-6:
+                    current[0] += unit_lb
+                    current[1] += volume
+                    current[2].append((*dims, 1.0))
+                    break
+            else:
+                bins.append([unit_lb, volume, [(*dims, 1.0)]])
+        for content_lb, _volume, bin_items in bins:
+            packages.append((Box.fitting_box_for_items(bin_items, content_lb) or largest, content_lb, None))
+        return packages
+
     def _int_shippo_parcels(self):
         self.ensure_one()
-        box = self._int_shippo_suggest_box()
-        weight_lb = self._int_shippo_content_weight_lb()
-        if box:
-            weight_lb += box.empty_lb or 0.0
-            length_in, width_in, height_in = box.length_in, box.width_in, box.height_in
-        else:
-            length_in = width_in = height_in = 10.0
-        weight_lb = max(weight_lb or 0.1, 0.1)
-        return [{
-            "length": f"{max(length_in or 1.0, 0.1):.2f}",
-            "width": f"{max(width_in or 1.0, 0.1):.2f}",
-            "height": f"{max(height_in or 1.0, 0.1):.2f}",
-            "distance_unit": "in",
-            "weight": f"{weight_lb:.2f}",
-            "mass_unit": "lb",
-        }]
+        parcels = []
+        for box, content_lb, dims in self._int_shippo_packages():
+            weight_lb = content_lb
+            if box:
+                weight_lb += box.empty_lb or 0.0
+                length_in, width_in, height_in = box.length_in, box.width_in, box.height_in
+            elif dims:
+                length_in, width_in, height_in = dims
+            else:
+                length_in = width_in = height_in = DEFAULT_PARCEL_IN
+            weight_lb = max(weight_lb or 0.1, 0.1)
+            parcels.append({
+                "length": f"{max(length_in or 1.0, 0.1):.2f}",
+                "width": f"{max(width_in or 1.0, 0.1):.2f}",
+                "height": f"{max(height_in or 1.0, 0.1):.2f}",
+                "distance_unit": "in",
+                "weight": f"{weight_lb:.2f}",
+                "mass_unit": "lb",
+            })
+        return parcels
+
+    def _int_freight_over_lb(self):
+        value = self.env["ir.config_parameter"].sudo().get_param("int_shippo.freight_over_lb")
+        try:
+            return float(value) if value not in (None, False, "") else DEFAULT_FREIGHT_OVER_LB
+        except ValueError:
+            return DEFAULT_FREIGHT_OVER_LB
+
+    def _int_shippo_needs_freight(self):
+        """Too heavy or too big for parcel carriers, so checkout offers freight."""
+        self.ensure_one()
+        if not self._int_shippo_order_lines():
+            return False
+        limit = self._int_freight_over_lb()
+        if limit > 0 and self._int_shippo_content_weight_lb() > limit + 1e-6:
+            return True
+        packages = self._int_shippo_packages()
+        if len(packages) > MAX_PARCELS:
+            return True
+        return any(
+            content_lb + ((box.empty_lb or 0.0) if box else 0.0) > PARCEL_MAX_LB + 1e-6
+            for box, content_lb, _dims in packages
+        )
+
+    def _int_nothing_ships_now(self):
+        """Every product in the cart is backordered, so there is nothing to ship yet."""
+        self.ensure_one()
+        goods = self.order_line.filtered(
+            lambda line: line.product_id
+            and line.product_id.type != "service"
+            and not line.display_type
+            and not line.is_delivery
+            and line.product_uom_qty
+        )
+        return bool(goods) and not self._int_shippo_order_lines()
+
+    def _int_website_checkout_cart(self):
+        return bool(self.website_id) and self.state in ("draft", "sent")
+
+    def action_confirm(self):
+        res = super().action_confirm()
+        for order in self.filtered(lambda o: o.carrier_id.int_checkout_role == "freight"):
+            order.message_post(
+                body=self.env._("Freight order: quote the freight and add the charge before it ships."),
+                subtype_xmlid="mail.mt_note",
+            )
+            if order.user_id:
+                order.activity_schedule(
+                    "mail.mail_activity_data_todo",
+                    summary=self.env._("Quote freight"),
+                    user_id=order.user_id.id,
+                )
+        return res
 
     def _int_shippo_rate_key(self):
         """Fingerprint of everything Shippo prices on, so any change refetches."""

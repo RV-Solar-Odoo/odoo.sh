@@ -5,21 +5,9 @@
         <xpath expr="//div[@name='website_sale_non_free_cart']" position="before">
             <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
             <t t-set="int_currency" t-value="website_sale_order.currency_id"/>
-            <div t-if="not errors and website_sale_order._int_backorder_lines()" class="card mb-3 o_int_pay_summary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <span>Pay now</span>
-                        <strong t-out="int_pay_now" t-options="{'widget': 'monetary', 'display_currency': int_currency}"/>
-                    </div>
-                    <div class="d-flex justify-content-between text-muted">
-                        <span>Backordered, billed when it arrives</span>
-                        <span t-out="int_backorder_amount" t-options="{'widget': 'monetary', 'display_currency': int_currency}"/>
-                    </div>
-                    <p class="small text-muted mb-0 mt-2">
-                        Backordered items ship on their own once they arrive. We'll invoice them, with their
-                        shipping, before they ship. There's no ETA yet.
-                    </p>
-                </div>
+            <div t-if="not errors and website_sale_order._int_backorder_lines()" class="alert alert-info mb-3 o_int_pay_summary" role="status">
+                Backordered items aren't charged today. They ship on their own once they arrive,
+                and we'll invoice them, with their shipping, before they ship. There's no ETA yet.
             </div>
             <div t-if="not errors and int_terms and int_terms['on_terms'] and int_pay_now" class="card mb-3 o_int_on_account">
                 <div class="card-body">
@@ -47,6 +35,52 @@
                 <t t-if="website_sale_order._int_backorder_lines()">Place backorder</t>
                 <t t-else="">Confirm order</t>
             </h4>
+        </xpath>
+    </template>
+
+    <!-- Order summary: what is charged today when part of the cart is backordered. -->
+    <template id="total_backorder_due_today" inherit_id="website_sale.total" name="Due Today">
+        <xpath expr="//div[contains(@t-attf-class, 'o_cart_total')]" position="before">
+            <t t-set="int_split_cart" t-value="website_sale_order and website_sale_order.state in ('draft', 'sent') and website_sale_order._int_backorder_lines()"/>
+        </xpath>
+        <xpath expr="//tr[@name='o_order_delivery']/td[1]" position="replace">
+            <td class="ps-0 pt-0 pb-2 border-0 text-muted" colspan="2">
+                <t t-if="int_split_cart">Delivery (ships now)</t>
+                <t t-else="">Delivery</t>
+            </td>
+        </xpath>
+        <xpath expr="//tr[@name='o_order_total']" position="after">
+            <t t-if="int_split_cart">
+                <tr name="o_int_order_backordered">
+                    <td colspan="2" class="border-0 ps-0 pt-0 pb-2 text-muted">Backordered, billed when it arrives</td>
+                    <td class="text-end border-0 pe-0 pt-0 pb-2 text-muted">
+                        <span t-out="website_sale_order._int_backorder_amount()" style="white-space: nowrap;"
+                              t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                    </td>
+                </tr>
+                <tr name="o_int_order_due_today" class="border-top">
+                    <td colspan="2" class="border-0 ps-0 pt-2"><strong>Due Today</strong></td>
+                    <td class="text-end border-0 px-0 pt-2">
+                        <strong t-out="website_sale_order._int_pay_now_amount()" style="white-space: nowrap;"
+                                t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                    </td>
+                </tr>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Thank-you page: a payment for the ship-now part is a full payment. -->
+    <template id="payment_confirmation_status_backorder" inherit_id="website_sale.payment_confirmation_status" name="Backorder Payment Status">
+        <xpath expr="//div[@t-if='tx_sudo']" position="attributes">
+            <attribute name="t-attf-class">alert px-3 pb-0 pt-3 #{
+                    (tx_sudo.state == 'pending' and 'alert-info') or
+                    (tx_sudo.state == 'done' and order._int_payment_matches(tx_sudo) and 'alert-success') or
+                    (tx_sudo.state == 'done' and 'alert-warning') or
+                    (tx_sudo.state == 'authorized' and 'alert-success') or
+                    'alert-danger'}</attribute>
+        </xpath>
+        <xpath expr="//t[contains(@t-if, 'order.amount_total != tx_sudo.amount')]" position="attributes">
+            <attribute name="t-if">tx_sudo.state == 'done' and not order._int_payment_matches(tx_sudo)</attribute>
         </xpath>
     </template>
 
