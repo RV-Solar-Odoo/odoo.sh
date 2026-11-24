@@ -46,6 +46,36 @@ class SaleOrder(models.Model):
             return 0.0
         return self._int_pay_now_amount()
 
+    def _int_checkout_summary(self):
+        """Figures for the payment-step summary of a split cart: today, and later.
+
+        Today is the lines that ship now, with their shipping and tax, and adds up to the
+        pay-now amount. Later is the open backorder lines with their tax; their shipping is
+        quoted when they ship. Each tax is the group total less its untaxed lines, so the
+        rows always add up and are 0 for a tax-exempt customer.
+        """
+        self.ensure_one()
+        currency = self.currency_id
+        later_lines = self._int_backorder_lines()
+        now_lines = self.order_line - later_lines - self.order_line.filtered("display_type")
+        shipping_lines = now_lines.filtered("is_delivery")
+        now_items = currency.round(sum((now_lines - shipping_lines).mapped("price_subtotal")))
+        now_shipping = currency.round(sum(shipping_lines.mapped("price_subtotal")))
+        due_today = self._int_pay_now_amount()
+        later_items = currency.round(sum(later_lines.mapped("price_subtotal")))
+        later_total = self._int_backorder_amount()
+        later_qty = sum(later_lines.mapped("product_uom_qty"))
+        return {
+            "now_items": now_items,
+            "now_shipping": now_shipping,
+            "now_tax": currency.round(due_today - now_items - now_shipping),
+            "due_today": due_today,
+            "later_qty": int(later_qty) if float(later_qty).is_integer() else later_qty,
+            "later_items": later_items,
+            "later_tax": currency.round(later_total - later_items),
+            "later_total": later_total,
+        }
+
     def _int_payment_matches(self, tx):
         """Whether ``tx`` paid what checkout asked for.
 

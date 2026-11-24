@@ -259,13 +259,61 @@ class TestBackorderCheckout(TransactionCase):
                 "hide_promotions": True,
             }))
 
-    def test_order_summary_shows_due_today_for_a_split_cart(self):
+    def test_order_summary_splits_today_from_the_backorder(self):
+        tax = self.env["account.tax"].create({
+            "name": "Checkout Summary 10%",
+            "amount": 10.0,
+            "type_tax_use": "sale",
+            "company_id": self.company.id,
+        })
         product = self._product("Checkout Summary", on_hand=1)
         cart = self._cart(self.owner, (product, 3))
+        cart.order_line.filtered(lambda line: line.product_id == product).tax_ids = tax
         cart._int_backorder_split()
+        figures = cart._int_checkout_summary()
+        self.assertEqual(figures["now_items"], 100.0)
+        self.assertEqual(figures["now_tax"], 10.0)
+        self.assertEqual(figures["due_today"], cart._int_pay_now_amount())
+        self.assertEqual(figures["due_today"], 110.0)
+        self.assertEqual(figures["later_qty"], 2)
+        self.assertEqual(figures["later_items"], 200.0)
+        self.assertEqual(figures["later_tax"], 20.0)
         html = self._render_total(cart)
-        self.assertIn("Due Today", html)
-        self.assertIn("Backordered, billed when it arrives", html)
-        self.assertIn("Delivery (ships now)", html)
+        root = etree.fromstring(html, etree.HTMLParser())
+        for name in ("o_order_delivery", "o_order_total_untaxed", "o_order_total_taxes", "o_order_total"):
+            row = root.xpath(f"//tr[@name='{name}']")
+            self.assertTrue(row and "d-none" in row[0].get("class", ""), name)
+        for name in ("o_int_now_items", "o_int_now_shipping", "o_int_now_tax", "o_int_order_due_today", "o_int_order_later"):
+            self.assertTrue(root.xpath(f"//tr[@name='{name}']"), name)
+        self.assertIn("Paying today", html)
+        self.assertIn("Billed when it ships", html)
+        self.assertIn("Backordered items (2)", html)
+        self.assertIn("TBD", html)
+        self.assertIn("Free", html)
+        self.assertIn("We'll let you know when there's an ETA and bill these items then.", html)
+
         cart._int_backorder_merge()
-        self.assertNotIn("Due Today", self._render_total(cart))
+        html = self._render_total(cart)
+        self.assertNotIn("Due Today", html)
+        root = etree.fromstring(html, etree.HTMLParser())
+        self.assertNotIn("d-none", root.xpath("//tr[@name='o_order_total']")[0].get("class", ""))
+
+    def test_order_summary_has_no_tax_rows_for_a_tax_exempt_dealer(self):
+        product = self._product("Checkout Exempt", on_hand=1)
+        cart = self._cart(self.owner, (product, 2))
+        cart._int_backorder_split()
+        root = etree.fromstring(self._render_total(cart), etree.HTMLParser())
+        self.assertFalse(root.xpath("//tr[@name='o_int_now_tax']"))
+        later = root.xpath("//tr[@name='o_int_order_later']")[0]
+        self.assertNotIn("Tax", "".join(later.itertext()))
+
+    def test_order_summary_for_an_all_backorder_cart_shows_nothing_due(self):
+        product = self._product("Checkout All Later")
+        cart = self._cart(self.owner, (product, 2))
+        cart._int_backorder_split()
+        self.assertEqual(cart._int_checkout_summary()["due_today"], 0.0)
+        root = etree.fromstring(self._render_total(cart), etree.HTMLParser())
+        self.assertFalse(root.xpath("//tr[@name='o_int_now_items']"))
+        self.assertFalse(root.xpath("//tr[@name='o_int_now_shipping']"))
+        self.assertTrue(root.xpath("//tr[@name='o_int_order_due_today']"))
+        self.assertTrue(root.xpath("//tr[@name='o_int_order_later']"))

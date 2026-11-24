@@ -5,10 +5,6 @@
         <xpath expr="//div[@name='website_sale_non_free_cart']" position="before">
             <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
             <t t-set="int_currency" t-value="website_sale_order.currency_id"/>
-            <div t-if="not errors and website_sale_order._int_backorder_lines()" class="alert alert-info mb-3 o_int_pay_summary" role="status">
-                Backordered items aren't charged today. They ship on their own once they arrive,
-                and we'll invoice them, with their shipping, before they ship. There's no ETA yet.
-            </div>
             <div t-if="not errors and int_terms and int_terms['on_terms'] and int_pay_now" class="card mb-3 o_int_on_account">
                 <div class="card-body">
                     <h5 class="card-title">Pay on Account</h5>
@@ -38,34 +34,88 @@
         </xpath>
     </template>
 
-    <!-- Order summary: what is charged today when part of the cart is backordered. -->
+    <!-- Order summary of a split cart: what is paid today, and what is billed when the backorder ships.
+         Odoo's rows stay in the page, hidden, for the checkout script that updates them. -->
     <template id="total_backorder_due_today" inherit_id="website_sale.total" name="Due Today">
         <xpath expr="//div[contains(@t-attf-class, 'o_cart_total')]" position="before">
             <t t-set="int_split_cart" t-value="website_sale_order and website_sale_order.state in ('draft', 'sent') and website_sale_order._int_backorder_lines()"/>
         </xpath>
-        <xpath expr="//tr[@name='o_order_delivery']/td[1]" position="replace">
-            <td class="ps-0 pt-0 pb-2 border-0 text-muted" colspan="2">
-                <t t-if="int_split_cart">Delivery (ships now)</t>
-                <t t-else="">Delivery</t>
-            </td>
+        <xpath expr="//tr[@name='o_order_delivery']" position="attributes">
+            <attribute name="t-att-class">'d-none' if int_split_cart else None</attribute>
+        </xpath>
+        <xpath expr="//tr[@name='o_order_total_untaxed']" position="attributes">
+            <attribute name="t-att-class">'d-none' if int_split_cart else None</attribute>
+        </xpath>
+        <xpath expr="//tr[@name='o_order_total_taxes']" position="attributes">
+            <attribute name="t-att-class">'d-none' if int_split_cart else None</attribute>
+        </xpath>
+        <xpath expr="//tr[@name='o_order_total']" position="attributes">
+            <attribute name="class"/>
+            <attribute name="t-att-class">'d-none' if int_split_cart else 'border-top'</attribute>
         </xpath>
         <xpath expr="//tr[@name='o_order_total']" position="after">
             <t t-if="int_split_cart">
-                <tr name="o_int_order_backordered">
-                    <td colspan="2" class="border-0 ps-0 pt-0 pb-2 text-muted">Backordered, billed when it arrives</td>
-                    <td class="text-end border-0 pe-0 pt-0 pb-2 text-muted">
-                        <span t-out="website_sale_order._int_backorder_amount()" style="white-space: nowrap;"
-                              t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                <t t-set="int_sum" t-value="website_sale_order._int_checkout_summary()"/>
+                <t t-set="int_money" t-value="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                <t t-set="int_ships_now" t-value="int_sum['now_items'] or int_sum['due_today']"/>
+                <tr name="o_int_today_heading">
+                    <td colspan="3" class="border-0 px-0 pt-0 pb-2 small text-uppercase fw-semibold text-muted">Paying today</td>
+                </tr>
+                <tr t-if="int_ships_now" name="o_int_now_items">
+                    <td colspan="2" class="border-0 ps-0 pt-0 pb-2 text-muted">Items shipping now</td>
+                    <td class="text-end border-0 pe-0 pt-0 pb-2">
+                        <span t-out="int_sum['now_items']" style="white-space: nowrap;" t-options="int_money"/>
+                    </td>
+                </tr>
+                <tr t-if="int_ships_now and website_sale_order._has_deliverable_products()" name="o_int_now_shipping">
+                    <td colspan="2" class="border-0 ps-0 pt-0 pb-2 text-muted">Shipping</td>
+                    <td class="text-end border-0 pe-0 pt-0 pb-2">
+                        <t t-if="not website_sale_order.carrier_id">-</t>
+                        <t t-elif="website_sale_order.currency_id.is_zero(int_sum['now_shipping'])">Free</t>
+                        <span t-else="" t-out="int_sum['now_shipping']" style="white-space: nowrap;" t-options="int_money"/>
+                    </td>
+                </tr>
+                <tr t-if="int_ships_now and not website_sale_order.currency_id.is_zero(int_sum['now_tax'])" name="o_int_now_tax">
+                    <td colspan="2" class="border-0 ps-0 pt-0 pb-2 text-muted">Tax</td>
+                    <td class="text-end border-0 pe-0 pt-0 pb-2">
+                        <span t-out="int_sum['now_tax']" style="white-space: nowrap;" t-options="int_money"/>
                     </td>
                 </tr>
                 <tr name="o_int_order_due_today" class="border-top">
-                    <td colspan="2" class="border-0 ps-0 pt-2"><strong>Due Today</strong></td>
-                    <td class="text-end border-0 px-0 pt-2">
-                        <strong t-out="website_sale_order._int_pay_now_amount()" style="white-space: nowrap;"
-                                t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                    <td colspan="2" class="border-0 ps-0 pt-2 pb-3"><strong>Due Today</strong></td>
+                    <td class="text-end border-0 px-0 pt-2 pb-3">
+                        <strong class="fs-5" t-out="int_sum['due_today']" style="white-space: nowrap;" t-options="int_money"/>
+                    </td>
+                </tr>
+                <tr name="o_int_order_later">
+                    <td colspan="3" class="border-0 px-0 pt-0 pb-3">
+                        <div class="o_int_later rounded p-3 bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="border-style: dashed !important;">
+                            <div class="small text-uppercase fw-semibold mb-2">Billed when it ships</div>
+                            <div class="d-flex justify-content-between gap-2 mb-1">
+                                <span>Backordered items (<t t-out="int_sum['later_qty']"/>)</span>
+                                <span t-out="int_sum['later_items']" style="white-space: nowrap;" t-options="int_money"/>
+                            </div>
+                            <div t-if="website_sale_order._has_deliverable_products()" class="d-flex justify-content-between gap-2 mb-1">
+                                <span>Shipping</span>
+                                <span>TBD</span>
+                            </div>
+                            <div t-if="not website_sale_order.currency_id.is_zero(int_sum['later_tax'])" class="d-flex justify-content-between gap-2 mb-1">
+                                <span>Tax</span>
+                                <span t-out="int_sum['later_tax']" style="white-space: nowrap;" t-options="int_money"/>
+                            </div>
+                            <p class="small mb-0 mt-2">We'll let you know when there's an ETA and bill these items then.</p>
+                        </div>
                     </td>
                 </tr>
             </t>
+        </xpath>
+    </template>
+
+    <!-- Phone summary button: a split cart shows what is due today, not the full order. -->
+    <template id="checkout_layout_due_today" inherit_id="website_sale.checkout_layout" name="Due Today on Phones">
+        <xpath expr="//span[@id='amount_total_summary']" position="attributes">
+            <attribute name="t-field"/>
+            <attribute name="t-out">website_sale_order._int_pay_now_amount() if website_sale_order.state in ('draft', 'sent') and website_sale_order._int_backorder_lines() else website_sale_order.amount_total</attribute>
         </xpath>
     </template>
 
