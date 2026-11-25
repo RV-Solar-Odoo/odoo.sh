@@ -111,11 +111,23 @@
         </xpath>
     </template>
 
-    <!-- Phone summary button: a split cart shows what is due today, not the full order. -->
-    <template id="checkout_layout_due_today" inherit_id="website_sale.checkout_layout" name="Due Today on Phones">
-        <xpath expr="//span[@id='amount_total_summary']" position="attributes">
-            <attribute name="t-field"/>
-            <attribute name="t-out">website_sale_order._int_pay_now_amount() if website_sale_order.state in ('draft', 'sent') and website_sale_order._int_backorder_lines() else website_sale_order.amount_total</attribute>
+    <!-- Checkout on phones: the order summary is shown on the page, under the step's content,
+         instead of in a side panel. The bottom bar keeps only the sticky Pay / Continue button.
+         Odoo's checkout script updates the summary card on its own, so it doesn't need the panel. -->
+    <template id="checkout_layout_due_today" inherit_id="website_sale.checkout_layout" name="Order Summary on Phones">
+        <xpath expr="//div[hasclass('o_total_card')]/.." position="attributes">
+            <attribute name="class">offset-xxl-1 col-12 col-lg-5 col-xxl-4 rounded mt-3 mt-lg-0</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_total_card')]/div[hasclass('card-body')]/div[1]" position="attributes">
+            <attribute name="class">o_int_summary_body</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_total_card')]//div[hasclass('o_cta_navigation_container')]" position="attributes">
+            <attribute name="class">o_cta_navigation_container px-0 d-none d-lg-block</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_mobile_summary')]/button" position="replace"/>
+        <xpath expr="//div[@id='o_cart_summary_offcanvas']" position="replace"/>
+        <xpath expr="//div[hasclass('o_mobile_summary')]" position="attributes">
+            <attribute name="class">o_mobile_summary d-lg-none sticky-bottom mt-auto bg-body border-top pt-2</attribute>
         </xpath>
     </template>
 

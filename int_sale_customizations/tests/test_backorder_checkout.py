@@ -298,6 +298,14 @@ class TestBackorderCheckout(TransactionCase):
         root = etree.fromstring(html, etree.HTMLParser())
         self.assertNotIn("d-none", root.xpath("//tr[@name='o_order_total']")[0].get("class", ""))
 
+    def test_checkout_on_phones_shows_the_summary_on_the_page(self):
+        arch = etree.fromstring(self.env.ref("website_sale.checkout_layout").get_combined_arch())
+        self.assertFalse(arch.xpath("//div[@id='o_cart_summary_offcanvas']"))
+        self.assertFalse(arch.xpath("//div[contains(concat(' ', @class, ' '), ' o_mobile_summary ')]/button"))
+        column = arch.xpath("//div[contains(concat(' ', @class, ' '), ' o_total_card ')]/..")[0]
+        self.assertNotIn("d-none", column.get("class"))
+        self.assertTrue(arch.xpath("//div[contains(concat(' ', @class, ' '), ' o_mobile_summary ')]//t[@t-call='website_sale.navigation_buttons']"))
+
     def test_order_summary_has_no_tax_rows_for_a_tax_exempt_dealer(self):
         product = self._product("Checkout Exempt", on_hand=1)
         cart = self._cart(self.owner, (product, 2))
