@@ -15,6 +15,11 @@
         <field name="code">storefront</field>
         <field name="sequence">30</field>
     </record>
+    <record id="lead_document_label_dealer_agreement" model="int.lead.document.label">
+        <field name="name">Dealer Agreement</field>
+        <field name="code">dealer_agreement</field>
+        <field name="sequence">900</field>
+    </record>
     <record id="lead_document_label_other" model="int.lead.document.label">
         <field name="name">Other Attachments</field>
         <field name="code">other</field>

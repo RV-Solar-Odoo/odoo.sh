@@ -6,3 +6,7 @@ access_int_lead_document_system,access.int.lead.document.system,model_int_lead_d
 access_int_lead_document_label_salesman,access.int.lead.document.label.salesman,model_int_lead_document_label,sales_team.group_sale_salesman,1,0,1,0
 access_int_lead_document_label_manager,access.int.lead.document.label.manager,model_int_lead_document_label,sales_team.group_sale_manager,1,1,1,1
 access_int_lead_document_label_system,access.int.lead.document.label.system,model_int_lead_document_label,base.group_system,1,1,1,1
+access_int_dealer_certificate_salesman,access.int.dealer.certificate.salesman,model_int_dealer_certificate,sales_team.group_sale_salesman,1,1,1,0
+access_int_dealer_certificate_invoice,access.int.dealer.certificate.invoice,model_int_dealer_certificate,account.group_account_invoice,1,1,1,0
+access_int_dealer_certificate_manager,access.int.dealer.certificate.manager,model_int_dealer_certificate,sales_team.group_sale_manager,1,1,1,1
+access_int_dealer_certificate_system,access.int.dealer.certificate.system,model_int_dealer_certificate,base.group_system,1,1,1,1

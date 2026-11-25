@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_dealer_documents" model="ir.ui.view">
+        <field name="name">res.config.settings.form.dealer.documents</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="crm.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='crm']" position="inside">
+                <block title="Dealer Documents" name="int_dealer_documents">
+                    <setting string="Certificate Reviewer" company_dependent="1"
+                             help="Reviews certificates from My Portal when the dealer has no salesperson.">
+                        <field name="int_cert_reviewer_id"/>
+                    </setting>
+                    <setting string="Certificate Reminders" company_dependent="1"
+                             help="Days before expiry to email the dealer, separated by commas.">
+                        <field name="int_cert_reminder_days" placeholder="60,30,7"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

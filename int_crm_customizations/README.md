@@ -36,7 +36,39 @@ Sets the company contact's payment terms, Net 10th by default (`int_account_cust
 due the 10th of the month after the invoice). Clearing the field leaves the contact's terms as they are. With terms
 and a credit limit, the dealer can use Place Order on Account at checkout (SPEC decision 37).
 
+## My Portal → Documents (`/my/documents`)
+
+A Documents tile for dealer logins (a dealer pricelist, see `_int_is_dealer_contact`). Every role can view
+and download. Permissions come from the table in Contacts Customizations: `view_documents` (all roles),
+`manage_certificates` (Owner, Accountant) and `manage_logo` (Owner). Files are served by
+`/my/documents/file/<kind>/<id>` only when they belong to the logged-in dealer; anything else is a 404.
+Uploads: PDF, JPG, PNG or BMP up to 20 MB, checked by extension and content.
+
+- **Application Documents** are read live from the Documents tab of the dealer's leads (leads whose contact
+  belongs to the dealer, for the website's company), grouped by the same labels. Nothing is copied.
+  **Replace** adds a new, unreviewed document on the same lead under the same label (`int_replaces_id`),
+  with a chatter note and a review activity for the lead's salesperson. The dealer then sees the new file
+  with Pending Review; staff see both.
+- **Certificates** (`int.dealer.certificate`): type (Resale, Sales Tax Exemption, Business License, Other),
+  issuing state, number, issue and expiration dates, the file, and a status. Added or replaced from the
+  portal, a certificate is Pending Review, with an activity for the dealer's salesperson (or the
+  Certificate Reviewer in Settings). A replaced certificate stays valid until staff **Approve** the new
+  one, then it becomes Replaced. **Reject** needs a note, which is emailed to the dealer's Owner and
+  Accountant logins. Staff find them under CRM → Sales → Dealer Certificates and on the contact's
+  Certificates button. Approving a tax or resale certificate for a tax-exempt contact also refreshes the
+  contact's Tax Exemption Certificate file; exemption itself stays a staff decision.
+- **Reminders** (daily job "Dealer Certificates: Reminders and Expiry"): an email at each threshold in
+  Settings (60, 30 and 7 days by default), once each, then Expired the day after the expiration date,
+  with an email to the dealer and an activity for staff. Ordering isn't blocked (SPEC decision 16).
+- **Company Logo** is the company contact's image (`image_1920`). Use `image_512` or smaller for quotes.
+  PNG, JPG or WebP up to 5 MB; no SVG.
+- **Dealer Agreement** shows the newest file under the **Dealer Agreement** label on the dealer's leads,
+  and "Not signed yet" until there is one. When the Sign template exists, filing the signed PDF under
+  that label is all it needs.
+
 ## Settings and manual steps
+
+- CRM → Settings → **Dealer Documents**: Certificate Reviewer and Certificate Reminders (per company).
 
 - CRM → Configuration → **Document Labels** (sales managers): rename, reorder, or hide labels.
   The four starting labels keep working after a rename because the code finds them by `code`.
@@ -48,3 +80,7 @@ and a credit limit, the dealer can use Place Order on Account at checkout (SPEC 
   The Documents tab and Files therefore show the same files. See SPEC.md decision 36.
 - 2026-11-18: files the website form posted before this update are filed as Other Attachments.
   Odoo did not record which upload field they came from. Certificates already approved are marked Reviewed.
+- 2026-11-25: a pending replacement may sit beside the current certificate, so the limit is one current
+  and one pending certificate per dealer, type and state (SPEC decision 40). Other is not limited.
+- 2026-11-25: no backfill of certificate records for existing dealers. Their application files already
+  show under Application Documents.

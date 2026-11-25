@@ -18,6 +18,8 @@ INT_PORTAL_PERMISSIONS = {
     "view_credit": {"owner", "accountant"},
     "view_store_credit": {"owner", "accountant"},
     "manage_certificates": {"owner", "accountant"},
+    "view_documents": {"owner", "buyer", "accountant", "viewer"},
+    "manage_logo": {"owner"},
     "export_pricing": {"owner"},
     "view_resources": {"owner", "buyer", "accountant", "viewer"},
     "submit_tickets": {"owner", "buyer", "accountant"},

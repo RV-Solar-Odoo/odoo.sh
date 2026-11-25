@@ -1,21 +1,25 @@
 {
     "name": "CRM Customizations",
-    "version": "19.0.1.6.0",
+    "version": "19.0.1.7.0",
     "category": "Sales/CRM",
-    "summary": "Dealer application documents and tax exemption claims, reviewed on the lead and applied to the customer",
+    "summary": "Dealer application documents, tax exemption claims, dealer certificates and the My Portal Documents page",
     "author": "Internal",
     "license": "LGPL-3",
-    "depends": ["crm", "account", "website_crm", "int_contacts_customizations", "int_account_customizations"],
+    "depends": ["crm", "account", "website_crm", "int_contacts_customizations", "int_account_customizations", "int_website_customizations", "mail", "portal"],
     "application": False,
     "data": [
         "security/ir.model.access.csv",
         "security/lead_document_rules.xml",
         "data/lead_document_labels.xml",
         "data/website_form_fields.xml",
+        "data/dealer_certificate_data.xml",
         "views/dealer_invite_views.xml",
         "views/crm_lead_views.xml",
         "views/res_partner_views.xml",
         "views/lead_document_views.xml",
+        "views/dealer_certificate_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/portal_templates.xml",
     ],
     "assets": {
         "web.assets_frontend": [

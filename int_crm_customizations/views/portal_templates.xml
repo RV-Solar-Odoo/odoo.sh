@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_documents" name="My Portal Documents" inherit_id="portal.portal_my_home" priority="46">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-if="request.env['res.users']._int_documents_page_ok(request.website)" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/web/static/img/mimetypes/document.svg'"/>
+                <t t-set="title">Documents</t>
+                <t t-set="text">Application files, certificates, your logo and dealer agreement</t>
+                <t t-set="url" t-value="'/my/documents'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_documents_breadcrumbs" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'int_documents'" class="breadcrumb-item">Documents</li>
+        </xpath>
+    </template>
+
+    <!-- View and Download links for one file. -->
+    <template id="portal_document_links" name="Document links">
+        <span class="d-inline-flex gap-3 flex-wrap">
+            <a t-attf-href="/my/documents/file/{{ int_kind }}/{{ int_id }}" target="_blank" rel="noopener">View</a>
+            <a t-attf-href="/my/documents/file/{{ int_kind }}/{{ int_id }}?download=1">Download</a>
+        </span>
+    </template>
+
+    <!-- A file input, the size note and a submit button, inside a form the caller opens. -->
+    <template id="portal_document_file_input" name="Document file input">
+        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+        <input class="form-control" type="file" name="file" required="required"
+               t-att-accept="int_accept or '.pdf,.jpg,.jpeg,.png,.bmp'"/>
+        <div class="form-text" t-out="int_hint or 'PDF, JPG, PNG or BMP, up to 20 MB.'"/>
+    </template>
+
+    <template id="portal_dealer_documents" name="Dealer Documents">
+        <t t-call="portal.portal_layout">
+            <t t-set="additional_title">Documents</t>
+            <div class="o_int_documents">
+                <h3>Documents</h3>
+                <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+                <div t-if="int_done" class="alert alert-success" role="status" t-out="int_done"/>
+
+                <!-- Application documents: read live from the lead's Documents tab. -->
+                <section class="card mb-4" id="int_documents_application">
+                    <div class="card-body">
+                        <h4 class="card-title">Application Documents</h4>
+                        <p t-if="not int_groups" class="text-muted mb-0">No application documents yet.</p>
+                        <t t-foreach="int_groups" t-as="int_group">
+                            <h5 class="h6 mt-3 mb-2" t-out="int_group[0].name"/>
+                            <ul class="list-unstyled mb-0">
+                                <li t-foreach="int_group[1]" t-as="int_doc" class="py-2 border-bottom">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                        <span class="text-break">
+                                            <t t-out="int_doc.name"/>
+                                            <span t-if="not int_doc.reviewed and int_doc.int_replaces_id" class="badge text-bg-warning ms-1">Pending Review</span>
+                                        </span>
+                                        <t t-call="int_crm_customizations.portal_document_links">
+                                            <t t-set="int_kind" t-value="'application'"/>
+                                            <t t-set="int_id" t-value="int_doc.id"/>
+                                        </t>
+                                    </div>
+                                    <details t-if="int_can_manage" class="mt-2">
+                                        <summary class="small">Replace</summary>
+                                        <form t-attf-action="/my/documents/application/{{ int_doc.id }}/replace" method="post"
+                                              enctype="multipart/form-data" class="d-flex flex-column gap-2 mt-2">
+                                            <t t-call="int_crm_customizations.portal_document_file_input"/>
+                                            <div><button type="submit" class="btn btn-primary btn-sm">Upload Replacement</button></div>
+                                        </form>
+                                    </details>
+                                </li>
+                            </ul>
+                        </t>
+                    </div>
+                </section>
+
+                <!-- Certificates. -->
+                <section class="card mb-4" id="int_documents_certificates">
+                    <div class="card-body">
+                        <h4 class="card-title">Certificates</h4>
+                        <p class="text-muted">Tax, resale and business license certificates. New and replacement files are checked by our team; a replaced certificate stays valid until we approve the new one.</p>
+                        <p t-if="not int_certificates" class="text-muted">No certificates yet.</p>
+                        <div t-else="" class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>State</th>
+                                        <th>Number</th>
+                                        <th>Expires</th>
+                                        <th>Status</th>
+                                        <th/>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="int_certificates" t-as="int_cert">
+                                        <tr>
+                                            <td t-field="int_cert.cert_type"/>
+                                            <td t-out="int_cert.state_id.code or '—'"/>
+                                            <td class="text-break" t-out="int_cert.cert_number or '—'"/>
+                                            <td>
+                                                <span t-if="int_cert.expiration_date" t-field="int_cert.expiration_date"/>
+                                                <span t-else="" class="text-muted">Doesn't expire</span>
+                                            </td>
+                                            <td>
+                                                <t t-set="int_pill" t-value="{'pending_review': 'text-bg-warning', 'valid': 'text-bg-success', 'expiring': 'text-bg-warning', 'expired': 'text-bg-danger'}"/>
+                                                <span t-attf-class="badge #{int_pill.get(int_cert.status, 'text-bg-secondary')}" t-field="int_cert.status"/>
+                                            </td>
+                                            <td class="text-end">
+                                                <t t-call="int_crm_customizations.portal_document_links">
+                                                    <t t-set="int_kind" t-value="'certificate'"/>
+                                                    <t t-set="int_id" t-value="int_cert.id"/>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                        <tr t-if="int_can_manage and int_cert.status in int_replaceable and int_cert.replaced_by_id.status != 'pending_review'">
+                                            <td colspan="6" class="border-top-0 pt-0">
+                                                <details>
+                                                    <summary class="small">Replace</summary>
+                                                    <form t-attf-action="/my/documents/certificates/{{ int_cert.id }}/replace" method="post"
+                                                          enctype="multipart/form-data" class="row g-2 mt-1">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small" t-attf-for="int_number_{{ int_cert.id }}">Number</label>
+                                                            <input class="form-control" t-attf-id="int_number_{{ int_cert.id }}" name="cert_number" maxlength="64" t-att-value="int_cert.cert_number"/>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small" t-attf-for="int_issue_{{ int_cert.id }}">Issued</label>
+                                                            <input class="form-control" type="date" t-attf-id="int_issue_{{ int_cert.id }}" name="issue_date"/>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small" t-attf-for="int_expires_{{ int_cert.id }}">Expires</label>
+                                                            <input class="form-control" type="date" t-attf-id="int_expires_{{ int_cert.id }}" name="expiration_date"/>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <t t-call="int_crm_customizations.portal_document_file_input"/>
+                                                        </div>
+                                                        <div class="col-12"><button type="submit" class="btn btn-primary btn-sm">Upload Replacement</button></div>
+                                                    </form>
+                                                </details>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                        <details t-if="int_can_manage" class="mt-3">
+                            <summary class="btn btn-secondary btn-sm">Add Certificate</summary>
+                            <form action="/my/documents/certificates" method="post" enctype="multipart/form-data" class="row g-2 mt-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small" for="int_cert_type">Type</label>
+                                    <select class="form-select" id="int_cert_type" name="cert_type" required="required">
+                                        <option t-foreach="int_cert_types" t-as="int_type" t-att-value="int_type[0]" t-out="int_type[1]"/>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small" for="int_cert_state">Issuing State</label>
+                                    <select class="form-select" id="int_cert_state" name="state_id">
+                                        <option value="">—</option>
+                                        <option t-foreach="int_states" t-as="int_state" t-att-value="int_state.id" t-att-selected="int_state == int_dealer.state_id" t-out="int_state.name"/>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="int_cert_number">Number</label>
+                                    <input class="form-control" id="int_cert_number" name="cert_number" maxlength="64"/>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="int_cert_issue">Issued</label>
+                                    <input class="form-control" type="date" id="int_cert_issue" name="issue_date"/>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="int_cert_expires">Expires</label>
+                                    <input class="form-control" type="date" id="int_cert_expires" name="expiration_date"/>
+                                    <div class="form-text">Leave empty if it doesn't expire.</div>
+                                </div>
+                                <div class="col-12">
+                                    <t t-call="int_crm_customizations.portal_document_file_input"/>
+                                </div>
+                                <div class="col-12"><button type="submit" class="btn btn-primary">Add Certificate</button></div>
+                            </form>
+                        </details>
+                    </div>
+                </section>
+
+                <!-- Company logo, on the company contact's image. -->
+                <section class="card mb-4" id="int_documents_logo">
+                    <div class="card-body">
+                        <h4 class="card-title">Company Logo</h4>
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <div class="o_int_logo_preview border rounded d-flex align-items-center justify-content-center bg-white" style="width: 128px; height: 128px;">
+                                <img t-if="int_logo" t-att-src="int_logo" alt="Company logo" style="max-width: 100%; max-height: 100%; object-fit: contain;"/>
+                                <span t-else="" class="small text-muted text-center px-2">No logo yet</span>
+                            </div>
+                            <form t-if="int_can_logo" action="/my/documents/logo" method="post" enctype="multipart/form-data"
+                                  class="d-flex flex-column gap-2 flex-grow-1" style="max-width: 420px;">
+                                <t t-call="int_crm_customizations.portal_document_file_input">
+                                    <t t-set="int_accept" t-value="'.png,.jpg,.jpeg,.webp'"/>
+                                    <t t-set="int_hint" t-value="'PNG, JPG or WebP, up to 5 MB.'"/>
+                                </t>
+                                <div>
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <t t-if="int_logo">Replace Logo</t>
+                                        <t t-else="">Upload Logo</t>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Dealer agreement: the newest file under the Dealer Agreement label on the lead. -->
+                <section class="card mb-4" id="int_documents_agreement">
+                    <div class="card-body">
+                        <h4 class="card-title">Dealer Agreement</h4>
+                        <div t-if="int_agreement" class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <span class="text-break" t-out="int_agreement.name"/>
+                            <t t-call="int_crm_customizations.portal_document_links">
+                                <t t-set="int_kind" t-value="'application'"/>
+                                <t t-set="int_id" t-value="int_agreement.id"/>
+                            </t>
+                        </div>
+                        <p t-else="" class="text-muted mb-0">Not signed yet. Your signed agreement will appear here.</p>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+</odoo>
