@@ -1,6 +1,6 @@
 {
     "name": "CRM Customizations",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.7.1",
     "category": "Sales/CRM",
     "summary": "Dealer application documents, tax exemption claims, dealer certificates and the My Portal Documents page",
     "author": "Internal",

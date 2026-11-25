@@ -96,7 +96,7 @@
                                 <tbody>
                                     <t t-foreach="int_certificates" t-as="int_cert">
                                         <tr>
-                                            <td t-field="int_cert.cert_type"/>
+                                            <td><span t-field="int_cert.cert_type"/></td>
                                             <td t-out="int_cert.state_id.code or '—'"/>
                                             <td class="text-break" t-out="int_cert.cert_number or '—'"/>
                                             <td>
