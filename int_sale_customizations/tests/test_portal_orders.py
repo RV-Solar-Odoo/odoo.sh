@@ -237,6 +237,12 @@ class TestPortalOrders(TransactionCase):
         matched = [line for line in joined_lines if line["product_id"]]
         self.assertEqual(matched[0]["qty"], 4)
         self.assertFalse(any(line["sku"] in ("QB-33018", "12/4k/160-50") for line in joined_lines))
+        bare_po, bare_lines = SaleOrder._int_po_review_from_text(
+            "No. PO-5005\nINT-PORTAL-SVC 1 15.00\n",
+            False,
+        )
+        self.assertEqual(bare_po, "PO-5005")
+        self.assertEqual([line["qty"] for line in bare_lines if line["product_id"]], [1])
 
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})

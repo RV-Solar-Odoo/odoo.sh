@@ -211,9 +211,25 @@ def _plausible_po(value):
     return text[:80]
 
 
+def _po_token(match):
+    """The number after a PO label.
+
+    A line such as ``No. PO-5005`` matches the label ``PO`` and then the hyphen,
+    which would leave only ``5005``. The hyphen belongs to the number.
+    """
+    value = match.group(1)
+    start = match.start(1)
+    text = match.string
+    if start >= 3 and text[start - 1] == "-" and text[start - 3:start - 1].upper() == "PO":
+        before = start - 3
+        if before == 0 or not (text[before - 1].isalnum() or text[before - 1] == "."):
+            value = "PO-" + value
+    return _plausible_po(value)
+
+
 def _inline_po(value):
     match = PDF_PO.search(cell_text(value))
-    return _plausible_po(match.group(1)) if match else ""
+    return _po_token(match) if match else ""
 
 
 def _neighbor_po(rows, row_index, cell_index):
@@ -524,7 +540,7 @@ def match_pdf_text(text, products):
     head = "\n".join((text or "").splitlines()[:40])
     po_number = ""
     for po_match in PDF_PO.finditer(head):
-        po_number = _plausible_po(po_match.group(1))
+        po_number = _po_token(po_match)
         if po_number:
             break
     lines = []
