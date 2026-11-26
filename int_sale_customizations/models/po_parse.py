@@ -397,6 +397,9 @@ def match_sheet_rows(parsed, products):
 def _unknown_code(key):
     if len(key) < 4 or len(key) > 40 or key in PDF_STOP:
         return False
+    # 120V and 2x120V are volts in a description, including when a PDF wraps them onto their own line.
+    if re.fullmatch(r"\d+V", key) or re.fullmatch(r"\d+X\d+V", key):
+        return False
     return any(character.isdigit() for character in key) and any(character.isalpha() for character in key)
 
 

@@ -215,6 +215,15 @@ class TestPortalOrders(TransactionCase):
         self.assertEqual(len(matched), 1)
         self.assertEqual(matched[0]["qty"], 4)
         self.assertFalse(any(line["sku"] == "120V" for line in lines))
+        wrapped_po, wrapped = SaleOrder._int_po_review_from_text("\n".join([
+            "P.O. No. QB-33018",
+            "MultiPlus-II 48/3000/35-50 120V (UL",
+            "1741)",
+            "INT-PORTAL-SVC Portal order service 4 1,249.00",
+        ]), False)
+        self.assertEqual(wrapped_po, "QB-33018")
+        self.assertEqual([line["qty"] for line in wrapped if line["product_id"]], [4])
+        self.assertFalse(any(line["sku"] == "120V" for line in wrapped))
 
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})
