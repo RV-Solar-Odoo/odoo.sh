@@ -505,6 +505,15 @@ class IntDealerQuoteLine(models.Model):
             return 0.0
         return (self.unit_price - self.dealer_cost) / self.unit_price * 100.0
 
+    def _int_margin_label(self):
+        """Whole-number margin, such as 33%. The template prints this string.
+
+        A percent sign inside a QWeb expression is compiled as a format string,
+        so the page cannot format the number itself.
+        """
+        self.ensure_one()
+        return f"{round(self._int_margin_percent())}%"
+
     def _int_subtotal(self):
         self.ensure_one()
         return self.unit_price * self.quantity

@@ -210,7 +210,7 @@
                                         <span t-else="">—</span>
                                     </td>
                                     <td class="o_int_quote_dealer text-end">
-                                        <span t-if="line.line_type == 'product'" t-out="'%.0f%%' % line._int_margin_percent()"/>
+                                        <span t-if="line.line_type == 'product'" t-out="line._int_margin_label()"/>
                                         <span t-else="">—</span>
                                     </td>
                                     <td class="text-end">

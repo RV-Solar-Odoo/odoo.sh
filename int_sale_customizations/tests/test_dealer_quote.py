@@ -128,6 +128,7 @@ class TestDealerQuotes(TransactionCase):
         cable = quote.line_ids.filtered(lambda line: line.product_id == self.cable)
         self.assertEqual(battery.unit_price, 150.0)
         self.assertEqual(cable.unit_price, 30.0)
+        self.assertEqual(battery._int_margin_label(), "33%")
         quote._int_apply(self.buyer, {
             "price_basis": "msrp",
             "qty_%s" % battery.id: "1",
