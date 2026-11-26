@@ -745,6 +745,8 @@ Dealer-only enforcement:
 
 **Purpose.** Dealers create branded quotes for their own customers at MAP, MSRP or a custom margin, and deliver them as PDF, print or email.
 
+**First slice (decision 42).** Built in `int_sale_customizations`, not a new module. Customer quotes are `/my/customer-quotes`. `/my/quotes` stays the quotations RV Solar sends the dealer. The company default is `res.partner.int_quote_price_basis` (MAP or MSRP). PDF, email, and cart conversion are not in this slice.
+
 **Depends:** `rvsb_dealer_base`, `rvsb_portal_addresses`, `website_sale`, `mail`.
 
 **Settings (per company)**
@@ -907,6 +909,7 @@ These defaults were recommended before kickoff. The build uses them unless Casey
 | 39 | Payment-page order summary, 2026-11-24 | Ian. When part of the cart is backordered, the summary is split in two. **Paying today:** items shipping now, shipping ("Free" at $0), tax, and Due Today, which they add up to. **Billed when it ships** (a shaded box): backordered items with their count, shipping TBD, and tax, then "We'll let you know when there's an ETA and bill these items then." Nothing about the backorder (price, shipping or tax) is charged today. Tax rows are left out at $0, so a tax-exempt dealer sees none. The full order total isn't shown, and the separate note above the payment methods is removed. On phones, every checkout step after the cart (address, delivery, payment) shows the full order summary on the page instead of Odoo's "Order" side panel, with a sticky Pay / Continue button at the bottom (2026-11-25). | ☑ Ian |
 | 40 | Dealer Documents page, 2026-11-25 | Ian. Built in `int_crm_customizations` (no new module). **Application Documents** are read live from the dealer's lead Documents tab with the same labels; dealers replace a file, which adds an unreviewed document on the lead. **Certificates** follow 6.5 with a Business License type added; one current and one pending certificate per dealer, type and state (6.5's single-active rule would block a pending replacement); Other is not limited. Review alerts go to the dealer's salesperson, else a Certificate Reviewer setting (the alert-list system lives in Helpdesk). No backfill for existing dealers. **Logo** is the company contact's `image_1920` (PNG/JPG/WebP, 5 MB). **Dealer Agreement** is the newest file under a new Dealer Agreement lead label, "Not signed yet" until then; the Sign template comes later. Every role views and downloads; Owner and Accountant change certificates and application files; Owner changes the logo. Pricing XLSX and Dealer Resources are not part of this round. | ☑ Ian |
 | 41 | Upload a PO into the cart, 2026-11-26 | Grant: read .xlsx, .csv, and text PDFs without a language model. Headings such as SKU, Part Number, Item #, Qty, and Quantity are accepted. A part number matches the internal reference or the barcode, ignoring spaces, dashes, and case. The dealer reviews the lines, changes quantities, drops lines, and then adds the rest to the cart. The original file stays a private attachment on that order. My Orders shows a PO # when the order came from this page. A PDF with no readable text is sent to the salesperson as a draft quotation. A dealer's own part numbers that are not our SKUs stay unmatched. The temporary credit override stays parked. Later the same day: also read the column names used on Vertex42, QuickBooks, Xero, SAP, Coupa, and NetSuite purchase orders. The PO number can sit beside or under its label. A part number inside a longer item name still matches. On a printed line, the quantity is the whole number before the price, not a voltage in the description and not the price. | ☑ Grant |
+| 42 | Customer quotes, first slice, 2026-11-26 | Grant: a dealer builds a quote for their own customer in `int_sale_customizations` at `/my/customer-quotes`. `/my/quotes` stays the quotations RV Solar sends the dealer. The account owner sets the company default to MAP or MSRP on the company contact (`int_quote_price_basis`). A new quote copies that choice. The dealer can switch one quote and can type a line price. No MAP uses MSRP and the line says so. Below MAP warns and still saves. Wholesale and product margin are on the dealer's screen only. Product search does not include wholesale. Labor and other charges are lines without a product. Owner and Buyer edit. Accountant and Viewer do not. PDF, email, and adding the products to the cart come next. | ☑ Grant |
 
 ---
 
@@ -1040,7 +1043,8 @@ cross-company isolation tests. Run them all.
 ### 12.9 `rvsb_dealer_quotes`
 
 ```
-Read CLAUDE.md, SPEC.md sections 4, 5, 6.8 and decisions 6 and 15.
+Read CLAUDE.md, SPEC.md sections 4, 5, 6.8 and decisions 6, 15 and 42.
+Decision 42: the first slice is already in `int_sale_customizations` at `/my/customer-quotes`. Do not take over `/my/quotes`.
 Plan first: models, editor page (JS approach), price computation, PDF layout that
 avoids the company external layout, email sending, cart conversion. Wait for my OK.
 Build per section 6.8. Tests must assert the rendered PDF HTML contains no

@@ -2,3 +2,7 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_int_sale_cancel_wizard_salesman,int.sale.cancel.wizard.salesman,model_int_sale_cancel_wizard,sales_team.group_sale_salesman,1,1,1,1
 access_int_favorite_order_salesman,int.favorite.order.salesman,model_int_favorite_order,sales_team.group_sale_salesman,1,1,1,1
 access_int_favorite_order_line_salesman,int.favorite.order.line.salesman,model_int_favorite_order_line,sales_team.group_sale_salesman,1,1,1,1
+access_int_dealer_quote_salesman,int.dealer.quote.salesman,model_int_dealer_quote,sales_team.group_sale_salesman,1,1,1,1
+access_int_dealer_quote_line_salesman,int.dealer.quote.line.salesman,model_int_dealer_quote_line,sales_team.group_sale_salesman,1,1,1,1
+access_int_dealer_quote_system,int.dealer.quote.system,model_int_dealer_quote,base.group_system,1,1,1,1
+access_int_dealer_quote_line_system,int.dealer.quote.line.system,model_int_dealer_quote_line,base.group_system,1,1,1,1

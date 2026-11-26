@@ -1,0 +1,50 @@
+// Customer quotes. Wholesale columns stay visually secondary. The card sits
+// with the other account pages and does not take the orders slot.
+.o_int_quote_lead {
+    max-width: 42rem;
+    color: #4a5068;
+}
+
+.o_int_quote_warn {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: #fff6de;
+    color: #8a6100;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.o_int_quote_missing {
+    display: inline-block;
+    margin-top: 0.25rem;
+    color: #767c96;
+    font-size: 0.8rem;
+}
+
+.o_int_quote_dealer {
+    color: #767c96;
+}
+
+.o_int_quote_lines {
+    input[type="number"] {
+        min-width: 5.5rem;
+    }
+}
+
+.o_int_quote_totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+
+    strong {
+        margin-left: 0.35rem;
+    }
+}
+
+.o_portal_my_home .o_portal_docs .o_portal_index_card:has(a[href="/my/customer-quotes"]) {
+    order: 45 !important;
+}

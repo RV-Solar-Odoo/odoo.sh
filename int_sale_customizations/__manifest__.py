@@ -1,8 +1,8 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.9.2",
+    "version": "19.0.1.10.0",
     "category": "Sales/Sales",
-    "summary": "Dealer orders: tabs, favorite orders, search, backorders, export, PO upload, cancellation, and paying only for what ships now",
+    "summary": "Dealer orders, checkout, and customer quotes priced at MAP or MSRP",
     "author": "Internal",
     "license": "LGPL-3",
     "depends": [
@@ -14,6 +14,7 @@
         "loyalty",
         "sale_loyalty",
         "int_contacts_customizations",
+        "int_inventory_customizations",
         "int_account_customizations",
         "int_victron_stock",
         "int_shippo_customizations",
@@ -21,7 +22,10 @@
     "application": False,
     "data": [
         "security/ir.model.access.csv",
+        "security/dealer_quote_rules.xml",
         "views/portal_templates.xml",
+        "views/quote_templates.xml",
+        "views/res_partner_views.xml",
         "views/favorite_templates.xml",
         "views/checkout_templates.xml",
         "views/sale_order_views.xml",
@@ -31,7 +35,9 @@
         "web.assets_frontend": [
             "int_sale_customizations/static/src/scss/portal_tracking.scss",
             "int_sale_customizations/static/src/scss/favorites.scss",
+            "int_sale_customizations/static/src/scss/quotes.scss",
             "int_sale_customizations/static/src/js/favorites.js",
+            "int_sale_customizations/static/src/js/quotes.js",
         ],
     },
 }

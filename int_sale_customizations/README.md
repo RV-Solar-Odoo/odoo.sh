@@ -8,6 +8,10 @@ Each shipped delivery with a tracking number is a link when the carrier has a UR
 
 My Orders also searches by order number, PO, ship-to, product, or serial, and filters by date and status (All, Open, Shipped, Cancelled, Cancellation requested). All includes cancelled orders. Pins, reorder, export, and PO upload follow the portal role. The export has one row per physical product, with the delivery method as a column; shipping, discount and coupon lines, down payments, and notes are not rows. Reorder skips the same charge lines. A cancellation request does not cancel or refund the order. A sales manager confirms or denies it from the order. Store credit needs a program and a top-up product under Settings, and an accountant should review that before production.
 
+## Customer quotes
+
+Owners and buyers write quotes for the dealer's own customers at `/my/customer-quotes`. The account owner sets the company default to MAP or MSRP (Customer prices). That is what the retail customer pays the dealer. A new quote copies the default; changing the default later leaves quotes that were already started alone. A line with no MAP uses MSRP and says so. The dealer can type a price. Below MAP warns and still saves. Wholesale (the dealer's pricelist) and the product margin are on that screen only, and the product search does not include them. Labor and other charges are lines without a product. The My Orders Quotes tab is still quotations from RV Solar. PDF, email, and adding the products to the cart come next.
+
 ## Checkout: pay for what ships now
 
 Depends on Victron Stock (backorder lines) and Shippo Customizations (shipping quotes).

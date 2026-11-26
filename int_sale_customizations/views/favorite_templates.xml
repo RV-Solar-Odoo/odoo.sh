@@ -255,7 +255,10 @@
         </xpath>
         <xpath expr="//t[@t-call='portal.portal_searchbar']" position="after">
             <t t-call="int_sale_customizations.portal_order_tabs"/>
-            <p class="o_int_tab_hint">Quotes waiting for you to accept. Open one to review, sign and pay.</p>
+            <p class="o_int_tab_hint">
+                Quotes waiting for you to accept. Open one to review, sign and pay.
+                <a t-if="request.env.user.int_portal_can('create_quotes')" href="/my/customer-quotes">Quotes you write for your own customers are separate.</a>
+            </p>
         </xpath>
     </template>
 
