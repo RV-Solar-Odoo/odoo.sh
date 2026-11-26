@@ -1,0 +1,4 @@
+po-number,line-number,source-part-num,description,quantity,uom,price,total,need-by-date,currency,supplier-name
+PO-61094,1,PMP242505110,MultiPlus-II 24/5000/120-95 120V,1,EA,2410.00,2410.00,2026-12-15,USD,RV Solar & Battery
+PO-61094,2,PMP122405200,"MultiPlus-II 12/4k/160-50 2x120V, backup for the coach",2,EA,1760.00,3520.00,2026-12-15,USD,RV Solar & Battery
+PO-61094,3,PMP483105000,MultiPlus-II 48/10000/140-100 230V,1,EA,4125.00,4125.00,2026-12-15,USD,RV Solar & Battery

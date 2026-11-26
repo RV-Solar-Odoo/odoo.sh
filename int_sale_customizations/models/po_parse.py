@@ -10,58 +10,124 @@ import re
 ROW_LIMIT = 500
 QTY_LIMIT = 100000
 
+# First match wins, so a line number called "Item" loses to Material / SKU / MPN.
 PART_LABELS = (
     "sku",
+    "mpn",
+    "manufacturer part number",
+    "manufacturers part number",
+    "manufacturer part no",
+    "manufacturers part no",
+    "manufacturer part",
+    "mfr part number",
+    "mfr part no",
+    "mfr part",
+    "mfg part number",
+    "mfg part no",
+    "mfg part",
+    "vendor part number",
+    "vendor part no",
+    "vendor part",
+    "vendor item number",
+    "vendor item",
+    "vendor sku",
+    "supplier part number",
+    "supplier part no",
+    "supplier part",
+    "supplier item number",
+    "supplier item",
+    "supplier sku",
+    "source part num",
+    "source part number",
+    "your part number",
+    "your part no",
+    "your item number",
+    "barcode",
+    "upc",
+    "ean",
+    "gtin",
     "internal reference",
     "product code",
     "product number",
-    "part number",
-    "part no",
-    "manufacturer part",
-    "mfr part",
-    "mpn",
-    "barcode",
-    "upc",
-    "vendor part number",
-    "vendor part",
+    "item code",
     "item number",
     "item no",
+    "catalog number",
+    "catalogue number",
+    "catalog no",
+    "part number",
+    "part no",
+    "material number",
+    "material no",
+    "material",
     "part",
+    "product service",
+    "product",
     "item",
 )
 QTY_LABELS = (
+    "quantity ordered",
+    "qty ordered",
+    "ordered quantity",
+    "order quantity",
+    "order qty",
+    "ordered qty",
+    "po quantity",
+    "qty ord",
     "quantity",
     "qty",
-    "qty ordered",
-    "order qty",
-    "order quantity",
-    "ordered qty",
     "units",
+    "ordered",
 )
 PO_LABELS = (
     "po number",
     "purchase order number",
+    "purchase order no",
     "customer po number",
     "customer po",
     "purchase order",
     "po no",
+    "po num",
     "po",
 )
 PO_LABEL_SET = set(PO_LABELS)
+NEIGHBOR_STOP = PO_LABEL_SET | {
+    "date", "order date", "document date", "delivery date", "vendor",
+    "ship to", "ship via", "bill to",
+}
+SKIP_PARTS = {
+    "subtotal", "total", "grand total", "tax", "sales tax", "shipping",
+    "freight", "discount", "balance", "balance due", "amount due",
+    "comments", "comment", "notes", "note", "special instructions",
+}
 
 PDF_STOP = {
     "QTY", "QUANTITY", "SKU", "ITEM", "PART", "TOTAL", "SUBTOTAL", "TAX",
     "SHIPPING", "PRICE", "AMOUNT", "DESCRIPTION", "DATE", "PAGE", "EACH",
     "UNIT", "UNITS", "PO", "NUMBER", "PURCHASE", "ORDER", "CUSTOMER",
-    "INVOICE", "USD", "EXT", "EXTENDED", "SHIP", "BILL",
+    "INVOICE", "USD", "EXT", "EXTENDED", "SHIP", "BILL", "EA", "PCS",
+    "RATE", "MATERIAL", "SERVICE", "PRODUCT",
 }
-PDF_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/\-]*")
+PDF_TOKEN = re.compile(
+    r"\d{1,3}(?:,\d{3})+(?:\.\d+)?"
+    r"|"
+    r"[A-Za-z0-9][A-Za-z0-9._/\-]*"
+)
 PDF_PO = re.compile(
-    r"(?<![A-Za-z])(?:customer\s+po|purchase\s+order|p\.?\s*o\.?)\b"
-    r"\s*(?:number|no\.?|#)?\s*[:#\-]?\s*([A-Za-z0-9][A-Za-z0-9\-]{1,40})",
+    r"(?<![A-Za-z0-9])(?:"
+    r"customer[^\S\n]+po(?![A-Za-z])"
+    r"|purchase[^\S\n]+order(?![A-Za-z])"
+    r"|p\.?[^\S\n]*o\.?(?![A-Za-z])(?![^\S\n]*box\b)"
+    r")"
+    r"[^\S\n]*(?:number|no\.?|num|#)?"
+    r"[^\S\n]*[:#\-]?[^\S\n]*"
+    r"([A-Za-z0-9][A-Za-z0-9\-]{1,40})",
     re.IGNORECASE,
 )
 QTY_TEXT = re.compile(r"-?\d+(?:\.\d+)?")
+DATE_TEXT = re.compile(r"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}")
+PHONE_TEXT = re.compile(r"\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}")
+MONEY_TEXT = re.compile(r"\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})")
 
 
 class PoParseError(Exception):
@@ -122,50 +188,106 @@ def _labels(row):
     return [norm_label(cell) for cell in row]
 
 
-def _pick(labels, ordered):
+def _columns(labels, ordered):
     positions = {}
     for index, label in enumerate(labels):
         if label and label not in positions:
             positions[label] = index
-    for label in ordered:
-        if label in positions:
-            return positions[label]
-    return None
+    return [positions[label] for label in ordered if label in positions]
+
+
+def _plausible_po(value):
+    text = cell_text(value).strip()
+    if not text or len(text) > 30 or any(char.isspace() and char != " " for char in text):
+        return ""
+    if " " in text and not re.match(r"(?i)^(?:po|p\.?o\.?)\b", text):
+        return ""
+    if not re.search(r"\d", text):
+        return ""
+    if DATE_TEXT.fullmatch(text) or PHONE_TEXT.fullmatch(text) or MONEY_TEXT.fullmatch(text):
+        return ""
+    if norm_label(text) in PO_LABEL_SET:
+        return ""
+    return text[:80]
+
+
+def _inline_po(value):
+    match = PDF_PO.search(cell_text(value))
+    return _plausible_po(match.group(1)) if match else ""
+
+
+def _neighbor_po(rows, row_index, cell_index):
+    """The number beside a PO label, or directly under it on a printed form."""
+    row = rows[row_index]
+    for offset in range(1, 4):
+        if cell_index + offset >= len(row):
+            break
+        value = cell_text(row[cell_index + offset])
+        if not value:
+            continue
+        if norm_label(value) in NEIGHBOR_STOP:
+            break
+        found = _plausible_po(value) or _inline_po(value)
+        if found:
+            return found
+        break
+    if row_index + 1 < len(rows):
+        below = rows[row_index + 1]
+        if cell_index < len(below):
+            return _plausible_po(below[cell_index])
+    return ""
+
+
+def _po_on_row(rows, row_index):
+    row = rows[row_index]
+    for cell_index, cell in enumerate(row):
+        found = _inline_po(cell)
+        if found:
+            return found
+        if norm_label(cell) in PO_LABEL_SET:
+            found = _neighbor_po(rows, row_index, cell_index)
+            if found:
+                return found
+    return ""
 
 
 def parse_sheet_rows(rows):
     """Return ``(po_number, [{"sku", "qty"}, ...])`` from cell values."""
     po_number = ""
     header_index = None
-    sku_col = qty_col = po_col = None
-    for index, row in enumerate(rows[:30]):
+    part_cols = []
+    qty_col = po_col = None
+    for index, row in enumerate(rows[:40]):
         labels = _labels(row)
-        part = _pick(labels, PART_LABELS)
-        qty = _pick(labels, QTY_LABELS)
-        if part is not None and qty is not None:
+        parts = _columns(labels, PART_LABELS)
+        qtys = _columns(labels, QTY_LABELS)
+        if parts and qtys:
             header_index = index
-            sku_col, qty_col = part, qty
-            po_col = _pick(labels, PO_LABELS)
+            part_cols = parts
+            qty_col = qtys[0]
+            po_cols = _columns(labels, PO_LABELS)
+            po_col = po_cols[0] if po_cols else None
             break
         if not po_number:
-            for cell_index, label in enumerate(labels):
-                if label in PO_LABEL_SET and cell_index + 1 < len(row):
-                    value = cell_text(row[cell_index + 1])
-                    if value:
-                        po_number = value[:80]
-                        break
+            po_number = _po_on_row(rows, index)
     if header_index is None:
         raise PoParseError("header")
     parsed = []
     for row in rows[header_index + 1:]:
         if not row or all(cell in (None, "") or (isinstance(cell, str) and not str(cell).strip()) for cell in row):
             continue
-        sku = cell_text(row[sku_col]) if sku_col < len(row) else ""
+        sku = ""
+        for col in part_cols:
+            if col < len(row) and cell_text(row[col]):
+                sku = cell_text(row[col])
+                break
         qty = row[qty_col] if qty_col < len(row) else None
+        if norm_label(sku) in SKIP_PARTS:
+            continue
         if po_col is not None and not po_number and po_col < len(row):
-            value = cell_text(row[po_col])
+            value = _plausible_po(row[po_col]) or _inline_po(row[po_col])
             if value:
-                po_number = value[:80]
+                po_number = value
         if not sku and (qty is None or qty == ""):
             continue
         parsed.append({"sku": sku, "qty": qty})
@@ -201,6 +323,30 @@ def index_products(products):
     return index
 
 
+def _lookup(sku, index):
+    """Exact part number, or the longest catalog code inside a longer item name."""
+    key = norm_code(sku)
+    if not key:
+        return []
+    if key in index:
+        return index[key]
+    if len(key) < 6:
+        return []
+    best_len = 0
+    found = []
+    for candidate, products in index.items():
+        if len(candidate) < 6 or candidate not in key:
+            continue
+        if len(candidate) > best_len:
+            best_len = len(candidate)
+            found = list(products)
+        elif len(candidate) == best_len:
+            for product in products:
+                if all(item["id"] != product["id"] for item in found):
+                    found.append(product)
+    return found
+
+
 def _line(sku, qty, product, reason):
     return {
         "sku": sku,
@@ -227,7 +373,7 @@ def match_sheet_rows(parsed, products):
         if not sku:
             lines.append(_line("", None, None, "missing_sku"))
             continue
-        found = index.get(norm_code(sku)) or []
+        found = _lookup(sku, index)
         qty, qty_reason = parse_quantity(item.get("qty"))
         if len(found) > 1:
             lines.append(_line(sku, None, None, "ambiguous"))
@@ -254,14 +400,43 @@ def _unknown_code(key):
     return any(character.isdigit() for character in key) and any(character.isalpha() for character in key)
 
 
+def _code_in_token(token, index):
+    """A catalog code, including one glued to the description by a PDF reader."""
+    key = norm_code(token)
+    if not key or key in PDF_STOP:
+        return "", []
+    if key in index:
+        return key, index[key]
+    if len(key) < 6:
+        return "", []
+    best = ""
+    found = []
+    for candidate, products in index.items():
+        if len(candidate) < 6 or candidate not in key or candidate == key:
+            continue
+        if len(candidate) > len(best):
+            best = candidate
+            found = list(products)
+        elif len(candidate) == best:
+            for product in products:
+                if all(item["id"] != product["id"] for item in found):
+                    found.append(product)
+    return best, found
+
+
 def _classified_tokens(line, index):
     classified = []
     for token in PDF_TOKEN.findall(line):
         key = norm_code(token)
         if not key or key in PDF_STOP:
             continue
-        if key in index:
-            classified.append(("code", token, index[key]))
+        if "," in token:
+            classified.append(("qty", token, float(token.replace(",", ""))))
+            continue
+        code, products = _code_in_token(token, index)
+        if code:
+            shown = token if norm_code(token) == code else code
+            classified.append(("code", shown, products))
         elif re.fullmatch(r"\d+(?:\.\d+)?", token):
             classified.append(("qty", token, float(token)))
         elif _unknown_code(key):
@@ -269,51 +444,72 @@ def _classified_tokens(line, index):
     return classified
 
 
-def _nearest_qty(classified, index, used):
-    """The number after a part number, or the one before it when the line leads with the quantity."""
+def _span_qty(classified, index):
+    """The whole number before the price.
 
-    def scan(start, stop, step):
-        cursor = start
-        while cursor != stop:
-            kind = classified[cursor][0]
-            if kind in ("code", "unknown"):
-                return None
-            if kind == "qty" and cursor not in used:
-                number, reason = parse_quantity(classified[cursor][2])
-                if reason:
-                    return None
-                used.add(cursor)
-                return number
-            cursor += step
-        return None
-
-    found = scan(index + 1, len(classified), 1)
-    if found is not None:
-        return found
-    return scan(index - 1, -1, -1)
+    Printed lines run part, description, quantity, price. Voltages inside the
+    description are earlier whole numbers. The price is the first decimal.
+    A line with no price and one whole number keeps that number.
+    """
+    integers = []
+    saw_price = False
+    for cursor in range(index + 1, len(classified)):
+        kind, token, value = classified[cursor]
+        if kind == "code":
+            break
+        if kind != "qty":
+            continue
+        number, reason = parse_quantity(value)
+        if reason:
+            continue
+        # 1,249.00 is a price even though it is a whole number of dollars.
+        if "." in token or "," in token:
+            saw_price = True
+            break
+        integers.append(number)
+    if saw_price and integers:
+        return integers[-1]
+    if not saw_price and len(integers) == 1:
+        return integers[0]
+    for cursor in range(index - 1, -1, -1):
+        kind, _token, value = classified[cursor]
+        if kind in ("code", "unknown"):
+            break
+        if kind != "qty":
+            continue
+        number, reason = parse_quantity(value)
+        if reason or isinstance(number, float):
+            continue
+        return number
+    return None
 
 
 def match_pdf_text(text, products):
     """Return ``(po_number, lines)`` for text extracted from a PDF."""
     index = index_products(products)
     head = "\n".join((text or "").splitlines()[:40])
-    po_match = PDF_PO.search(head)
-    po_number = po_match.group(1).strip(" -")[:80] if po_match else ""
+    po_number = ""
+    for po_match in PDF_PO.finditer(head):
+        po_number = _plausible_po(po_match.group(1))
+        if po_number:
+            break
     lines = []
     for raw_line in (text or "").splitlines():
         line = raw_line.strip()
         if not line or PDF_PO.search(line):
             continue
         label = norm_label(line)
-        if ("qty" in label or "quantity" in label) and ("sku" in label or "part" in label or "item" in label):
+        if ("qty" in label or "quantity" in label) and ("sku" in label or "part" in label or "item" in label or "material" in label):
             continue
         classified = _classified_tokens(line, index)
-        used = set()
+        known = any(item[0] == "code" for item in classified)
         for token_index, item in enumerate(classified):
             kind, token, payload = item
             if kind not in ("code", "unknown"):
                 continue
-            qty = _nearest_qty(classified, token_index, used)
+            if kind == "unknown" and known:
+                continue
+            qty = _span_qty(classified, token_index)
             if kind == "unknown":
                 lines.append(_line(token, qty, None, "unknown"))
                 continue

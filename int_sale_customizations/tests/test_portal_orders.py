@@ -140,6 +140,82 @@ class TestPortalOrders(TransactionCase):
         review = self.env.ref("int_sale_customizations.portal_po_review").arch
         self.assertIn("/my/po-upload/confirm", review)
 
+    def test_po_upload_reads_real_purchase_order_layouts(self):
+        SaleOrder = self.env["sale.order"]
+        po_number, rows = SaleOrder._int_po_rows([
+            ["Purchase Order", "4500018392", "Document Date", "11/26/2026"],
+            [],
+            ["Item", "Material", "Short Text", "Order Quantity", "Un", "Net Price"],
+            ["10", "INT-PORTAL-SVC", "Portal order service", 4, "EA", 15],
+            ["20", "NO-SUCH", "Missing", 1, "EA", 1],
+        ])
+        self.assertEqual(po_number, "4500018392")
+        added, rejected = SaleOrder._int_match_po_rows(rows, False)
+        self.assertEqual(added[0][0].default_code, "INT-PORTAL-SVC")
+        self.assertEqual(added[0][1], 4)
+        self.assertEqual(len(rejected), 1)
+
+        po_number, rows = SaleOrder._int_po_rows([
+            ["PURCHASE ORDER"],
+            ["High Country RV"],
+            ["DATE", "PO #"],
+            ["11/26/2026", "PO-88421"],
+            [],
+            ["ITEM #", "DESCRIPTION", "QTY", "UNIT PRICE", "TOTAL"],
+            ["INT-PORTAL-SVC", "Portal order service", 2, 15, 30],
+            ["SUBTOTAL", "", "", "", 30],
+        ])
+        self.assertEqual(po_number, "PO-88421")
+        added, rejected = SaleOrder._int_match_po_rows(rows, False)
+        self.assertEqual(len(added), 1)
+        self.assertEqual(added[0][1], 2)
+        self.assertFalse(rejected)
+
+        po_number, rows = SaleOrder._int_po_rows([
+            ["po-number", "line-number", "source-part-num", "description", "quantity", "uom", "price"],
+            ["PO-61094", "1", "INT-PORTAL-SVC", "Service", "3", "EA", "15"],
+        ])
+        self.assertEqual(po_number, "PO-61094")
+        added, rejected = SaleOrder._int_match_po_rows(rows, False)
+        self.assertEqual(added[0][1], 3)
+
+        po_number, rows = SaleOrder._int_po_rows([
+            ["Item Code", "Description", "Quantity", "Unit Price", "Disc %", "Amount"],
+            ["INT-PORTAL-SVC", "Portal order service", 2, 15, "0%", 30],
+        ])
+        self.assertFalse(po_number)
+        added, rejected = SaleOrder._int_match_po_rows(rows, False)
+        self.assertEqual(added[0][1], 2)
+        self.assertFalse(rejected)
+        added, rejected = SaleOrder._int_match_po_rows([
+            ("Services : Portal : INT-PORTAL-SVC", 5),
+        ], False)
+        self.assertEqual(added[0][0].default_code, "INT-PORTAL-SVC")
+        self.assertEqual(added[0][1], 5)
+        self.assertFalse(rejected)
+
+        po_number, rows = SaleOrder._int_po_rows([
+            ["PO Number", "Line", "Qty Ord", "UOM", "Manufacturer Part Number", "Description"],
+            ["PO-WH-441", "1", "6", "EA", "int-portal-svc", "Service"],
+        ])
+        self.assertEqual(po_number, "PO-WH-441")
+        added, rejected = SaleOrder._int_match_po_rows(rows, False)
+        self.assertEqual(added[0][1], 6)
+
+        text_po, lines = SaleOrder._int_po_review_from_text("\n".join([
+            "PURCHASE ORDER",
+            "PO Box 500",
+            "P.O. No. 2026-114",
+            "Product/Service SKU Description Qty Rate Amount",
+            "MultiPlus-II 48/3000/35-50 120V (UL 1741) INT-PORTAL-SVC Portal order service 4 1,249.00 4,996.00",
+            "Subtotal 4,996.00",
+        ]), False)
+        self.assertEqual(text_po, "2026-114")
+        matched = [line for line in lines if line["product_id"]]
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(matched[0]["qty"], 4)
+        self.assertFalse(any(line["sku"] == "120V" for line in lines))
+
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})
         user = self._portal(partner, "cancel-owner@example.com", "owner")

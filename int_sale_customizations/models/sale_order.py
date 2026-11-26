@@ -540,7 +540,7 @@ class SaleOrder(models.Model):
 
     def _int_po_error(self, code):
         return {
-            "header": _("The spreadsheet needs a header row with a part number and a quantity. Use columns such as SKU and Qty, or download the template."),
+            "header": _("The spreadsheet needs a header row with a part number and a quantity. Columns such as SKU, Item #, Part Number, Material, or Manufacturer Part Number, and Qty or Quantity, all work."),
             "limit": _("A purchase order upload can contain at most 500 rows."),
             "csv": _("The CSV could not be read. Save it as UTF-8."),
             "sheet": _("This spreadsheet could not be read. Save it as .xlsx or .csv."),
