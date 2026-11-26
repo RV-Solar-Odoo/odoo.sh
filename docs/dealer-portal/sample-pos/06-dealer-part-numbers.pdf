@@ -1,41 +1,74 @@
 %PDF-1.4
+%“Œ‹ž ReportLab Generated PDF document (opensource)
 1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
+<<
+/F1 2 0 R /F2 3 0 R
+>>
 endobj
 2 0 obj
-<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
 endobj
 3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
 endobj
 4 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+<<
+/Contents 8 0 R /MediaBox [ 0 0 612 792 ] /Parent 7 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
 endobj
 5 0 obj
-<< /Length 146 >>
+<<
+/PageMode /UseNone /Pages 7 0 R /Type /Catalog
+>>
+endobj
+6 0 obj
+<<
+/Author (\(anonymous\)) /CreationDate (D:20261126150005-06'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20261126150005-06'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
+>>
+endobj
+7 0 obj
+<<
+/Count 1 /Kids [ 4 0 R ] /Type /Pages
+>>
+endobj
+8 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 824
+>>
 stream
-BT
-/F1 12 Tf
-50 760 Td
-(Purchase Order PO-6006) Tj
-0 -18 Td
-(DEALER-200AH  2) Tj
-0 -18 Td
-(MY-PART-9  1) Tj
-0 -18 Td
-(200Ah lithium battery) Tj
-ET
-endstream
+GauHJhf"u<&:WfG\>LdVKP)6?9]+8T>r6+e8m%oQVC?A\$?Us"l@2%Qr(Ice^n_8_=D.O.I.nYq,CnlCo`$BB\FSV5%08f3Ifa(()uM.DIH-ASMNtW(-of/1;l`ICZ*pRV7_'9"X`SJ+#+k9KKG):15Sdru:dDI!1K$KfX!L(X&Le9o&VWOkb^Xo5a`&thR<Lgf^4Q@dre2Q-P>=nbE=<=dSHu?T0__.f6J"[Z(37uUKY_MW?p6A,`k5h?RgU.Tp`Y,?D9Uj\K-8=ph2!q8"H5+SjldEp)PZJSmHTLk4Q:]Dg_GUOW;X#C^Bh@'/PF.S-;C4-R"We$(a[or90^5(D[g>S,ZmXFO.X<j/EKH2E$*#Z8U;i5@?J2T;tpDqb:F%LNtZ>i[I:?]as_7GQ02g^<X%'j^at?GR$9oU^sg9ufueg[*-)W2a\JN1YR]r7S&0Q@AoPAA*eLcL5scUV5nAS5@'`JC[k(54,H9Sdm!%+p6*QH.oDkG[i@8MrFf[d"_al(i.k1W/+8[%Zh9UZ7JK59!A'^qf%jr`8l[_5/ZZWd;@%D*m!BclCIjJKH&h4H4H#Z^/l?[36>BK8KjWNiQQ_M_Y_RLq/bT0[\+6d$X4rl.H:'[nMr\iq,cSsYnC![lGPUoo%ZdeH&]d#`*,(=a9VAPhHe,Fj$'pVkA_B:gcI`p.i`Hs9(6W@"j-SN/53S)2U)m1!Bdg('NU9_pMBr,uaQ,DBL.$Z/W+Shr;;8%lClQ2o[g0"#Rb++OX$(dbW]q$AW"ER^="2P--d6RKm5i-'F=]Q2=oof%dhGiTpFlhAN:\bI>?a\iNEW~>endstream
 endobj
 xref
-0 6
+0 9
 0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000241 00000 n 
-0000000311 00000 n 
-trailer << /Size 6 /Root 1 0 R >>
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000321 00000 n 
+0000000514 00000 n 
+0000000582 00000 n 
+0000000862 00000 n 
+0000000921 00000 n 
+trailer
+<<
+/ID 
+[<ee89b324c189c2d5c52b9891f1f14953><ee89b324c189c2d5c52b9891f1f14953>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 6 0 R
+/Root 5 0 R
+/Size 9
+>>
 startxref
-508
+1835
 %%EOF
