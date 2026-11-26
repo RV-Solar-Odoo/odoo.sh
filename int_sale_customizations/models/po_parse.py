@@ -394,13 +394,44 @@ def match_sheet_rows(parsed, products):
     return lines
 
 
-def _unknown_code(key):
+def _unknown_code(token):
+    key = norm_code(token)
     if len(key) < 4 or len(key) > 40 or key in PDF_STOP:
         return False
-    # 120V and 2x120V are volts in a description, including when a PDF wraps them onto their own line.
+    # 120V, 2x120V, and 12/4k/160-50 are ratings in a description, including when a
+    # PDF reader puts them on their own line.
     if re.fullmatch(r"\d+V", key) or re.fullmatch(r"\d+X\d+V", key):
         return False
+    if "/" in str(token):
+        return False
     return any(character.isdigit() for character in key) and any(character.isalpha() for character in key)
+
+
+def join_positioned_text(snippets, tolerance=3.0):
+    """Turn ``(x, y, text)`` pieces into visual rows.
+
+    A PDF reader often returns one cell at a time. Pieces on the same baseline
+    belong on one line, so the part number stays with its quantity.
+    """
+    items = []
+    for x, y, text in snippets:
+        text = " ".join(str(text or "").split())
+        if text:
+            items.append((float(x), float(y), text))
+    if not items:
+        return ""
+    items.sort(key=lambda item: (-item[1], item[0]))
+    rows = []
+    for x, y, text in items:
+        if rows and abs(y - rows[-1][0]) <= tolerance:
+            rows[-1][1].append((x, text))
+        else:
+            rows.append([y, [(x, text)]])
+    lines = []
+    for _y, parts in rows:
+        parts.sort()
+        lines.append(" ".join(part for _x, part in parts))
+    return "\n".join(lines)
 
 
 def _code_in_token(token, index):
@@ -442,7 +473,7 @@ def _classified_tokens(line, index):
             classified.append(("code", shown, products))
         elif re.fullmatch(r"\d+(?:\.\d+)?", token):
             classified.append(("qty", token, float(token)))
-        elif _unknown_code(key):
+        elif _unknown_code(token):
             classified.append(("unknown", token, None))
     return classified
 
@@ -510,7 +541,7 @@ def match_pdf_text(text, products):
             kind, token, payload = item
             if kind not in ("code", "unknown"):
                 continue
-            if kind == "unknown" and known:
+            if kind == "unknown" and (known or norm_code(token) == norm_code(po_number)):
                 continue
             qty = _span_qty(classified, token_index)
             if kind == "unknown":

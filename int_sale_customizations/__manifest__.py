@@ -1,6 +1,6 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.10.0",
+    "version": "19.0.1.10.1",
     "category": "Sales/Sales",
     "summary": "Dealer orders, checkout, and customer quotes priced at MAP or MSRP",
     "author": "Internal",

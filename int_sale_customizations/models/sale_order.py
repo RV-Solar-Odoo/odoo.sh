@@ -8,6 +8,7 @@ from odoo.tools.float_utils import float_compare
 
 from .po_parse import (
     PoParseError,
+    join_positioned_text,
     match_pdf_text,
     match_sheet_rows,
     parse_csv_bytes,
@@ -652,9 +653,44 @@ class SaleOrder(models.Model):
                 return ""
         try:
             document = reader(io.BytesIO(raw))
-            return "\n".join((page.extract_text() or "") for page in document.pages)
+            pages = []
+            for page in document.pages:
+                snippets = self._int_po_pdf_snippets(page)
+                if snippets:
+                    pages.append(join_positioned_text(snippets))
+                else:
+                    pages.append(page.extract_text() or "")
+            return "\n".join(pages)
         except Exception:
             return ""
+
+    def _int_po_pdf_snippets(self, page):
+        """``(x, y, text)`` for each text run, in page coordinates."""
+        found = []
+
+        def visitor(text, cm, tm, font_dict, font_size):
+            if not text or not str(text).strip():
+                return
+            try:
+                a, b, c, d, e, f = cm
+                x = a * tm[4] + c * tm[5] + e
+                y = b * tm[4] + d * tm[5] + f
+            except (TypeError, ValueError, IndexError):
+                return
+            found.append((x, y, text))
+
+        try:
+            page.extract_text(visitor_text=visitor)
+        except Exception:
+            return []
+        ys = {round(y, 1) for _x, y, _text in found}
+        if len(found) > 3 and len(ys) < 2:
+            return []
+        return found
+
+    def _int_po_join_rows(self, snippets):
+        """One string per visual row. ``snippets`` are ``(x, y, text)``."""
+        return join_positioned_text(snippets)
 
     def _int_po_quantity_for(self, product, raw):
         """A quantity the cart will accept for this product, or an error string."""
