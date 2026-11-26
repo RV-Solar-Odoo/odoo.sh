@@ -622,7 +622,7 @@ class CustomerPortal(CustomerPortal):
         pending["po_number"] = (po_number or "").strip()[:80]
         request.session["int_po_upload"] = pending
         if problems:
-            return self._int_po_review(error=_("Fix the quantity on: %s", ", ".join(problems)))
+            return self._int_po_review(error=_("Check these lines before adding them: %s", ", ".join(problems)))
         if not chosen:
             return self._int_po_review(error=_("Choose at least one product with a quantity."))
         cart = self._int_cart()
@@ -636,16 +636,24 @@ class CustomerPortal(CustomerPortal):
         cart.sudo().write(values)
         attachment = request.env["ir.attachment"].sudo().browse(pending.get("attachment_id")).exists()
         if attachment and not attachment.res_id:
-            attachment.write({
-                "res_model": "sale.order",
-                "res_id": cart.id,
-            })
-            cart.sudo().message_post(
-                body=_("Purchase order uploaded from My Portal."),
-                attachment_ids=[attachment.id],
-            )
+            cart._int_po_keep_file(attachment)
         request.session.pop("int_po_upload", None)
         return request.redirect("/shop/cart")
+
+    @route("/my/orders/<int:order_id>/po-file", type="http", auth="user", website=True)
+    def int_po_file(self, order_id, **kwargs):
+        order = request.env["sale.order"].browse(order_id).exists()
+        user = request.env.user
+        if not order or not user.int_portal_can("view_orders") or not order._int_owned_by(user):
+            return request.redirect("/my")
+        attachment = order._int_po_attachment()
+        if not attachment or attachment.res_model != "sale.order" or attachment.res_id != order.id:
+            return request.redirect(order.get_portal_url())
+        filename = (attachment.name or "purchase-order").replace("\\", "").replace('"', "").replace("\r", "").replace("\n", "")
+        return request.make_response(base64.b64decode(attachment.datas or b""), headers=[
+            ("Content-Type", attachment.mimetype or "application/octet-stream"),
+            ("Content-Disposition", "attachment; filename=\"%s\"" % filename),
+        ])
 
     @route("/my/po-upload/staff", type="http", auth="user", website=True, methods=["POST"])
     def int_po_upload_staff(self, po_number="", **kwargs):
@@ -676,21 +684,10 @@ class CustomerPortal(CustomerPortal):
             attachment = request.env["ir.attachment"].sudo().create({
                 "name": filename or "purchase-order.pdf",
                 "datas": base64.b64encode(raw),
-                "res_model": "sale.order",
-                "res_id": order.id,
                 "type": "binary",
                 "public": False,
             })
-        else:
-            attachment.sudo().write({
-                "res_model": "sale.order",
-                "res_id": order.id,
-                "public": False,
-            })
-        order.message_post(
-            body=_("Purchase order uploaded from My Portal."),
-            attachment_ids=[attachment.id],
-        )
+        order._int_po_keep_file(attachment)
         salesperson = user.partner_id.commercial_partner_id.user_id
         if salesperson and not salesperson.share:
             order.activity_schedule(

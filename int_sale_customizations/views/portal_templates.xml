@@ -203,6 +203,9 @@
     <template id="portal_order_cancel" name="Request cancellation" inherit_id="sale.sale_order_portal_content">
         <xpath expr="//div[@id='introduction']" position="after">
             <div t-if="request.params.get('int_error')" class="alert alert-warning" role="alert" t-out="request.params.get('int_error')"/>
+            <p t-if="sale_order.int_uploaded_po and sale_order._int_po_portal_file() and report_type != 'pdf'" class="mb-2">
+                <a t-att-href="'/my/orders/%s/po-file' % sale_order.id">Purchase order: <t t-out="sale_order._int_po_portal_file()"/></a>
+            </p>
             <div t-if="sale_order.int_cancel_state == 'requested'" class="alert alert-info" role="alert">
                 Cancellation requested — we'll confirm shortly.
             </div>

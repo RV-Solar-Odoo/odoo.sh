@@ -1,3 +1,5 @@
+import base64
+
 from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
@@ -243,6 +245,34 @@ class TestPortalOrders(TransactionCase):
         )
         self.assertEqual(bare_po, "PO-5005")
         self.assertEqual([line["qty"] for line in bare_lines if line["product_id"]], [1])
+
+    def test_uploaded_po_file_stays_on_the_order(self):
+        partner = self.env["res.partner"].create({"name": "PO File Dealer", "is_company": True})
+        order = self.env["sale.order"].create({
+            "partner_id": partner.id,
+            "order_line": [Command.create({
+                "product_id": self.product.id,
+                "product_uom_qty": 1,
+            })],
+        })
+        attachment = self.env["ir.attachment"].create({
+            "name": "dealer-po.pdf",
+            "datas": base64.b64encode(b"%PDF-1.4"),
+            "type": "binary",
+        })
+        order._int_po_keep_file(attachment)
+        self.assertEqual(order.int_po_attachment_id, attachment)
+        self.assertEqual(attachment.res_model, "sale.order")
+        self.assertEqual(attachment.res_id, order.id)
+        self.assertFalse(attachment.public)
+        self.assertIn(attachment, order.message_ids.attachment_ids)
+        order._int_po_keep_file(attachment)
+        linked = order.message_ids.filtered(lambda message: attachment in message.attachment_ids)
+        self.assertEqual(len(linked), 1)
+        order.action_confirm()
+        self.assertEqual(order.state, "sale")
+        self.assertEqual(attachment.res_id, order.id)
+        self.assertEqual(order._int_po_portal_file(), "dealer-po.pdf")
 
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})

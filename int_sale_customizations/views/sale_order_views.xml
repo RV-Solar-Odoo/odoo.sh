@@ -20,6 +20,7 @@
             </xpath>
             <xpath expr="//field[@name='client_order_ref']" position="after">
                 <field name="int_uploaded_po" readonly="1"/>
+                <field name="int_po_attachment_id" readonly="1" invisible="not int_uploaded_po"/>
             </xpath>
             <xpath expr="//field[@name='partner_shipping_id']" position="after">
                 <field name="int_ship_location_type" readonly="1"/>

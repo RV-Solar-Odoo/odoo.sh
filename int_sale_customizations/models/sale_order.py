@@ -61,6 +61,12 @@ class SaleOrder(models.Model):
         copy=False,
         help="The dealer added this order from Upload a PO. The PO # column shows its customer reference.",
     )
+    int_po_attachment_id = fields.Many2one(
+        "ir.attachment",
+        string="Uploaded PO file",
+        copy=False,
+        ondelete="set null",
+    )
     int_ship_location_type = fields.Selection(related="partner_shipping_id.int_location_type")
     int_ship_has_dock = fields.Boolean(related="partner_shipping_id.int_has_loading_dock")
     int_ship_has_forklift = fields.Boolean(related="partner_shipping_id.int_has_forklift")
@@ -109,6 +115,73 @@ class SaleOrder(models.Model):
     def _int_owned_by(self, user):
         self.ensure_one()
         return self.partner_id.commercial_partner_id == user.partner_id.commercial_partner_id
+
+    def action_confirm(self):
+        result = super().action_confirm()
+        for order in self.filtered("int_uploaded_po"):
+            order._int_po_keep_file()
+        return result
+
+    def _int_po_attachment(self):
+        """The dealer's uploaded file, including one saved before this link existed."""
+        self.ensure_one()
+        if self.int_po_attachment_id:
+            return self.int_po_attachment_id.sudo()
+        if not self.int_uploaded_po:
+            return self.env["ir.attachment"]
+        return self.env["ir.attachment"].sudo().search([
+            ("res_model", "=", "sale.order"),
+            ("res_id", "=", self.id),
+            ("res_field", "=", False),
+        ], order="id desc", limit=1)
+
+    def _int_po_portal_file(self):
+        """Filename for the order page, or an empty string."""
+        self.ensure_one()
+        return self._int_po_attachment().name or ""
+
+    def _int_po_keep_file(self, attachment=None):
+        """Keep the uploaded file on this order and on its chatter.
+
+        Checkout confirms this same order, so the file placed here is the one
+        on the quotation. A portal post can drop the chatter link; put it back.
+        """
+        self.ensure_one()
+        attachment = (attachment or self._int_po_attachment()).sudo()
+        if not attachment:
+            return attachment
+        if attachment.res_model != "sale.order" or attachment.res_id != self.id or attachment.public:
+            attachment.write({
+                "res_model": "sale.order",
+                "res_id": self.id,
+                "public": False,
+            })
+        if self.int_po_attachment_id != attachment:
+            self.sudo().write({"int_po_attachment_id": attachment.id, "int_uploaded_po": True})
+        Message = self.env["mail.message"].sudo()
+        linked = Message.search([
+            ("model", "=", "sale.order"),
+            ("res_id", "=", self.id),
+            ("attachment_ids", "in", attachment.ids),
+        ], limit=1)
+        if linked:
+            return attachment
+        existing = Message.search([
+            ("model", "=", "sale.order"),
+            ("res_id", "=", self.id),
+            ("body", "ilike", "Purchase order uploaded from My Portal"),
+        ], limit=1)
+        if existing:
+            existing.write({"attachment_ids": [(4, attachment.id)]})
+            return attachment
+        message = self.sudo().with_context(mail_create_nosubscribe=True).message_post(
+            body=_("Purchase order uploaded from My Portal."),
+            subtype_xmlid="mail.mt_note",
+            attachment_ids=[attachment.id],
+        )
+        if attachment not in message.attachment_ids:
+            message.sudo().write({"attachment_ids": [(4, attachment.id)]})
+        return attachment
 
     def _int_outgoing(self):
         self.ensure_one()
