@@ -6,6 +6,15 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 
+from .po_parse import (
+    PoParseError,
+    match_pdf_text,
+    match_sheet_rows,
+    parse_csv_bytes,
+    parse_quantity,
+    parse_sheet_rows,
+)
+
 
 CANCEL_REASONS = [
     ("no_longer_needed", "No longer needed"),
@@ -46,6 +55,11 @@ class SaleOrder(models.Model):
     int_cancel_decided_by = fields.Many2one("res.users", copy=False)
     int_cancel_decision_note = fields.Text(copy=False)
     int_cancel_settled = fields.Boolean(copy=False)
+    int_uploaded_po = fields.Boolean(
+        string="Uploaded PO",
+        copy=False,
+        help="The dealer added this order from Upload a PO. The PO # column shows its customer reference.",
+    )
     int_ship_location_type = fields.Selection(related="partner_shipping_id.int_location_type")
     int_ship_has_dock = fields.Boolean(related="partner_shipping_id.int_has_loading_dock")
     int_ship_has_forklift = fields.Boolean(related="partner_shipping_id.int_has_forklift")
@@ -524,76 +538,142 @@ class SaleOrder(models.Model):
             tx.sudo().action_refund(amount_to_refund=chunk)
             remaining -= chunk
 
+    def _int_po_error(self, code):
+        return {
+            "header": _("The spreadsheet needs a header row with a part number and a quantity. Use columns such as SKU and Qty, or download the template."),
+            "limit": _("A purchase order upload can contain at most 500 rows."),
+            "csv": _("The CSV could not be read. Save it as UTF-8."),
+            "sheet": _("This spreadsheet could not be read. Save it as .xlsx or .csv."),
+        }.get(code, _("This purchase order could not be read."))
+
+    def _int_po_reason(self, code):
+        return {
+            "missing_sku": _("The part number is missing."),
+            "bad_qty": _("Quantity must be a positive number."),
+            "huge": _("Quantity must be 100,000 or less."),
+            "unknown": _("Unknown part number or not available."),
+            "ambiguous": _("More than one product uses this part number."),
+            "missing_qty": _("Quantity is missing."),
+            "whole": _("Quantity must be a whole number for this product."),
+        }.get(code, code or "")
+
+    def _int_po_catalog(self, website):
+        company = website.company_id if website else self.env.company
+        products = self.env["product.product"].search([
+            ("sale_ok", "=", True),
+            "|", ("company_id", "=", False), ("company_id", "=", company.id),
+        ]).filtered(lambda product: self._int_product_on_website(product, website))
+        catalog = []
+        for product in products:
+            rounding = product.uom_id.rounding if product.uom_id else 1.0
+            catalog.append({
+                "id": product.id,
+                "default_code": product.default_code or "",
+                "barcode": product.barcode or "",
+                "name": product.with_context(display_default_code=False).display_name,
+                "whole": rounding >= 1,
+            })
+        return catalog
+
+    def _int_po_public_lines(self, lines):
+        public = []
+        for line in lines:
+            reason = line.get("reason") or ""
+            reason_text = self._int_po_reason(reason) if reason in {
+                "missing_sku", "bad_qty", "huge", "unknown", "ambiguous", "missing_qty", "whole",
+            } else reason
+            public.append({
+                "sku": line.get("sku") or "",
+                "qty": line.get("qty"),
+                "product_id": line.get("product_id") or False,
+                "name": line.get("name") or "",
+                "reason": reason_text,
+                "include": bool(line.get("product_id")) and not reason_text,
+            })
+        return public
+
     @api.model
     def _int_po_rows_from_xlsx(self, raw):
         try:
             import openpyxl
         except ImportError as exc:
             raise UserError(_("The spreadsheet reader is not available.")) from exc
-        workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
-        sheet = workbook.active
-        rows = [list(row) for row in sheet.iter_rows(values_only=True)]
+        try:
+            workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+            sheet = workbook.active
+            rows = [list(row) for row in sheet.iter_rows(values_only=True)]
+        except UserError:
+            raise
+        except Exception as exc:
+            raise UserError(self._int_po_error("sheet")) from exc
         return self._int_po_rows(rows)
+
+    @api.model
+    def _int_po_rows_from_csv(self, raw):
+        try:
+            po_number, parsed = parse_csv_bytes(raw)
+        except PoParseError as exc:
+            raise UserError(self._int_po_error(exc.code)) from exc
+        return po_number, [(row["sku"], row["qty"]) for row in parsed]
 
     @api.model
     def _int_po_rows(self, rows):
         """Return (po_number, [(sku, qty), ...]) from a sheet of cell values."""
-        po_number = ""
-        header_index = None
-        sku_col = qty_col = po_col = None
-        for index, row in enumerate(rows[:8]):
-            labels = [str(cell).strip().lower() if cell is not None else "" for cell in row]
-            if "sku" in labels and "qty" in labels:
-                header_index = index
-                sku_col = labels.index("sku")
-                qty_col = labels.index("qty")
-                po_col = labels.index("po number") if "po number" in labels else None
-                break
-            for cell_index, label in enumerate(labels):
-                if label == "po number" and cell_index + 1 < len(row) and row[cell_index + 1]:
-                    po_number = str(row[cell_index + 1]).strip()
-        if header_index is None:
-            raise UserError(_("The spreadsheet needs a header row with SKU and Qty."))
-        parsed = []
-        for row in rows[header_index + 1:]:
-            if not row or all(cell in (None, "") for cell in row):
-                continue
-            sku = str(row[sku_col]).strip() if sku_col < len(row) and row[sku_col] not in (None, "") else ""
-            qty = row[qty_col] if qty_col < len(row) else None
-            if po_col is not None and po_col < len(row) and row[po_col] and not po_number:
-                po_number = str(row[po_col]).strip()
-            parsed.append((sku, qty))
-        if len(parsed) > 500:
-            raise UserError(_("A purchase order upload can contain at most 500 rows."))
-        return po_number, parsed
+        try:
+            po_number, parsed = parse_sheet_rows(rows)
+        except PoParseError as exc:
+            raise UserError(self._int_po_error(exc.code)) from exc
+        return po_number, [(row["sku"], row["qty"]) for row in parsed]
+
+    def _int_po_review_lines(self, parsed, website):
+        """Lines a dealer can accept or skip. ``parsed`` is ``[(sku, qty), ...]``."""
+        catalog = self._int_po_catalog(website)
+        rows = [{"sku": sku, "qty": qty} for sku, qty in parsed]
+        return self._int_po_public_lines(match_sheet_rows(rows, catalog))
+
+    def _int_po_review_from_text(self, text, website):
+        catalog = self._int_po_catalog(website)
+        try:
+            po_number, lines = match_pdf_text(text, catalog)
+        except PoParseError as exc:
+            raise UserError(self._int_po_error(exc.code)) from exc
+        return po_number, self._int_po_public_lines(lines)
+
+    def _int_po_text_from_pdf(self, raw):
+        reader = None
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader
+        except ImportError:
+            try:
+                from PyPDF2 import PdfReader
+                reader = PdfReader
+            except ImportError:
+                return ""
+        try:
+            document = reader(io.BytesIO(raw))
+            return "\n".join((page.extract_text() or "") for page in document.pages)
+        except Exception:
+            return ""
+
+    def _int_po_quantity_for(self, product, raw):
+        """A quantity the cart will accept for this product, or an error string."""
+        quantity, code = parse_quantity(raw)
+        if code:
+            return None, self._int_po_reason(code)
+        rounding = product.uom_id.rounding if product.uom_id else 1.0
+        if rounding >= 1 and float_compare(quantity, round(quantity), precision_rounding=1.0) != 0:
+            return None, self._int_po_reason("whole")
+        return quantity, ""
 
     def _int_match_po_rows(self, parsed, website):
         added = []
         rejected = []
-        company = website.company_id if website else self.env.company
-        for sku, qty in parsed:
-            if not sku:
-                rejected.append(("", _("The SKU is missing.")))
-                continue
-            try:
-                quantity = int(qty)
-            except (TypeError, ValueError):
-                rejected.append((sku, _("Quantity must be a positive whole number.")))
-                continue
-            if quantity <= 0:
-                rejected.append((sku, _("Quantity must be a positive whole number.")))
-                continue
-            products = self.env["product.product"].search([
-                ("default_code", "=", sku),
-                ("sale_ok", "=", True),
-                "|", ("company_id", "=", False), ("company_id", "=", company.id),
-            ]).filtered(lambda product: self._int_product_on_website(product, website))
-            if not products:
-                rejected.append((sku, _("Unknown SKU or not available.")))
-            elif len(products) > 1:
-                rejected.append((sku, _("More than one product uses this SKU.")))
+        for line in self._int_po_review_lines(parsed, website):
+            if line["product_id"] and not line["reason"]:
+                added.append((self.env["product.product"].browse(line["product_id"]), line["qty"]))
             else:
-                added.append((products, quantity))
+                rejected.append((line["sku"], line["reason"]))
         return added, rejected
 
     def _int_export_csv(self):

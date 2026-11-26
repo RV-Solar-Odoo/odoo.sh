@@ -18,6 +18,9 @@
                 <field name="int_on_account" invisible="1"/>
                 <span class="badge text-bg-info mb-2" invisible="not int_on_account">Placed on Account</span>
             </xpath>
+            <xpath expr="//field[@name='client_order_ref']" position="after">
+                <field name="int_uploaded_po" readonly="1"/>
+            </xpath>
             <xpath expr="//field[@name='partner_shipping_id']" position="after">
                 <field name="int_ship_location_type" readonly="1"/>
                 <field name="int_ship_has_dock" readonly="1"/>

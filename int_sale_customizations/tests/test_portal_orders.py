@@ -81,6 +81,65 @@ class TestPortalOrders(TransactionCase):
         self.assertEqual(added[0][0].default_code, "INT-PORTAL-SVC")
         self.assertEqual(len(rejected), 2)
 
+    def test_po_upload_reads_common_columns_and_text(self):
+        SaleOrder = self.env["sale.order"]
+        rows = [
+            ["P.O. #", "PO-77"],
+            [],
+            ["Part Number", "Qty Ordered"],
+            ["int-portal-svc", "2 pcs"],
+            ["INT-PORTAL-SVC", "nope"],
+        ]
+        po_number, parsed = SaleOrder._int_po_rows(rows)
+        self.assertEqual(po_number, "PO-77")
+        self.assertEqual(parsed[0], ("int-portal-svc", "2 pcs"))
+        added, rejected = SaleOrder._int_match_po_rows(parsed, False)
+        self.assertEqual(len(added), 1)
+        self.assertEqual(added[0][1], 2)
+        self.assertEqual(len(rejected), 1)
+        self.product.barcode = "BC-PORTAL-1"
+        barcode_po, barcode_rows = SaleOrder._int_po_rows([
+            ["UPC", "Quantity"],
+            ["bc portal 1", 1],
+        ])
+        added, rejected = SaleOrder._int_match_po_rows(barcode_rows, False)
+        self.assertFalse(barcode_po)
+        self.assertEqual(added[0][0], self.product)
+        self.assertFalse(rejected)
+        dashed = self.env["product.product"].create({
+            "name": "Dashed portal product",
+            "type": "service",
+            "list_price": 5,
+            "sale_ok": True,
+            "default_code": "ABC-123",
+        })
+        if "is_published" in dashed.product_tmpl_id._fields:
+            dashed.product_tmpl_id.is_published = True
+        added, rejected = SaleOrder._int_match_po_rows([("ABC123", 3)], False)
+        self.assertEqual(added[0][0], dashed)
+        self.assertFalse(rejected)
+        twin = dashed.copy({"default_code": "DUP-1"})
+        dashed.default_code = "DUP-1"
+        if "is_published" in twin.product_tmpl_id._fields:
+            twin.product_tmpl_id.is_published = True
+        added, rejected = SaleOrder._int_match_po_rows([("DUP-1", 1)], False)
+        self.assertFalse(added)
+        self.assertIn("More than one", rejected[0][1])
+        text_po, text_lines = SaleOrder._int_po_review_from_text(
+            "PO Number: PO-44\nINT-PORTAL-SVC 4\nNO-SUCH-99 1\n",
+            False,
+        )
+        self.assertEqual(text_po, "PO-44")
+        matched = [line for line in text_lines if line["product_id"]]
+        self.assertEqual(matched[0]["qty"], 4)
+        self.assertTrue(any(line["sku"] == "NO-SUCH-99" and line["reason"] for line in text_lines))
+        with self.assertRaises(UserError):
+            SaleOrder._int_po_rows([["SKU", "Qty"]] + [["X", 1]] * 501)
+        orders = str(self.env.ref("sale.portal_my_orders").get_combined_arch())
+        self.assertIn("PO #", orders)
+        review = self.env.ref("int_sale_customizations.portal_po_review").arch
+        self.assertIn("/my/po-upload/confirm", review)
+
     def test_cancel_request_does_not_cancel_and_confirm_is_once(self):
         partner = self.env["res.partner"].create({"name": "Cancel Dealer", "is_company": True})
         user = self._portal(partner, "cancel-owner@example.com", "owner")

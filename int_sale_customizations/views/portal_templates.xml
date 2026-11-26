@@ -123,6 +123,12 @@
                 </div>
             </form>
         </xpath>
+        <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="after">
+            <th>PO #</th>
+        </xpath>
+        <xpath expr="//t[@t-foreach='orders']/tr/td[a[@t-att-href='order.get_portal_url()']]" position="after">
+            <td><t t-if="order.int_uploaded_po" t-out="order.client_order_ref"/></td>
+        </xpath>
         <xpath expr="//thead/tr/th[span[hasclass('d-md-inline')]]" position="before">
             <th t-if="request.env.user.int_portal_can('pin_orders')" class="o_int_pin_col"><span class="visually-hidden">Favorite</span></th>
         </xpath>
@@ -381,14 +387,15 @@
                 We've received your PO and will send a quote shortly.
             </div>
             <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <p>Upload an Excel file, a CSV, or a PDF. You'll see each line before anything is added to the cart, so you can change a quantity or leave a line off. A scanned PDF, with no text we can read, goes to your sales rep for a quote.</p>
             <p><a href="/my/po-template.xlsx">Download the spreadsheet template</a></p>
             <form action="/my/po-upload/submit" method="post" enctype="multipart/form-data" class="row g-2">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <div class="col-md-6">
-                    <input class="form-control" type="file" name="po_file" accept=".xlsx,.pdf" required="required"/>
+                    <input class="form-control" type="file" name="po_file" accept=".xlsx,.csv,.pdf" required="required"/>
                 </div>
                 <div class="col-md-4">
-                    <input class="form-control" name="po_number" placeholder="PO number (PDF, optional)"/>
+                    <input class="form-control" name="po_number" placeholder="PO number (optional)" maxlength="80"/>
                 </div>
                 <div class="col-md-2">
                     <button class="btn btn-primary w-100" type="submit">Upload</button>
@@ -397,16 +404,57 @@
         </t>
     </template>
 
-    <template id="portal_po_result" name="PO upload result">
+    <template id="portal_po_review" name="PO upload review">
         <t t-call="portal.portal_layout">
-            <h3>Purchase order <t t-out="int_po_number"/></h3>
-            <p t-if="int_added"><t t-out="len(int_added)"/> line(s) added to the cart.</p>
-            <ul t-if="int_rejected">
-                <li t-foreach="int_rejected" t-as="item">
-                    <span t-out="item[0] or 'Row'"/> — <span t-out="item[1]"/>
-                </li>
-            </ul>
-            <a class="btn btn-primary" href="/shop/cart">View cart</a>
+            <h3>Review this purchase order</h3>
+            <p class="text-muted" t-out="int_filename"/>
+            <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
+            <p t-if="int_cart_count" class="alert alert-info" role="alert">
+                Your cart already has <t t-out="int_cart_count"/> line(s). These products will be added to it unless you replace the cart.
+            </p>
+            <form action="/my/po-upload/confirm" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="mb-3 col-md-4">
+                    <label class="form-label" for="int_po_number">PO number</label>
+                    <input class="form-control" id="int_po_number" name="po_number" maxlength="80" t-att-value="int_po_number"/>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th><span class="visually-hidden">Add</span></th>
+                                <th>Part number</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="int_lines" t-as="line">
+                                <td>
+                                    <input t-if="line['product_id']" type="checkbox" t-att-name="'include_%s' % line_index" t-att-checked="line['include'] and 'checked' or None"/>
+                                </td>
+                                <td t-out="line['sku'] or '—'"/>
+                                <td t-out="line['name']"/>
+                                <td>
+                                    <input t-if="line['product_id']" class="form-control" type="number" min="0" step="any" t-att-name="'qty_%s' % line_index" t-att-value="line['qty'] or ''"/>
+                                </td>
+                                <td class="text-muted" t-out="line['reason']"/>
+                            </tr>
+                            <tr t-if="not int_lines">
+                                <td colspan="5">No part numbers were found in this file.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div t-if="int_cart_count" class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="fresh" value="1" id="int_po_fresh"/>
+                    <label class="form-check-label" for="int_po_fresh">Replace the products already in my cart</label>
+                </div>
+                <button t-if="int_can_add" class="btn btn-primary" type="submit">Add to cart</button>
+                <button t-if="int_is_pdf" class="btn btn-light" type="submit" formaction="/my/po-upload/staff">Send the file to your sales rep</button>
+                <a class="btn btn-light" href="/my/po-upload">Upload a different file</a>
+            </form>
         </t>
     </template>
 

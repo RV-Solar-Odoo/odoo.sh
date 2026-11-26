@@ -1,4 +1,6 @@
 import base64
+import os
+import re
 from datetime import date
 from urllib.parse import quote
 
@@ -475,6 +477,48 @@ class CustomerPortal(CustomerPortal):
             ("Content-Disposition", "attachment; filename=po_template.xlsx"),
         ])
 
+    def _int_po_filename(self, name, default):
+        base = os.path.basename((name or "").replace("\\", "/")) 
+        base = re.sub(r"[^\w.\- ]+", "", base).strip()[:120]
+        return base or default
+
+    def _int_po_drop_pending(self):
+        pending = request.session.get("int_po_upload") or {}
+        attachment_id = pending.get("attachment_id")
+        if not attachment_id:
+            return
+        attachment = request.env["ir.attachment"].sudo().browse(attachment_id).exists()
+        if attachment and not attachment.res_id:
+            attachment.unlink()
+        request.session.pop("int_po_upload", None)
+
+    def _int_po_keep(self, raw, filename):
+        self._int_po_drop_pending()
+        attachment = request.env["ir.attachment"].sudo().create({
+            "name": filename,
+            "datas": base64.b64encode(raw),
+            "type": "binary",
+            "public": False,
+        })
+        return attachment
+
+    def _int_po_review(self, error=""):
+        pending = request.session.get("int_po_upload")
+        if not pending:
+            return request.redirect("/my/po-upload?error=%s" % quote(_("Upload the file again.")))
+        cart = self._int_cart()
+        lines = pending.get("lines") or []
+        return request.render("int_sale_customizations.portal_po_review", {
+            "page_name": "int_po",
+            "int_error": error,
+            "int_po_number": pending.get("po_number") or "",
+            "int_lines": lines,
+            "int_filename": pending.get("filename") or "",
+            "int_is_pdf": pending.get("kind") == "pdf",
+            "int_can_add": any(line.get("product_id") for line in lines),
+            "int_cart_count": len(cart.order_line),
+        })
+
     @route("/my/po-upload", type="http", auth="user", website=True)
     def int_po_upload_page(self, **kwargs):
         if not request.env.user.int_portal_can("upload_po"):
@@ -494,45 +538,155 @@ class CustomerPortal(CustomerPortal):
         if not upload:
             return request.redirect("/my/po-upload?error=%s" % quote(_("Choose a file.")))
         raw = upload.read()
+        if not raw:
+            return request.redirect("/my/po-upload?error=%s" % quote(_("Choose a file.")))
         if len(raw) > 10 * 1024 * 1024:
             return request.redirect("/my/po-upload?error=%s" % quote(_("The file must be 10 MB or smaller.")))
-        name = (upload.filename or "").lower()
-        if name.endswith(".pdf"):
-            return self._int_po_pdf(user, raw, upload.filename, po_number)
-        try:
-            po_from_file, parsed = request.env["sale.order"]._int_po_rows_from_xlsx(raw)
-        except UserError as exc:
-            return request.redirect("/my/po-upload?error=%s" % quote(str(exc.args[0])))
-        po_number = (po_number or po_from_file or "").strip()
-        added, rejected = request.env["sale.order"]._int_match_po_rows(parsed, request.website)
-        cart = self._int_cart()
-        for product, quantity in added:
-            cart._cart_add(product_id=product.id, quantity=quantity)
-        if po_number:
-            cart.sudo().write({"client_order_ref": po_number})
-        return request.render("int_sale_customizations.portal_po_result", {
-            "page_name": "int_po",
-            "int_added": added,
-            "int_rejected": rejected,
-            "int_po_number": po_number,
-        })
+        filename = self._int_po_filename(upload.filename, "purchase-order")
+        ext = os.path.splitext(filename)[1].lower()
+        typed = (po_number or "").strip()[:80]
+        SaleOrder = request.env["sale.order"]
+        if ext == ".pdf":
+            text = SaleOrder._int_po_text_from_pdf(raw)
+            if not text.strip():
+                return self._int_po_pdf(user, raw, filename, typed)
+            try:
+                po_from_file, lines = SaleOrder._int_po_review_from_text(text, request.website)
+            except UserError as exc:
+                return request.redirect("/my/po-upload?error=%s" % quote(str(exc.args[0])))
+            kind = "pdf"
+        elif ext == ".csv":
+            try:
+                po_from_file, parsed = SaleOrder._int_po_rows_from_csv(raw)
+                lines = SaleOrder._int_po_review_lines(parsed, request.website)
+            except UserError as exc:
+                return request.redirect("/my/po-upload?error=%s" % quote(str(exc.args[0])))
+            kind = "sheet"
+        elif ext == ".xlsx":
+            try:
+                po_from_file, parsed = SaleOrder._int_po_rows_from_xlsx(raw)
+                lines = SaleOrder._int_po_review_lines(parsed, request.website)
+            except UserError as exc:
+                return request.redirect("/my/po-upload?error=%s" % quote(str(exc.args[0])))
+            kind = "sheet"
+        else:
+            return request.redirect("/my/po-upload?error=%s" % quote(_("Upload an .xlsx, .csv, or .pdf file.")))
+        attachment = self._int_po_keep(raw, filename)
+        request.session["int_po_upload"] = {
+            "attachment_id": attachment.id,
+            "filename": filename,
+            "kind": kind,
+            "po_number": typed or po_from_file or "",
+            "lines": lines,
+        }
+        return self._int_po_review()
 
-    def _int_po_pdf(self, user, raw, filename, po_number):
+    @route("/my/po-upload/confirm", type="http", auth="user", website=True, methods=["POST"])
+    def int_po_upload_confirm(self, po_number="", fresh="", **post):
+        user = request.env.user
+        if not user.int_portal_can("upload_po") or user.int_portal_ordering_blocked():
+            return request.redirect("/my")
+        pending = request.session.get("int_po_upload")
+        if not pending:
+            return request.redirect("/my/po-upload?error=%s" % quote(_("Upload the file again.")))
+        SaleOrder = request.env["sale.order"]
+        lines = []
+        chosen = []
+        problems = []
+        for index, line in enumerate(pending.get("lines") or []):
+            item = dict(line)
+            raw_qty = post.get("qty_%s" % index, item.get("qty"))
+            item["include"] = post.get("include_%s" % index) in ("on", "1", "true", "True")
+            product = request.env["product.product"].browse(item.get("product_id") or 0).exists()
+            if item["include"]:
+                if not product or not SaleOrder._int_product_on_website(product, request.website):
+                    item["reason"] = _("That product is no longer available.")
+                    item["include"] = False
+                    problems.append(item["sku"] or _("A line"))
+                else:
+                    quantity, reason = SaleOrder._int_po_quantity_for(product, raw_qty)
+                    item["qty"] = quantity
+                    item["reason"] = reason
+                    if reason:
+                        problems.append(item["sku"] or product.display_name)
+                    else:
+                        chosen.append((product, quantity))
+            elif product:
+                quantity, reason = SaleOrder._int_po_quantity_for(product, raw_qty)
+                item["qty"] = quantity
+                if reason:
+                    item["reason"] = reason
+            lines.append(item)
+        pending = dict(pending)
+        pending["lines"] = lines
+        pending["po_number"] = (po_number or "").strip()[:80]
+        request.session["int_po_upload"] = pending
+        if problems:
+            return self._int_po_review(error=_("Fix the quantity on: %s", ", ".join(problems)))
+        if not chosen:
+            return self._int_po_review(error=_("Choose at least one product with a quantity."))
+        cart = self._int_cart()
+        if fresh == "1" and cart.order_line:
+            cart.order_line.sudo().unlink()
+        for product, quantity in chosen:
+            cart._cart_add(product_id=product.id, quantity=quantity)
+        values = {"int_uploaded_po": True}
+        if pending["po_number"]:
+            values["client_order_ref"] = pending["po_number"]
+        cart.sudo().write(values)
+        attachment = request.env["ir.attachment"].sudo().browse(pending.get("attachment_id")).exists()
+        if attachment and not attachment.res_id:
+            attachment.write({
+                "res_model": "sale.order",
+                "res_id": cart.id,
+            })
+            cart.sudo().message_post(
+                body=_("Purchase order uploaded from My Portal."),
+                attachment_ids=[attachment.id],
+            )
+        request.session.pop("int_po_upload", None)
+        return request.redirect("/shop/cart")
+
+    @route("/my/po-upload/staff", type="http", auth="user", website=True, methods=["POST"])
+    def int_po_upload_staff(self, po_number="", **kwargs):
+        user = request.env.user
+        if not user.int_portal_can("upload_po"):
+            return request.redirect("/my")
+        pending = request.session.get("int_po_upload") or {}
+        if pending.get("kind") != "pdf":
+            return request.redirect("/my/po-upload")
+        attachment = request.env["ir.attachment"].sudo().browse(pending.get("attachment_id")).exists()
+        if not attachment or attachment.res_id:
+            return request.redirect("/my/po-upload?error=%s" % quote(_("Upload the file again.")))
+        raw = base64.b64decode(attachment.datas)
+        number = (po_number or pending.get("po_number") or "").strip()[:80]
+        request.session.pop("int_po_upload", None)
+        return self._int_po_pdf(user, raw, attachment.name, number, attachment)
+
+    def _int_po_pdf(self, user, raw, filename, po_number, attachment=None):
         website = request.website
         order = request.env["sale.order"].sudo().create({
             "partner_id": user.partner_id.id,
             "company_id": website.company_id.id,
             "website_id": website.id,
             "client_order_ref": (po_number or "").strip() or False,
+            "int_uploaded_po": True,
         })
-        attachment = request.env["ir.attachment"].sudo().create({
-            "name": filename or "purchase-order.pdf",
-            "datas": base64.b64encode(raw),
-            "res_model": "sale.order",
-            "res_id": order.id,
-            "type": "binary",
-            "public": False,
-        })
+        if attachment is None:
+            attachment = request.env["ir.attachment"].sudo().create({
+                "name": filename or "purchase-order.pdf",
+                "datas": base64.b64encode(raw),
+                "res_model": "sale.order",
+                "res_id": order.id,
+                "type": "binary",
+                "public": False,
+            })
+        else:
+            attachment.sudo().write({
+                "res_model": "sale.order",
+                "res_id": order.id,
+                "public": False,
+            })
         order.message_post(
             body=_("Purchase order uploaded from My Portal."),
             attachment_ids=[attachment.id],
