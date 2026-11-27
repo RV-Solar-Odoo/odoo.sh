@@ -30,6 +30,30 @@
                         </group>
                     </group>
                 </page>
+                <page string="Application" name="int_application">
+                    <group>
+                        <group string="Billing Address">
+                            <field name="int_billing_different"/>
+                            <field name="int_billing_street" invisible="not int_billing_different"/>
+                            <field name="int_billing_street2" invisible="not int_billing_different"/>
+                            <field name="int_billing_city" invisible="not int_billing_different"/>
+                            <field name="int_billing_state_id" invisible="not int_billing_different" options="{'no_create': True}"/>
+                            <field name="int_billing_state_text" invisible="not int_billing_state_text"/>
+                            <field name="int_billing_zip" invisible="not int_billing_different"/>
+                            <field name="int_billing_country_id" invisible="not int_billing_different" options="{'no_create': True}"/>
+                        </group>
+                        <group string="Social Media">
+                            <field name="int_facebook"/>
+                            <field name="int_instagram"/>
+                            <field name="int_tiktok"/>
+                            <field name="int_linkedin"/>
+                        </group>
+                        <group string="As Typed" invisible="not int_state_text">
+                            <field name="int_state_text"/>
+                            <div class="text-muted" colspan="2">This state didn't match one, so set State on the address and clear this.</div>
+                        </group>
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>

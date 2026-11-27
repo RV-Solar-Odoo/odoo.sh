@@ -36,6 +36,23 @@ Sets the company contact's payment terms, Net 10th by default (`int_account_cust
 due the 10th of the month after the invoice). Clearing the field leaves the contact's terms as they are. With terms
 and a credit limit, the dealer can use Place Order on Account at checkout (SPEC decision 37).
 
+## Dealer application: address and social links
+
+The website editor's field list for the dealer application (a Create an Opportunity form) now offers:
+
+- **Business address**: the lead's own Street, Street2, City, ZIP and Country, plus **State / Province**, a text
+  box matched to the state by code or name ("TX", "Texas"). Unmatched text stays on the lead's Application tab.
+  The country defaults to the US when an address is given.
+- **Billing Address Is Different** and the Billing Street, Street 2, City, State / Province, ZIP and Country
+  fields. In the editor, set each billing field to be visible only when the box is set. Billing values are dropped
+  if the box is unticked.
+- **Facebook, Instagram, TikTok, LinkedIn** (optional boxes) and **Website**.
+
+On the lead, billing and social links are on the **Application** tab. When the lead is converted, or Create
+Dealer Account makes a new contact, the company gets the business address and the person sits under it; the
+billing address becomes an **Invoice** address under the company. Linking an existing contact fills its address
+only if it has none, and the lead keeps the address the dealer typed. Social links stay on the lead.
+
 ## My Portal → Documents (`/my/documents`)
 
 A Documents tile for dealer logins (a dealer pricelist, see `_int_is_dealer_contact`). Every role can view
@@ -84,3 +101,6 @@ Uploads: PDF, JPG, PNG or BMP up to 20 MB, checked by extension and content.
   and one pending certificate per dealer, type and state (SPEC decision 40). Other is not limited.
 - 2026-11-25: no backfill of certificate records for existing dealers. Their application files already
   show under Application Documents.
+- 2026-11-27: Create Dealer Account on a lead with no contact now creates the company and the person, as
+  converting the lead does, instead of one bare contact with only a name and email.
+- 2026-11-27: State is a typed box, not Odoo's State field, which would list every state in the world.

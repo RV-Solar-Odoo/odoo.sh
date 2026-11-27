@@ -190,8 +190,7 @@ class CrmLead(models.Model):
         """
         self.ensure_one()
         partner = self._int_account_partner()
-        if self.partner_id != partner:
-            self.partner_id = partner
+        if self._int_link_account_partner(partner):
             self.message_post(
                 body=self.env._(
                     "Linked this application to %(name)s because %(email)s already has a portal login.",
@@ -222,11 +221,15 @@ class CrmLead(models.Model):
             return self.partner_id
         if partners:
             return partners[:1]
-        return self.env["res.partner"].create({
-            "name": self.contact_name or self.partner_name or self.name,
-            "email": email,
-            "company_id": self.company_id.id,
-        })
+        # A new dealer: create the company and the person with the application's
+        # addresses, as converting the lead does.
+        self._handle_partner_assignment(create_missing=True)
+        if self.company_id:
+            commercial = self.partner_id.commercial_partner_id
+            (self.partner_id | commercial | commercial.child_ids).filtered(
+                lambda partner: not partner.company_id
+            ).write({"company_id": self.company_id.id})
+        return self.partner_id
 
     def action_grant_tax_exemption(self):
         self._int_check_can_approve({"x_tax_exemption_approved": True})

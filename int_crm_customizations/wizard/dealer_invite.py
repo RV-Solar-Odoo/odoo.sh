@@ -84,8 +84,7 @@ class IntDealerInvite(models.TransientModel):
         self.ensure_one()
         lead = self.lead_id
         partner = lead._int_account_partner()
-        if lead.partner_id != partner:
-            lead.partner_id = partner
+        if lead._int_link_account_partner(partner):
             lead.message_post(
                 body=self.env._(
                     "Linked this application to %(name)s because %(email)s already has a portal login.",

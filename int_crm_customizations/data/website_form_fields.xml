@@ -4,4 +4,15 @@
         <value>crm.lead</value>
         <value eval="['x_is_tax_exempt', 'x_tax_exemption_reason', 'x_tax_exemption_document']"/>
     </function>
+    <!-- Dealer application: business address (the lead's own address), billing address if
+         different, and social links. State is typed and matched in website_form_input_filter. -->
+    <function model="ir.model.fields" name="formbuilder_whitelist">
+        <value>crm.lead</value>
+        <value eval="[
+            'street', 'street2', 'city', 'zip', 'country_id', 'website', 'int_state_text',
+            'int_billing_different', 'int_billing_street', 'int_billing_street2', 'int_billing_city',
+            'int_billing_state_text', 'int_billing_zip', 'int_billing_country_id',
+            'int_facebook', 'int_instagram', 'int_tiktok', 'int_linkedin',
+        ]"/>
+    </function>
 </odoo>
