@@ -15,15 +15,22 @@
     <template id="portal_customer_quote_breadcrumbs" inherit_id="portal.portal_breadcrumbs">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
             <li t-if="page_name == 'int_customer_quotes'" class="breadcrumb-item active">Customer Quotes</li>
-            <li t-if="page_name == 'int_customer_quote'" class="breadcrumb-item">
+            <li t-if="page_name in ('int_customer_quote', 'int_quote_prices')" class="breadcrumb-item">
                 <a href="/my/customer-quotes">Customer Quotes</a>
             </li>
             <li t-if="page_name == 'int_customer_quote'" class="breadcrumb-item active" t-out="quote.name"/>
-            <li t-if="page_name == 'int_quote_prices'" class="breadcrumb-item">
-                <a href="/my/customer-quotes">Customer Quotes</a>
-            </li>
-            <li t-if="page_name == 'int_quote_prices'" class="breadcrumb-item active">Customer prices</li>
+            <li t-if="page_name == 'int_quote_prices'" class="breadcrumb-item active">Quote Settings</li>
         </xpath>
+    </template>
+
+    <!-- Quotes | Quote Settings, in the My Orders tab style. Settings is for the account owner. -->
+    <template id="portal_customer_quote_tabs" name="Customer Quotes tabs">
+        <nav class="o_int_order_tabs" aria-label="Customer Quotes">
+            <a href="/my/customer-quotes" t-attf-class="o_int_order_tab #{'active' if int_quote_tab == 'quotes' else ''}"
+               t-att-aria-current="'page' if int_quote_tab == 'quotes' else None">Quotes</a>
+            <a t-if="int_can_set_basis" href="/my/customer-quotes/settings" t-attf-class="o_int_order_tab #{'active' if int_quote_tab == 'settings' else ''}"
+               t-att-aria-current="'page' if int_quote_tab == 'settings' else None">Quote Settings</a>
+        </nav>
     </template>
 
     <template id="portal_customer_quotes" name="Customer quote list">
@@ -31,16 +38,15 @@
             <t t-set="additional_title">Customer Quotes</t>
             <div class="o_int_quote">
                 <h3>Customer Quotes</h3>
+                <t t-call="int_sale_customizations.portal_customer_quote_tabs"/>
                 <p class="o_int_quote_lead">
-                    Quotes you write for your own customers. New quotes start at
-                    <t t-out="int_basis"/>.
-                    <a t-if="int_can_set_basis" href="/my/customer-quotes/settings">Change</a>
+                    Quotes you write for your own customers, to download or print and send yourself.
                     Quotations from RV Solar stay under My Orders, on the Quotes tab.
                 </p>
                 <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
                 <form action="/my/customer-quotes" method="post" class="row g-2 align-items-end mb-4">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label" for="int_quote_customer">Customer</label>
                         <input class="form-control" id="int_quote_customer" type="text" name="customer_name" required="required" maxlength="120"/>
                     </div>
@@ -48,9 +54,16 @@
                         <label class="form-label" for="int_quote_email">Email</label>
                         <input class="form-control" id="int_quote_email" type="email" name="customer_email" maxlength="120"/>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label" for="int_quote_phone">Phone</label>
                         <input class="form-control" id="int_quote_phone" type="tel" name="customer_phone" maxlength="40"/>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="int_quote_basis">Customer price</label>
+                        <select class="form-select" id="int_quote_basis" name="price_basis">
+                            <option value="map" t-att-selected="int_basis == 'map'">MAP</option>
+                            <option value="msrp" t-att-selected="int_basis == 'msrp'">MSRP</option>
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">New Quote</button>
@@ -85,110 +98,201 @@
         </t>
     </template>
 
-    <template id="portal_customer_quote_settings" name="Customer quote prices">
+    <!-- Quote Settings: everything that prints on the dealer's quote PDF, with a live preview. -->
+    <template id="portal_customer_quote_settings" name="Quote Settings">
         <t t-call="portal.portal_layout">
-            <t t-set="additional_title">Customer prices</t>
+            <t t-set="additional_title">Quote Settings</t>
+            <t t-set="int_can_set_basis" t-value="True"/>
             <div class="o_int_quote">
-                <h3>Customer prices</h3>
-                <p class="o_int_quote_lead">
-                    New quotes for <t t-out="commercial.name"/> start at this price.
-                    It is what your customer pays you, not what you pay RV Solar.
-                    A quote you already started keeps its own price until you change that quote.
-                </p>
+                <h3>Customer Quotes</h3>
+                <t t-call="int_sale_customizations.portal_customer_quote_tabs"/>
                 <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
-                <form action="/my/customer-quotes/settings" method="post">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="price_basis" id="int_basis_map" value="map" t-att-checked="int_basis == 'map'"/>
-                        <label class="form-check-label" for="int_basis_map">MAP. Use MSRP when a product has no MAP.</label>
+                <div t-if="int_saved and not int_error" class="alert alert-success" role="status">Quote settings saved.</div>
+                <div class="o_int_qs">
+                    <form action="/my/customer-quotes/settings" method="post" enctype="multipart/form-data" class="o_int_qs_form js-int-qs-form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <p class="o_int_quote_lead mb-0">Account owner only. These apply to every quote your team prints.</p>
+
+                        <fieldset>
+                            <legend class="form-label">Default customer price</legend>
+                            <div class="d-flex flex-wrap gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="price_basis" id="int_basis_map" value="map" t-att-checked="int_basis == 'map'"/>
+                                    <label class="form-check-label" for="int_basis_map">MAP</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="price_basis" id="int_basis_msrp" value="msrp" t-att-checked="int_basis == 'msrp'"/>
+                                    <label class="form-check-label" for="int_basis_msrp">MSRP</label>
+                                </div>
+                            </div>
+                            <div class="form-text">What a new quote starts at. MAP uses MSRP when a product has no MAP. You can still pick per quote, and type any price on a line.</div>
+                        </fieldset>
+
+                        <div>
+                            <label class="form-label" for="int_qs_logo">Logo</label>
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <div class="o_int_qs_logo">
+                                    <img t-if="int_logo" t-att-src="int_logo" alt="Your logo"/>
+                                    <span t-else="" class="small text-muted text-center px-2">No logo yet</span>
+                                </div>
+                                <div class="flex-grow-1" style="min-width: 220px;">
+                                    <input class="form-control js-int-qs-logo" type="file" id="int_qs_logo" name="logo" accept=".png,.jpg,.jpeg,.webp"/>
+                                    <div class="form-text">PNG, JPG or WebP, up to 5 MB. It also shows under My Portal → Documents.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="int_qs_sub">Company subheading</label>
+                            <input class="form-control js-int-qs-sub" id="int_qs_sub" name="quote_subheading" maxlength="80"
+                                   placeholder="Solar · Batteries · Installs" t-att-value="commercial.int_quote_subheading or ''"/>
+                            <div class="form-text">The short line under your company name.</div>
+                        </div>
+
+                        <fieldset>
+                            <legend class="form-label">Quote accent colour</legend>
+                            <div class="o_int_qs_swatches">
+                                <t t-foreach="int_accents" t-as="int_swatch">
+                                    <label class="o_int_qs_swatch" t-att-style="'background: %s;' % int_swatch[0]">
+                                        <input type="radio" name="quote_accent" class="js-int-qs-accent" t-att-value="int_swatch[0]"
+                                               t-att-checked="int_accent == int_swatch[0] and not int_accent_custom" t-att-aria-label="int_swatch[1]"/>
+                                    </label>
+                                </t>
+                                <label class="o_int_qs_custom">
+                                    <input type="radio" name="quote_accent" value="custom" class="js-int-qs-accent js-int-qs-custom-pick"
+                                           t-att-checked="int_accent_custom" aria-label="Custom colour"/>
+                                    <span>Custom</span>
+                                    <input type="color" name="quote_accent_custom" class="js-int-qs-custom" t-att-value="int_accent" aria-label="Custom accent colour"/>
+                                </label>
+                            </div>
+                            <div class="form-text">Used for the top band, headings and the total. Everything else prints black and white. Very light colours are darkened so they stay readable.</div>
+                        </fieldset>
+
+                        <div>
+                            <label class="form-label" for="int_qs_footer">Footer line</label>
+                            <input class="form-control js-int-qs-footer" id="int_qs_footer" name="quote_footer" maxlength="200"
+                                   placeholder="Thank you for your business." t-att-value="commercial.int_quote_footer or ''"/>
+                            <div class="form-text">Your terms, licence number or a thank-you. One line.</div>
+                        </div>
+
+                        <div><button type="submit" class="btn btn-primary">Save Changes</button></div>
+                    </form>
+
+                    <div class="o_int_qs_side">
+                        <span class="o_int_qs_preview_label">Preview</span>
+                        <div class="o_int_qs_preview js-int-qs-preview"
+                             t-att-style="'--int-accent: %s; --int-accent-text: %s;' % (int_accent, int_accent_text)">
+                            <div class="o_int_qs_band"/>
+                            <div class="o_int_qs_sheet">
+                                <div class="o_int_qs_sheet_head">
+                                    <div class="o_int_qs_brand">
+                                        <img t-if="int_logo" t-att-src="int_logo" alt="" class="js-int-qs-preview-logo"/>
+                                        <img t-else="" alt="" class="js-int-qs-preview-logo d-none"/>
+                                        <div>
+                                            <strong t-out="commercial.name"/>
+                                            <small class="js-int-qs-preview-sub" t-out="commercial.int_quote_subheading or ''"/>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="o_int_qs_quote">QUOTE</span>
+                                        <strong>Q-0001</strong>
+                                    </div>
+                                </div>
+                                <div class="o_int_qs_cols">ITEM</div>
+                                <div class="o_int_qs_bar"/>
+                                <div class="o_int_qs_bar o_int_qs_bar_short"/>
+                                <div class="o_int_qs_total"><strong>Total</strong><strong class="o_int_qs_total_amount">$0.00</strong></div>
+                                <div class="o_int_qs_footer js-int-qs-preview-footer" t-out="commercial.int_quote_footer or ''"/>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="price_basis" id="int_basis_msrp" value="msrp" t-att-checked="int_basis == 'msrp'"/>
-                        <label class="form-check-label" for="int_basis_msrp">MSRP</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <a class="btn btn-outline-secondary" href="/my/customer-quotes">Back</a>
-                </form>
+                </div>
             </div>
         </t>
     </template>
 
+    <!-- The quote editor. No MAP/MSRP switch here, and wholesale, margin and MAP notes are
+         hidden until the dealer turns on Show Dealer Info, so a customer looking on sees only
+         their own prices. Lines reuse Edit Favorite's thumbnail, stepper and bin. -->
     <template id="portal_customer_quote" name="Customer quote">
         <t t-call="portal.portal_layout">
             <t t-set="additional_title">Customer Quote</t>
+            <t t-set="int_money" t-value="{'widget': 'monetary', 'display_currency': quote.currency_id}"/>
             <div class="o_int_quote">
-                <h3>
-                    <t t-out="quote.name"/>
-                    <span t-if="quote.customer_name" class="text-muted"> · <t t-out="quote.customer_name"/></span>
-                </h3>
-                <p class="o_int_quote_lead">
-                    These prices are what your customer pays you. Wholesale and margin stay on this screen.
-                    A price below MAP can still be saved. Download PDF or Print gives a quote with your logo and details, to send your customer yourself. Ordering these items comes next.
-                </p>
                 <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
-                <form t-attf-action="/my/customer-quotes/{{ quote.id }}" method="post" class="js-int-quote-edit" t-att-data-quote-id="quote.id"
+                <form t-attf-action="/my/customer-quotes/{{ quote.id }}" method="post" class="o_int_quote_edit js-int-quote-edit" t-att-data-quote-id="quote.id" t-att-data-basis="quote.price_basis"
                       t-att-data-currency-symbol="quote.currency_id.symbol"
                       t-att-data-currency-position="quote.currency_id.position"
                       t-att-data-currency-digits="quote.currency_id.decimal_places">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="add_product" class="js-int-quote-add" value=""/>
                     <input type="hidden" name="product_id" class="js-int-quote-product" value=""/>
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label" for="int_quote_edit_customer">Customer</label>
-                            <input class="form-control" id="int_quote_edit_customer" type="text" name="customer_name" required="required" maxlength="120" t-att-value="quote.customer_name"/>
+
+                    <div class="o_int_quote_head">
+                        <div>
+                            <h3 class="mb-1" t-out="quote.name"/>
+                            <label class="o_int_quote_until" for="int_quote_edit_until">
+                                <span>Valid until</span>
+                                <input class="form-control form-control-sm" id="int_quote_edit_until" type="date" name="valid_until" t-att-value="quote.valid_until or ''"/>
+                            </label>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="int_quote_edit_email">Email</label>
-                            <input class="form-control" id="int_quote_edit_email" type="email" name="customer_email" maxlength="120" t-att-value="quote.customer_email or ''"/>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="int_quote_edit_phone">Phone</label>
-                            <input class="form-control" id="int_quote_edit_phone" type="tel" name="customer_phone" maxlength="40" t-att-value="quote.customer_phone or ''"/>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="int_quote_edit_address">Customer address</label>
-                            <select class="form-select" id="int_quote_edit_address" name="customer_address_id">
-                                <option value="">No address</option>
-                                <option t-foreach="addresses" t-as="address" t-att-value="address.id" t-att-selected="address == quote.customer_address_id">
-                                    <t t-out="address.display_name"/>
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label" for="int_quote_edit_until">Valid until</label>
-                            <input class="form-control" id="int_quote_edit_until" type="date" name="valid_until" t-att-value="quote.valid_until or ''"/>
-                        </div>
-                        <div class="col-md-3">
-                            <span class="form-label d-block">This quote</span>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="price_basis" id="int_quote_basis_map" value="map" t-att-checked="quote.price_basis == 'map'"/>
-                                <label class="form-check-label" for="int_quote_basis_map">MAP</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="price_basis" id="int_quote_basis_msrp" value="msrp" t-att-checked="quote.price_basis == 'msrp'"/>
-                                <label class="form-check-label" for="int_quote_basis_msrp">MSRP</label>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label" for="int_quote_edit_notes">Memo</label>
-                            <textarea class="form-control" id="int_quote_edit_notes" name="notes" rows="2" maxlength="4000" t-out="quote.notes or ''"/>
+                        <div class="form-check form-switch o_int_dealer_switch">
+                            <input class="form-check-input js-int-quote-dealer" type="checkbox" role="switch" id="int_quote_dealer" autocomplete="off"/>
+                            <label class="form-check-label" for="int_quote_dealer">Show Dealer Info</label>
                         </div>
                     </div>
-                    <label class="form-label" for="int_quote_search">Add a product</label>
-                    <div class="o_int_fav_add_field mb-2">
-                        <input id="int_quote_search" class="js-int-quote-search" type="search" placeholder="Search by name or SKU" autocomplete="off" aria-label="Search products"/>
-                    </div>
+
+                    <details class="o_int_quote_customer" t-att-open="None if (quote.customer_email or quote.customer_phone or quote.customer_address_id) else 'open'">
+                        <summary>
+                            <span class="o_int_quote_avatar" aria-hidden="true" t-out="quote._int_customer_initials()"/>
+                            <span class="o_int_quote_customer_line">
+                                <strong t-out="quote.customer_name"/>
+                                <span t-out="quote._int_customer_summary()"/>
+                            </span>
+                            <span class="o_int_quote_customer_edit">Edit Customer</span>
+                        </summary>
+                        <div class="o_int_quote_customer_body row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="int_quote_edit_customer">Name</label>
+                                <input class="form-control" id="int_quote_edit_customer" type="text" name="customer_name" required="required" maxlength="120" t-att-value="quote.customer_name"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="int_quote_edit_email">Email</label>
+                                <input class="form-control" id="int_quote_edit_email" type="email" name="customer_email" maxlength="120" t-att-value="quote.customer_email or ''"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="int_quote_edit_phone">Phone</label>
+                                <input class="form-control" id="int_quote_edit_phone" type="tel" name="customer_phone" maxlength="40" t-att-value="quote.customer_phone or ''"/>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="int_quote_edit_address">Address</label>
+                                <select class="form-select" id="int_quote_edit_address" name="customer_address_id">
+                                    <option value="">Choose a saved customer address</option>
+                                    <option t-foreach="addresses" t-as="address" t-att-value="address.id" t-att-selected="address == quote.customer_address_id">
+                                        <t t-out="address.display_name"/>
+                                    </option>
+                                </select>
+                                <div class="form-text">From your Customer Addresses. <a href="/my/addresses?tab=customer">Add a customer address</a></div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <label class="o_int_fav_add_field o_int_quote_search" for="int_quote_search">
+                        <i class="fa fa-search" aria-hidden="true"/>
+                        <input id="int_quote_search" class="js-int-quote-search" type="search" placeholder="Add a product by name or SKU" autocomplete="off" aria-label="Add a product by name or SKU"/>
+                    </label>
                     <ul class="o_int_fav_results js-int-quote-results d-none"/>
-                    <p t-if="not quote.line_ids" class="text-muted">No lines yet.</p>
-                    <!-- Lines look like Edit Favorite. Each product line carries its MAP and MSRP
-                         customer prices and the dealer's unit cost, so quotes.js can reprice the
-                         page live when MAP/MSRP is switched. Wholesale is already on this
-                         dealer-only screen; the product search never returns it. -->
+
+                    <p t-if="not quote.line_ids" class="text-muted">No lines yet. Search above to add a product.</p>
+                    <!-- Each product line carries its MAP and MSRP customer prices and the dealer's
+                         unit cost for the live totals; the product search never returns wholesale. -->
                     <div t-if="quote.line_ids" class="o_int_quote_lines js-int-quote-lines">
+                        <div class="o_int_quote_line_head" aria-hidden="true">
+                            <span/><span>Item</span><span>Price each</span><span>Qty</span><span class="text-end">Total</span><span/>
+                        </div>
                         <t t-foreach="quote.line_ids" t-as="line">
                             <t t-set="int_is_product" t-value="line.line_type == 'product' and line.product_id"/>
-                            <div class="o_int_fav_line o_int_quote_line js-int-quote-line" data-int-line="1"
+                            <div class="o_int_quote_line js-int-quote-line" data-int-line="1"
                                  t-att-data-product="'1' if int_is_product else '0'"
                                  t-att-data-map="line.map_price or 0"
                                  t-att-data-msrp="line.msrp_price or 0"
@@ -198,70 +302,87 @@
                                     <t t-set="product" t-value="line.product_id"/>
                                 </t>
                                 <span t-else="" class="o_int_fav_thumb o_int_quote_icon" aria-hidden="true"><i class="fa fa-wrench"/></span>
-                                <span class="o_int_fav_product">
+                                <div class="o_int_quote_item">
                                     <span t-out="line.name"/>
                                     <span t-if="line.product_id.default_code" class="o_int_fav_sku">SKU <t t-out="line.product_id.default_code"/></span>
-                                    <span t-if="int_is_product" t-attf-class="o_int_quote_warn js-int-quote-below #{'' if line.below_map else 'd-none'}">Below MAP. You can still save this price.</span>
-                                    <span t-if="int_is_product" t-attf-class="o_int_quote_missing js-int-quote-nomap #{'' if line.map_missing else 'd-none'}">No MAP on this product. Using MSRP.</span>
-                                    <small t-if="int_is_product" class="o_int_quote_dealer">
-                                        Wholesale <span class="js-int-quote-cost" t-field="line.dealer_cost" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
+                                    <span t-if="int_is_product" t-attf-class="o_int_quote_warn o_int_dealer_only js-int-quote-below #{'' if line.below_map else 'd-none'}">Below MAP. You can still save this price.</span>
+                                    <span t-if="int_is_product" t-attf-class="o_int_quote_missing o_int_dealer_only js-int-quote-nomap #{'' if line.map_missing else 'd-none'}">No MAP on this product. Using MSRP.</span>
+                                    <small t-if="int_is_product" class="o_int_quote_dealer o_int_dealer_only">
+                                        Wholesale <span class="js-int-quote-cost" t-field="line.dealer_cost" t-options="int_money"/>
                                         · Margin <span class="js-int-quote-margin" t-out="line._int_margin_label()"/>
                                     </small>
-                                </span>
-                                <label class="o_int_quote_price">
-                                    <span class="o_int_quote_price_label">Price each</span>
-                                    <input class="form-control form-control-sm js-int-quote-price" type="number" min="0" step="0.01"
+                                </div>
+                                <label class="o_int_quote_box o_int_quote_price">
+                                    <span class="o_int_quote_affix" t-out="quote.currency_id.symbol"/>
+                                    <input class="js-int-quote-price" type="number" min="0" step="0.01"
                                            t-attf-name="price_{{ line.id }}" t-att-value="line.unit_price"
-                                           t-att-aria-label="'Customer price for %s' % line.name"/>
+                                           t-att-aria-label="'Price each for %s' % line.name"/>
+                                    <span class="o_int_quote_affix o_int_quote_each">each</span>
                                 </label>
-                                <span class="o_int_step">
+                                <span class="o_int_step o_int_quote_qty">
                                     <button type="button" data-int-step="-1" aria-label="Fewer">−</button>
                                     <input type="number" min="0" max="9999" step="1" class="js-int-quote-qty"
                                            t-attf-name="qty_{{ line.id }}" t-att-value="line.quantity"
                                            t-att-aria-label="'Quantity for %s' % line.name"/>
                                     <button type="button" data-int-step="1" aria-label="More">+</button>
                                 </span>
-                                <strong class="o_int_quote_subtotal js-int-quote-subtotal" t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
+                                <strong class="o_int_quote_subtotal js-int-quote-subtotal" t-field="line.price_subtotal" t-options="int_money"/>
                                 <input type="hidden" t-attf-name="remove_{{ line.id }}" value="0" class="js-int-fav-remove-input"/>
-                                <button type="button" class="o_int_fav_remove js-int-fav-remove" t-att-aria-label="'Remove %s' % line.name" title="Remove">
+                                <button type="button" class="o_int_fav_remove o_int_quote_bin js-int-fav-remove" t-att-aria-label="'Remove %s' % line.name" title="Remove">
                                     <i class="fa fa-trash-o" aria-hidden="true"/>
                                 </button>
                             </div>
                         </t>
                     </div>
-                    <div class="o_int_quote_totals">
-                        <div>Customer total<strong class="js-int-quote-total" t-field="quote.amount_untaxed" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
-                        <div class="o_int_quote_dealer">Product margin<strong class="js-int-quote-margin-total" t-field="quote.margin_amount" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
+
+                    <details class="o_int_quote_charge">
+                        <summary class="btn btn-outline-primary">+ Add Labor or Other Charge</summary>
+                        <div class="o_int_quote_charge_row">
+                            <div>
+                                <label class="form-label" for="int_quote_custom">Description</label>
+                                <input class="form-control js-int-quote-custom" id="int_quote_custom" type="text" name="custom_description" maxlength="240" placeholder="Install, freight, trip charge"/>
+                            </div>
+                            <div>
+                                <label class="form-label" for="int_quote_custom_qty">Qty</label>
+                                <input class="form-control" id="int_quote_custom_qty" type="number" min="0" step="1" name="custom_quantity" value="1"/>
+                            </div>
+                            <div>
+                                <label class="form-label" for="int_quote_custom_price">Price</label>
+                                <input class="form-control" id="int_quote_custom_price" type="number" min="0" step="0.01" name="custom_price" value="0"/>
+                            </div>
+                            <div><button type="submit" class="btn btn-outline-primary w-100" name="intent" value="custom">Add Charge</button></div>
+                        </div>
+                    </details>
+
+                    <div class="o_int_quote_foot">
+                        <div>
+                            <label class="form-label" for="int_quote_edit_notes">Memo for your customer</label>
+                            <textarea class="form-control" id="int_quote_edit_notes" name="notes" rows="3" maxlength="4000" t-out="quote.notes or ''"/>
+                        </div>
+                        <div class="o_int_quote_totals_card">
+                            <div><span>Products</span><span class="js-int-quote-products" t-out="int_products_total" t-options="int_money"/></div>
+                            <div><span>Labor and charges</span><span class="js-int-quote-charges" t-out="int_charges_total" t-options="int_money"/></div>
+                            <div class="o_int_quote_totals_main"><strong>Customer total</strong><strong class="js-int-quote-total" t-field="quote.amount_untaxed" t-options="int_money"/></div>
+                            <div class="o_int_quote_dealer o_int_dealer_only"><span>Your margin (only you see this)</span><span class="js-int-quote-margin-total" t-field="quote.margin_amount" t-options="int_money"/></div>
+                        </div>
                     </div>
-                    <div class="row g-2 align-items-end mt-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="int_quote_custom">Labor or other charge</label>
-                            <input class="form-control js-int-quote-custom" id="int_quote_custom" type="text" name="custom_description" maxlength="240" placeholder="Install, freight, trip charge"/>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label" for="int_quote_custom_qty">Qty</label>
-                            <input class="form-control" id="int_quote_custom_qty" type="number" min="0" step="1" name="custom_quantity" value="1"/>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label" for="int_quote_custom_price">Price</label>
-                            <input class="form-control" id="int_quote_custom_price" type="number" min="0" step="0.01" name="custom_price" value="0"/>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-outline-primary w-100" name="intent" value="custom">Add</button>
-                        </div>
+
+                    <div class="o_int_quote_exports d-sm-none">
+                        <a class="btn btn-outline-primary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf?download=1"><i class="fa fa-download" aria-hidden="true"/> Download PDF</a>
+                        <a class="btn btn-outline-primary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf" target="_blank" rel="noopener"><i class="fa fa-print" aria-hidden="true"/> Print</a>
                     </div>
-                    <div class="d-flex gap-2 flex-wrap mt-4">
+
+                    <!-- Sticky action bar -->
+                    <div class="o_int_quote_bar">
+                        <div class="o_int_quote_bar_total">
+                            <span>Customer total</span>
+                            <strong class="js-int-quote-total" t-field="quote.amount_untaxed" t-options="int_money"/>
+                        </div>
+                        <span class="o_int_quote_dirty js-int-quote-dirty d-none" role="status">Unsaved changes. Save before printing.</span>
+                        <a class="btn btn-outline-primary d-none d-sm-inline-flex" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf?download=1"><i class="fa fa-download" aria-hidden="true"/> Download PDF</a>
+                        <a class="btn btn-outline-primary d-none d-sm-inline-flex" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf" target="_blank" rel="noopener"><i class="fa fa-print" aria-hidden="true"/> Print</a>
                         <button type="submit" class="btn btn-primary">Save Quote</button>
-                        <span class="o_int_quote_dirty js-int-quote-dirty d-none" role="status">Unsaved changes</span>
-                        <a class="btn btn-outline-secondary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf?download=1">
-                            <i class="fa fa-download" aria-hidden="true"/> Download PDF
-                        </a>
-                        <a class="btn btn-outline-secondary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf" target="_blank" rel="noopener">
-                            <i class="fa fa-print" aria-hidden="true"/> Print
-                        </a>
-                        <a class="btn btn-outline-secondary" href="/my/customer-quotes">Back</a>
                     </div>
-                    <p class="o_int_quote_pdf_hint js-int-quote-pdf-hint d-none">Save Quote first; the PDF shows the last saved version.</p>
                 </form>
             </div>
         </t>

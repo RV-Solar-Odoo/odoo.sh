@@ -1,6 +1,6 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.12.0",
+    "version": "19.0.1.13.0",
     "category": "Sales/Sales",
     "summary": "Dealer orders, checkout, and customer quotes priced at MAP or MSRP",
     "author": "Internal",
@@ -18,6 +18,7 @@
         "int_account_customizations",
         "int_victron_stock",
         "int_shippo_customizations",
+        "int_crm_customizations",
     ],
     "application": False,
     "data": [

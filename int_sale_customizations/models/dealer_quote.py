@@ -126,6 +126,25 @@ class IntDealerQuote(models.Model):
                 vals["currency_id"] = company.currency_id.id
         return super().create(vals_list)
 
+    def _int_customer_initials(self):
+        self.ensure_one()
+        words = (self.customer_name or "").split()
+        return "".join(word[0] for word in words[:2]).upper() or "?"
+
+    def _int_customer_summary(self):
+        """"email · phone · city" for the folded customer row."""
+        self.ensure_one()
+        address = self.customer_address_id
+        place = ", ".join(part for part in (address.city, address.state_id.code) if part) if address else ""
+        parts = [self.customer_email, self.customer_phone, place or _("No address")]
+        return " · ".join(part for part in parts if part)
+
+    def _int_amounts(self):
+        """(products, labor and other charges), for the totals card and the PDF."""
+        self.ensure_one()
+        products = sum(line.unit_price * line.quantity for line in self.line_ids if line.line_type == "product")
+        return products, self.amount_untaxed - products
+
     def _get_report_base_filename(self):
         self.ensure_one()
         return "Quote %s" % self.name
@@ -190,13 +209,16 @@ class IntDealerQuote(models.Model):
         return self._int_customer_addresses(commercial).filtered(lambda partner: partner.id == address_id)[:1]
 
     @api.model
-    def _int_create(self, user, company, customer_name, email=None, phone=None):
+    def _int_create(self, user, company, customer_name, email=None, phone=None, basis=None):
+        """A new quote at ``basis`` (MAP or MSRP), else the company default from Quote Settings.
+        The editor has no MAP/MSRP switch, so a customer looking on doesn't see it."""
         self._int_check_editor(user)
         name = _int_clean_text(customer_name, MAX_NAME)
         if not name:
             raise UserError(_("Enter the customer's name."))
         commercial = user.partner_id.commercial_partner_id
-        basis = commercial.int_quote_price_basis if commercial.int_quote_price_basis in ("map", "msrp") else "map"
+        if basis not in ("map", "msrp"):
+            basis = commercial.int_quote_price_basis if commercial.int_quote_price_basis in ("map", "msrp") else "map"
         return self.sudo().create({
             "name": self._int_next_name(commercial),
             "partner_id": commercial.id,

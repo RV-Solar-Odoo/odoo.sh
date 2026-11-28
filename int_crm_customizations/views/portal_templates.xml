@@ -182,7 +182,8 @@
                     </div>
                 </section>
 
-                <!-- Company logo, on the company contact's image. -->
+                <!-- Company logo, on the company contact's image. It is changed on
+                     Customer Quotes → Quote Settings, where it is used. -->
                 <section class="card mb-4" id="int_documents_logo">
                     <div class="card-body">
                         <h4 class="card-title">Company Logo</h4>
@@ -191,19 +192,10 @@
                                 <img t-if="int_logo" t-att-src="int_logo" alt="Company logo" style="max-width: 100%; max-height: 100%; object-fit: contain;"/>
                                 <span t-else="" class="small text-muted text-center px-2">No logo yet</span>
                             </div>
-                            <form t-if="int_can_logo" action="/my/documents/logo" method="post" enctype="multipart/form-data"
-                                  class="d-flex flex-column gap-2 flex-grow-1" style="max-width: 420px;">
-                                <t t-call="int_crm_customizations.portal_document_file_input">
-                                    <t t-set="int_accept" t-value="'.png,.jpg,.jpeg,.webp'"/>
-                                    <t t-set="int_hint" t-value="'PNG, JPG or WebP, up to 5 MB.'"/>
-                                </t>
-                                <div>
-                                    <button type="submit" class="btn btn-primary btn-sm">
-                                        <t t-if="int_logo">Replace Logo</t>
-                                        <t t-else="">Upload Logo</t>
-                                    </button>
-                                </div>
-                            </form>
+                            <p class="mb-0 text-muted">
+                                Your logo prints on the quotes you make for your customers.
+                                <a t-if="int_can_logo" href="/my/customer-quotes/settings">Change it in Quote Settings</a>
+                            </p>
                         </div>
                     </div>
                 </section>

@@ -77,7 +77,7 @@ Uploads: PDF, JPG, PNG or BMP up to 20 MB, checked by extension and content.
 - **Reminders** (daily job "Dealer Certificates: Reminders and Expiry"): an email at each threshold in
   Settings (60, 30 and 7 days by default), once each, then Expired the day after the expiration date,
   with an email to the dealer and an activity for staff. Ordering isn't blocked (SPEC decision 16).
-- **Company Logo** is the company contact's image (`image_1920`). Use `image_512` or smaller for quotes.
+- **Company Logo** is the company contact's image (`image_1920`), shown read-only here. The owner changes it on Customer Quotes → Quote Settings (`int_sale_customizations`), where it is used; the upload still runs through `res.partner._int_portal_set_logo`.
   PNG, JPG or WebP up to 5 MB; no SVG.
 - **Dealer Agreement** shows the newest file under the **Dealer Agreement** label on the dealer's leads,
   and "Not signed yet" until there is one. When the Sign template exists, filing the signed PDF under

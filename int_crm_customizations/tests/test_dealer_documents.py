@@ -227,7 +227,7 @@ class TestDealerDocumentsPortal(DealerDocumentsCommon, HttpCase):
         self.assertIn("Application Documents", page.text)
         self.assertIn("Not signed yet", page.text)
         self.assertNotIn('action="/my/documents/certificates"', page.text)
-        self.assertNotIn('action="/my/documents/logo"', page.text)
+        self.assertNotIn('href="/my/customer-quotes/settings"', page.text)
         own = self.url_open(f"/my/documents/file/application/{self.license_doc.id}")
         self.assertEqual(own.status_code, 200)
         other = self.url_open(f"/my/documents/file/application/{self.other_doc.id}")
@@ -237,7 +237,8 @@ class TestDealerDocumentsPortal(DealerDocumentsCommon, HttpCase):
         self.authenticate(self.owner.login, self.owner.login)
         page = self.url_open("/my/documents")
         self.assertIn('action="/my/documents/certificates"', page.text)
-        self.assertIn('action="/my/documents/logo"', page.text)
+        # The logo is read-only here; the owner changes it in Quote Settings.
+        self.assertIn('href="/my/customer-quotes/settings"', page.text)
         home = self.url_open("/my")
         self.assertIn('href="/my/documents"', home.text)
 

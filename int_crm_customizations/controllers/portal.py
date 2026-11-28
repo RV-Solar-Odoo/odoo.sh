@@ -6,12 +6,11 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request, route
 from odoo.tools.image import image_data_uri
 
-from ..models.dealer_certificate import CERT_TYPES, MAX_DOCUMENT_BYTES, MAX_LOGO_BYTES, REPLACEABLE
+from ..models.dealer_certificate import CERT_TYPES, MAX_DOCUMENT_BYTES, REPLACEABLE
 
 DONE_MESSAGES = {
     "certificate": "Thanks. Your certificate is waiting for our review.",
     "replaced": "Thanks. We'll review the new file.",
-    "logo": "Your logo is saved.",
 }
 
 
@@ -134,16 +133,3 @@ class IntDealerDocuments(http.Controller):
         except (UserError, AccessError, ValidationError) as exc:
             return self._int_back(error=str(exc.args[0]))
         return self._int_back(done="replaced" if replaces else "certificate")
-
-    @route("/my/documents/logo", type="http", auth="user", website=True, methods=["POST"])
-    def int_dealer_logo(self, **kwargs):
-        dealer = self._int_dealer()
-        if not dealer:
-            return request.redirect("/my")
-        filename, content = self._int_upload(MAX_LOGO_BYTES)
-        try:
-            with request.env.cr.savepoint():
-                dealer._int_portal_set_logo(request.env.user, filename, content)
-        except (UserError, AccessError) as exc:
-            return self._int_back(error=str(exc.args[0]))
-        return self._int_back(done="logo")

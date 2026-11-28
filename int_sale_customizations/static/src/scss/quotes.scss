@@ -27,17 +27,191 @@
     color: #767c96;
 }
 
-// Lines reuse Edit Favorite's .o_int_fav_line row; these only add the quote's columns.
+$int-q-blue: #0054a8;
+$int-q-ink: #161b2e;
+$int-q-body: #4a5068;
+$int-q-muted: #767c96;
+$int-q-line: #e3e6f3;
+$int-q-soft: #eef0f5;
+$int-q-field: #c9d6ea;
+
+// Wholesale, margin and MAP notes: hidden until Show Dealer Info is on.
+.o_int_quote_edit:not(.o_int_show_dealer) .o_int_dealer_only {
+    display: none !important;
+}
+
+.o_int_quote_head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.o_int_quote_until {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: $int-q-body;
+    font-size: 0.9rem;
+
+    input {
+        width: auto;
+    }
+}
+
+.o_int_dealer_switch {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding-left: 2.75rem;
+
+    .form-check-input {
+        width: 2.5rem;
+        height: 1.35rem;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        color: $int-q-body;
+        font-weight: 600;
+        cursor: pointer;
+    }
+}
+
+// Customer details folded into one row; it opens to edit.
+.o_int_quote_customer {
+    margin-bottom: 1rem;
+    border: 1px solid $int-q-line;
+    border-radius: 12px;
+    background: #fff;
+
+    &[open] {
+        border-color: $int-q-blue;
+    }
+
+    summary {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        min-height: 60px;
+        padding: 0.65rem 1.1rem;
+        cursor: pointer;
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+}
+
+.o_int_quote_avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $int-q-soft;
+    color: $int-q-blue;
+    font-weight: 700;
+}
+
+.o_int_quote_customer_line {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+
+    span {
+        overflow: hidden;
+        color: $int-q-body;
+        font-size: 0.85rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.o_int_quote_customer_edit {
+    color: $int-q-blue;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.o_int_quote_customer_body {
+    padding: 0 1.1rem 1.1rem;
+}
+
+.o_int_quote_search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    color: $int-q-muted;
+
+    input {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+
+// Lines: one grid on desktop, so the price box and stepper share a centre line.
 .o_int_quote_lines {
     margin-bottom: 1rem;
-    border: 1px solid #e3e7f0;
+    border: 1px solid $int-q-line;
     border-radius: 12px;
     background: #fff;
     overflow: hidden;
+}
 
-    .o_int_quote_line:last-child {
+.o_int_quote_line_head,
+.o_int_quote_line {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 9.5rem 7.5rem 7rem 40px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+}
+
+.o_int_quote_line_head {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid $int-q-line;
+    background: #fafbfd;
+    color: $int-q-muted;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.o_int_quote_line {
+    border-bottom: 1px solid $int-q-soft;
+
+    &:last-child {
         border-bottom: 0;
     }
+
+    &.o_int_fav_removed {
+        opacity: 0.45;
+    }
+}
+
+.o_int_quote_item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    min-width: 0;
+    color: $int-q-ink;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
 .o_int_quote_icon {
@@ -45,7 +219,7 @@
     align-items: center;
     justify-content: center;
     background: #f1f3f8;
-    color: #767c96;
+    color: $int-q-muted;
 }
 
 .o_int_quote_line .o_int_quote_dealer {
@@ -53,67 +227,499 @@
     font-weight: 400;
 }
 
-.o_int_quote_price {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+// The price box is the stepper's shape: 40 px tall, same border and radius.
+.o_int_quote_box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    box-sizing: border-box;
+    height: 40px;
     margin: 0;
+    padding: 0 0.6rem;
+    border: 1px solid $int-q-field;
+    border-radius: 8px;
+    background: #fff;
+
+    &:focus-within {
+        border-color: $int-q-blue;
+        box-shadow: 0 0 0 0.2rem rgba(0, 84, 168, 0.15);
+    }
 
     input {
-        width: 7rem;
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        height: 38px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: $int-q-ink;
+        font-weight: 500;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            margin: 0;
+            -webkit-appearance: none;
+        }
     }
 }
 
-.o_int_quote_price_label {
-    color: #767c96;
-    font-size: 0.75rem;
+.o_int_quote_affix {
+    color: $int-q-muted;
+}
+
+.o_int_quote_each {
+    display: none;
+    font-size: 0.8rem;
+}
+
+.o_int_quote_qty {
+    justify-self: start;
+
+    button,
+    input {
+        height: 38px;
+    }
+
+    button {
+        width: 36px;
+    }
+
+    input {
+        width: 44px;
+    }
 }
 
 .o_int_quote_subtotal {
-    min-width: 6.5rem;
     text-align: right;
 }
 
+.o_int_quote_bin {
+    width: 40px;
+    height: 40px;
+}
+
+// Labor and other charges open in a row under the lines.
+.o_int_quote_charge {
+    margin-bottom: 1.25rem;
+
+    > summary {
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+}
+
+.o_int_quote_charge_row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 6rem 8rem auto;
+    gap: 0.75rem;
+    align-items: end;
+    margin-top: 0.75rem;
+    padding: 1rem;
+    border: 1px solid $int-q-line;
+    border-radius: 12px;
+    background: #fafbfd;
+}
+
+.o_int_quote_foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 1.25rem;
+}
+
+.o_int_quote_totals_card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem 1.25rem;
+    border-radius: 12px;
+    background: #f6f7fb;
+
+    > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+
+        > span:first-child {
+            color: $int-q-body;
+        }
+    }
+
+    .o_int_quote_totals_main {
+        align-items: baseline;
+        margin-top: 0.25rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid $int-q-line;
+
+        strong:last-child {
+            font-size: 1.35rem;
+        }
+    }
+
+    .o_int_quote_dealer,
+    .o_int_quote_dealer > span:first-child {
+        color: $int-q-muted;
+        font-size: 0.85rem;
+    }
+}
+
+.o_int_quote_exports {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+// Stays at the bottom of the window while the quote is edited.
+.o_int_quote_bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.85rem 0;
+    border-top: 1px solid $int-q-line;
+    background: #fff;
+    box-shadow: 0 -6px 16px rgba(22, 27, 46, 0.06);
+
+    .btn {
+        min-height: 44px;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-primary {
+        min-width: 9.5rem;
+    }
+}
+
+.o_int_quote_bar_total {
+    display: flex;
+    flex-direction: column;
+    margin-right: auto;
+    line-height: 1.2;
+
+    span {
+        color: $int-q-body;
+        font-size: 0.8rem;
+    }
+
+    strong {
+        font-size: 1.3rem;
+    }
+}
+
 .o_int_quote_dirty {
-    align-self: center;
     color: #8a6100;
     font-size: 0.875rem;
 }
 
-// Phones: the product takes the first row; price, quantity, total and the bin share the next.
-@media (max-width: 575.98px) {
+// Phones: the product on top; price, quantity and total on the next row.
+@media (max-width: 767.98px) {
+    .o_int_quote_line_head {
+        display: none;
+    }
+
     .o_int_quote_line {
-        padding: 0.75rem 1rem;
+        grid-template-columns: 56px minmax(0, 1fr) 40px;
+        grid-template-areas:
+            "thumb item bin"
+            "price price qty"
+            "total total total";
+        gap: 0.75rem;
+        padding: 0.9rem 1rem;
 
-        .o_int_fav_product {
-            flex-basis: calc(100% - 4.5rem);
-        }
+        > .o_int_fav_thumb { grid-area: thumb; }
+        > .o_int_quote_item { grid-area: item; }
+        > .o_int_quote_bin { grid-area: bin; align-self: start; }
+        > .o_int_quote_price { grid-area: price; height: 44px; }
+        > .o_int_quote_qty { grid-area: qty; justify-self: end; }
+        > .o_int_quote_subtotal { grid-area: total; }
+    }
 
-        .o_int_quote_subtotal {
-            min-width: 0;
-            margin-left: auto;
+    .o_int_quote_price input {
+        height: 42px;
+    }
+
+    .o_int_quote_each {
+        display: inline;
+    }
+
+    .o_int_quote_qty {
+        button,
+        input {
+            height: 42px;
         }
+    }
+
+    .o_int_quote_subtotal::before {
+        content: "Line total";
+        float: left;
+        color: $int-q-body;
+        font-weight: 400;
+    }
+
+    .o_int_quote_charge_row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        > div:first-child,
+        > div:last-child {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .o_int_quote_charge > summary {
+        width: 100%;
+    }
+
+    .o_int_quote_foot {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .o_int_quote_bar .btn-primary {
+        min-height: 48px;
     }
 }
 
-.o_int_quote_totals {
+// Quote Settings
+.o_int_qs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    gap: 2rem;
+    align-items: start;
+    margin-top: 1rem;
+
+    fieldset {
+        margin: 0;
+    }
+
+    legend {
+        float: none;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .form-label {
+        font-weight: 600;
+    }
+}
+
+.o_int_qs_form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.o_int_qs_logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border: 1px solid $int-q-line;
+    border-radius: 10px;
+    background: #fff;
+
+    img {
+        max-width: 88%;
+        max-height: 88%;
+        object-fit: contain;
+    }
+}
+
+.o_int_qs_swatches {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: flex-end;
-    margin-top: 0.75rem;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.o_int_qs_swatch {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    border-radius: 50%;
+    cursor: pointer;
+
+    input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    &:has(input:checked) {
+        box-shadow: 0 0 0 3px #fff, 0 0 0 5px $int-q-ink;
+    }
+
+    &:has(input:focus-visible) {
+        outline: 2px solid $int-q-blue;
+        outline-offset: 4px;
+    }
+}
+
+.o_int_qs_custom {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin: 0 0 0 0.25rem;
+    color: $int-q-body;
+    cursor: pointer;
+
+    input[type="color"] {
+        width: 44px;
+        height: 44px;
+        padding: 2px;
+        border: 1px solid $int-q-field;
+        border-radius: 8px;
+        background: #fff;
+        cursor: pointer;
+    }
+}
+
+.o_int_qs_side {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.o_int_qs_preview_label {
+    color: $int-q-muted;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.o_int_qs_preview {
+    --int-accent: #1f2433;
+    --int-accent-text: #1f2433;
+    overflow: hidden;
+    border: 1px solid $int-q-line;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(22, 27, 46, 0.08);
+    color: #1f2433;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.o_int_qs_band {
+    height: 5px;
+    background: var(--int-accent);
+}
+
+.o_int_qs_sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.1rem;
+}
+
+.o_int_qs_sheet_head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
 
     strong {
-        margin-left: 0.35rem;
+        display: block;
+        font-size: 0.85rem;
+    }
+}
+
+.o_int_qs_brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+
+    img {
+        max-width: 72px;
+        max-height: 36px;
+        object-fit: contain;
+    }
+
+    small {
+        display: block;
+        color: #6b7080;
+        font-size: 0.6rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+}
+
+.o_int_qs_quote {
+    display: block;
+    color: var(--int-accent-text);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+
+.o_int_qs_cols {
+    padding-bottom: 0.25rem;
+    border-bottom: 1.5px solid var(--int-accent);
+    color: var(--int-accent-text);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.o_int_qs_bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #f2f3f6;
+}
+
+.o_int_qs_bar_short {
+    width: 70%;
+}
+
+.o_int_qs_total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.4rem;
+    border-top: 2px solid var(--int-accent);
+    font-size: 0.75rem;
+}
+
+.o_int_qs_total_amount {
+    color: var(--int-accent-text);
+}
+
+.o_int_qs_footer {
+    color: #6b7080;
+    font-size: 0.6rem;
+
+    &:empty {
+        display: none;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .o_int_qs {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .o_int_qs_side {
+        position: static;
+        order: -1;
     }
 }
 
 .o_portal_my_home .o_portal_docs .o_portal_index_card:has(a[href="/my/customer-quotes"]) {
     order: 45 !important;
-}
-
-.o_int_quote_pdf_hint {
-    margin: 0.5rem 0 0;
-    color: #8a6100;
-    font-size: 0.875rem;
 }

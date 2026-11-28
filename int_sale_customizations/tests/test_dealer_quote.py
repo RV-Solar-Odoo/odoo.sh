@@ -1,9 +1,17 @@
-from odoo import Command
+import base64
+
+from odoo import Command, http
 from odoo.exceptions import AccessError, UserError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import HttpCase, TransactionCase, tagged
 
 from odoo.addons.int_sale_customizations.controllers.quote import PUBLIC_PRODUCT_KEYS
 from odoo.addons.int_sale_customizations.models.dealer_quote import CUSTOMER_PRICE_KEYS
+from odoo.addons.int_sale_customizations.models.res_partner import int_readable_accent
+
+# A 1x1 transparent PNG.
+PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+)
 
 
 @tagged("post_install", "-at_install")
@@ -267,3 +275,136 @@ class TestDealerQuotes(TransactionCase):
         self.assertNotIn("Margin", html)
         self.assertNotIn(self.company.name, html)
         self.assertEqual(quote._get_report_base_filename(), "Quote %s" % quote.name)
+
+    def test_a_new_quote_can_start_at_msrp_without_changing_the_default(self):
+        quote = self.Quote.with_user(self.buyer)._int_create(self.buyer, self.company, "Walk-in", basis="msrp")
+        self.assertEqual(quote.price_basis, "msrp")
+        self.assertEqual(self.dealer.int_quote_price_basis, "map")
+        quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.battery.id)})
+        self.assertEqual(quote.line_ids.unit_price, 200.0)
+
+    def test_quote_settings_are_the_owners_and_check_the_colour(self):
+        Partner = self.env["res.partner"]
+        with self.assertRaises(UserError):
+            Partner._int_set_quote_settings(self.buyer, {"quote_accent": "#1f7a4d"})
+        with self.assertRaises(UserError):
+            Partner._int_set_quote_settings(self.owner, {"quote_accent": "custom", "quote_accent_custom": "green"})
+        with self.assertRaises(AccessError):
+            self.dealer.with_user(self.owner).write({"int_quote_accent": "#1f7a4d"})
+        Partner._int_set_quote_settings(self.owner, {
+            "price_basis": "msrp",
+            "quote_accent": "custom",
+            "quote_accent_custom": "#1F7A4D",
+            "quote_subheading": "  Solar   and batteries ",
+            "quote_footer": "Thank you.",
+        }, logo=("logo.png", PNG))
+        self.assertEqual(self.dealer.int_quote_price_basis, "msrp")
+        self.assertEqual(self.dealer.int_quote_accent, "#1f7a4d")
+        self.assertEqual(self.dealer.int_quote_subheading, "Solar and batteries")
+        self.assertEqual(self.dealer.int_quote_footer, "Thank you.")
+        self.assertTrue(self.dealer.image_1920)
+        # A colour too light to read as text is darkened for text only.
+        self.assertEqual(int_readable_accent("#1f2433"), "#1f2433")
+        light = int_readable_accent("#ffee00")
+        self.assertNotEqual(light, "#ffee00")
+
+    def test_the_pdf_prints_the_dealers_settings(self):
+        self.env["res.partner"]._int_set_quote_settings(self.owner, {
+            "quote_accent": "#c2410c",
+            "quote_subheading": "Solar and batteries",
+            "quote_footer": "Licence 12345. Thank you.",
+        })
+        quote = self._quote()
+        quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.battery.id)})
+        quote._int_add_custom("Install", 1, 50)
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "int_sale_customizations.action_report_int_dealer_quote", quote.ids,
+        )[0].decode()
+        self.assertIn("#c2410c", html)
+        self.assertIn("Solar and batteries", html)
+        self.assertIn("Licence 12345. Thank you.", html)
+        self.assertIn("Prepared by", html)
+        self.assertIn("Labor and charges", html)
+        self.assertIn("150.00", html)
+        self.assertNotIn("Wholesale", html)
+        self.assertNotIn(self.company.name, html)
+
+
+@tagged("post_install", "-at_install")
+class TestDealerQuotePages(HttpCase):
+    """The pages render for the roles that use them, so a template error fails the build."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env.ref("website.default_website").company_id
+        cls.dealer = cls.env["res.partner"].create({"name": "Page Quote Dealer", "is_company": True})
+        cls.owner = cls._portal("Page Owner", "page-quote-owner@example.com", "owner")
+        cls.buyer = cls._portal("Page Buyer", "page-quote-buyer@example.com", "buyer")
+        template = cls.env["product.template"].create({
+            "name": "Page Quote Panel",
+            "type": "consu",
+            "list_price": 120,
+            "map_price": 100,
+            "sale_ok": True,
+        })
+        template.product_variant_id.default_code = "INT-PAGE-PNL"
+        cls.quote = cls.env["int.dealer.quote"].with_user(cls.buyer)._int_create(
+            cls.buyer, cls.company, "Robin Customer", email="robin@example.com",
+        )
+        cls.quote._int_add_product(template.product_variant_id)
+        cls.quote._int_add_custom("Install", 1, 75)
+
+    @classmethod
+    def _portal(cls, name, login, role):
+        partner = cls.env["res.partner"].create({"name": name, "parent_id": cls.dealer.id, "email": login})
+        partner.sudo().write({"int_portal_role": role})
+        return cls.env["res.users"].with_context(no_reset_password=True).create({
+            "name": name,
+            "login": login,
+            "password": login,
+            "email": login,
+            "partner_id": partner.id,
+            "company_id": cls.company.id,
+            "company_ids": [Command.set([cls.company.id])],
+            "group_ids": [Command.set([cls.env.ref("base.group_portal").id])],
+        })
+
+    def test_editor_list_and_pdf_render_without_dealer_numbers_showing(self):
+        self.authenticate(self.buyer.login, self.buyer.login)
+        listing = self.url_open("/my/customer-quotes")
+        self.assertEqual(listing.status_code, 200)
+        self.assertIn(self.quote.name, listing.text)
+        self.assertNotIn('href="/my/customer-quotes/settings"', listing.text)
+        editor = self.url_open("/my/customer-quotes/%s" % self.quote.id)
+        self.assertEqual(editor.status_code, 200)
+        self.assertIn("Show Dealer Info", editor.text)
+        self.assertIn("o_int_dealer_only", editor.text)
+        self.assertNotIn("o_int_show_dealer", editor.text)
+        self.assertNotIn('name="price_basis"', editor.text)
+        self.assertIn("Save Quote", editor.text)
+        pdf = self.url_open("/my/customer-quotes/%s/pdf" % self.quote.id)
+        self.assertEqual(pdf.status_code, 200)
+        # Buyers don't get Quote Settings.
+        settings = self.url_open("/my/customer-quotes/settings", allow_redirects=False)
+        self.assertIn(settings.status_code, (302, 303))
+
+    def test_owner_sees_and_saves_quote_settings(self):
+        self.authenticate(self.owner.login, self.owner.login)
+        page = self.url_open("/my/customer-quotes/settings")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Quote accent colour", page.text)
+        self.assertIn('name="logo"', page.text)
+        self.assertIn('name="quote_subheading"', page.text)
+        saved = self.url_open("/my/customer-quotes/settings", data={
+            "csrf_token": http.Request.csrf_token(self),
+            "price_basis": "msrp",
+            "quote_accent": "#0054a8",
+            "quote_subheading": "Mobile power",
+            "quote_footer": "Thanks!",
+        }, files={"logo": ("logo.png", PNG, "image/png")})
+        self.assertEqual(saved.status_code, 200)
+        self.dealer.invalidate_recordset()
+        self.assertEqual(self.dealer.int_quote_accent, "#0054a8")
+        self.assertEqual(self.dealer.int_quote_subheading, "Mobile power")
+        self.assertTrue(self.dealer.image_1920)

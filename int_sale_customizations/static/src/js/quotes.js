@@ -93,10 +93,9 @@ document.addEventListener("keydown", (ev) => {
     }
 });
 
-// Live pricing on the quote editor. Switching MAP / MSRP swaps the customer price
-// on every product line whose price wasn't typed by hand, and the line totals,
-// customer total and margin follow quantity and price as they change. Nothing is
-// saved until Save Quote; the server applies the same rules.
+// Live totals on the quote editor. Line totals, Products, Labor and charges, the
+// customer total and the dealer's margin follow quantity and price as they change.
+// Nothing is saved until Save Quote.
 
 function intQuoteMoney(form, amount) {
     const digits = Number(form.dataset.currencyDigits || 2);
@@ -109,11 +108,6 @@ function intQuoteMoney(form, amount) {
     return form.dataset.currencyPosition === "after" ? `${number} ${symbol}` : `${symbol} ${number}`;
 }
 
-function intQuoteBasis(form) {
-    const checked = form.querySelector("input[name='price_basis']:checked");
-    return checked ? checked.value : "map";
-}
-
 function intQuoteExpected(line, basis) {
     const map = Number(line.dataset.map) || 0;
     const msrp = Number(line.dataset.msrp) || 0;
@@ -124,9 +118,15 @@ function intQuoteSame(a, b) {
     return Math.abs((Number(a) || 0) - (Number(b) || 0)) < 0.005;
 }
 
+function intQuoteSetAll(form, selector, text) {
+    for (const el of form.querySelectorAll(selector)) {
+        el.textContent = text;
+    }
+}
+
 function intQuoteRecompute(form) {
-    const basis = intQuoteBasis(form);
-    let total = 0;
+    let products = 0;
+    let charges = 0;
     let margin = 0;
     for (const line of form.querySelectorAll(".js-int-quote-line")) {
         const qtyInput = line.querySelector(".js-int-quote-qty");
@@ -140,14 +140,15 @@ function intQuoteRecompute(form) {
             subtotalEl.textContent = intQuoteMoney(form, subtotal);
         }
         const removed = removeInput && removeInput.value === "1";
-        if (!removed) {
-            total += subtotal;
-        }
         if (line.dataset.product !== "1") {
+            if (!removed) {
+                charges += subtotal;
+            }
             continue;
         }
         const cost = Number(line.dataset.cost) || 0;
         if (!removed) {
+            products += subtotal;
             margin += (price - cost) * qty;
         }
         const marginEl = line.querySelector(".js-int-quote-margin");
@@ -159,59 +160,30 @@ function intQuoteRecompute(form) {
         if (below) {
             below.classList.toggle("d-none", !(map > 0 && price < map - 0.005));
         }
-        const noMap = line.querySelector(".js-int-quote-nomap");
-        if (noMap) {
-            noMap.classList.toggle("d-none", !(basis === "map" && map <= 0));
-        }
     }
-    const totalEl = form.querySelector(".js-int-quote-total");
-    if (totalEl) {
-        totalEl.textContent = intQuoteMoney(form, total);
-    }
-    const marginTotalEl = form.querySelector(".js-int-quote-margin-total");
-    if (marginTotalEl) {
-        marginTotalEl.textContent = intQuoteMoney(form, margin);
-    }
+    intQuoteSetAll(form, ".js-int-quote-products", intQuoteMoney(form, products));
+    intQuoteSetAll(form, ".js-int-quote-charges", intQuoteMoney(form, charges));
+    intQuoteSetAll(form, ".js-int-quote-total", intQuoteMoney(form, products + charges));
+    intQuoteSetAll(form, ".js-int-quote-margin-total", intQuoteMoney(form, margin));
 }
 
 function intQuoteDirty(form) {
-    for (const note of form.querySelectorAll(".js-int-quote-dirty, .js-int-quote-pdf-hint")) {
+    for (const note of form.querySelectorAll(".js-int-quote-dirty")) {
         note.classList.remove("d-none");
     }
 }
 
-document.addEventListener("change", (ev) => {
-    if (ev.target.name !== "price_basis") {
-        return;
-    }
-    const form = ev.target.closest(".js-int-quote-edit");
-    if (!form) {
-        return;
-    }
-    const basis = intQuoteBasis(form);
-    for (const line of form.querySelectorAll(".js-int-quote-line[data-product='1']")) {
-        if (line.dataset.manual === "1") {
-            continue;
-        }
-        const priceInput = line.querySelector(".js-int-quote-price");
-        if (priceInput) {
-            priceInput.value = intQuoteExpected(line, basis).toFixed(2);
-        }
-    }
-    intQuoteRecompute(form);
-    intQuoteDirty(form);
-});
-
 document.addEventListener("input", (ev) => {
     const form = ev.target.closest(".js-int-quote-edit");
-    if (!form || ev.target.closest(".js-int-quote-search")) {
+    if (!form || ev.target.closest(".js-int-quote-search") || ev.target.classList.contains("js-int-quote-dealer")) {
         return;
     }
     if (ev.target.classList.contains("js-int-quote-price")) {
-        // A price that equals the MAP/MSRP price stays automatic; anything else was typed.
+        // A price that equals the quote's MAP/MSRP price stays automatic; anything else was typed.
         const line = ev.target.closest(".js-int-quote-line");
         if (line && line.dataset.product === "1") {
-            line.dataset.manual = intQuoteSame(ev.target.value, intQuoteExpected(line, intQuoteBasis(form))) ? "0" : "1";
+            const basis = form.dataset.basis || "map";
+            line.dataset.manual = intQuoteSame(ev.target.value, intQuoteExpected(line, basis)) ? "0" : "1";
         }
     }
     if (ev.target.closest(".js-int-quote-line")) {
@@ -234,4 +206,84 @@ document.addEventListener("click", (ev) => {
         intQuoteRecompute(form);
         intQuoteDirty(form);
     }, 0);
+});
+
+// Show Dealer Info: wholesale, margin and MAP notes stay hidden until the dealer
+// turns this on, so a customer looking at the screen sees only their prices.
+// It is off each time the page opens.
+document.addEventListener("change", (ev) => {
+    if (!ev.target.classList.contains("js-int-quote-dealer")) {
+        return;
+    }
+    const form = ev.target.closest(".js-int-quote-edit");
+    if (form) {
+        form.classList.toggle("o_int_show_dealer", ev.target.checked);
+    }
+});
+
+// Quote Settings: the preview follows the accent, subheading, footer and logo.
+
+function intQsReadable(hex) {
+    // Same rule as the PDF: darken until text reads on white (4.5:1).
+    const lum = (h) => {
+        const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+            .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    let color = /^#[0-9a-f]{6}$/i.test(hex) ? hex.toLowerCase() : "#1f2433";
+    for (let i = 0; i < 20 && 1.05 / (lum(color) + 0.05) < 4.5; i++) {
+        color = "#" + [1, 3, 5].map((j) => Math.floor(parseInt(color.slice(j, j + 2), 16) * 0.85).toString(16).padStart(2, "0")).join("");
+    }
+    return color;
+}
+
+function intQsAccent(form) {
+    const picked = form.querySelector(".js-int-qs-accent:checked");
+    if (!picked) {
+        return null;
+    }
+    return picked.value === "custom" ? form.querySelector(".js-int-qs-custom").value : picked.value;
+}
+
+function intQsRefresh(form) {
+    const preview = form.parentElement.querySelector(".js-int-qs-preview");
+    if (!preview) {
+        return;
+    }
+    const accent = intQsAccent(form);
+    if (accent) {
+        preview.style.setProperty("--int-accent", accent);
+        preview.style.setProperty("--int-accent-text", intQsReadable(accent));
+    }
+    const sub = form.querySelector(".js-int-qs-sub");
+    const footer = form.querySelector(".js-int-qs-footer");
+    preview.querySelector(".js-int-qs-preview-sub").textContent = sub ? sub.value : "";
+    preview.querySelector(".js-int-qs-preview-footer").textContent = footer ? footer.value : "";
+}
+
+document.addEventListener("input", (ev) => {
+    const form = ev.target.closest(".js-int-qs-form");
+    if (!form) {
+        return;
+    }
+    if (ev.target.classList.contains("js-int-qs-custom")) {
+        form.querySelector(".js-int-qs-custom-pick").checked = true;
+    }
+    intQsRefresh(form);
+});
+
+document.addEventListener("change", (ev) => {
+    const form = ev.target.closest(".js-int-qs-form");
+    if (!form) {
+        return;
+    }
+    if (ev.target.classList.contains("js-int-qs-logo")) {
+        const file = ev.target.files && ev.target.files[0];
+        const img = form.parentElement.querySelector(".js-int-qs-preview-logo");
+        if (file && img && /^image\/(png|jpeg|webp)$/.test(file.type)) {
+            img.src = URL.createObjectURL(file);
+            img.classList.remove("d-none");
+        }
+    }
+    intQsRefresh(form);
 });

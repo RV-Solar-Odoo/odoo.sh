@@ -3,9 +3,14 @@ from urllib.parse import quote as url_quote
 from odoo import _
 from odoo.exceptions import AccessError, UserError
 from odoo.http import request, route
+from odoo.tools.image import image_data_uri
 from odoo.tools.misc import formatLang
 
+from odoo.addons.int_crm_customizations.models.dealer_certificate import MAX_LOGO_BYTES
+
 from odoo.addons.sale.controllers.portal import CustomerPortal
+
+from ..models.res_partner import QUOTE_ACCENTS
 
 # Keep this in step with CUSTOMER_PRICE_KEYS. Wholesale is not in the list.
 PUBLIC_PRODUCT_KEYS = ("id", "name", "sku", "price", "map_missing")
@@ -48,6 +53,7 @@ class IntCustomerQuotePortal(CustomerPortal):
                 quote = Quote._int_create(
                     user, company, post.get("customer_name"),
                     email=post.get("customer_email"), phone=post.get("customer_phone"),
+                    basis=post.get("price_basis"),
                 )
             except (UserError, AccessError) as exc:
                 return _int_redirect("/my/customer-quotes", exc.args[0])
@@ -57,28 +63,45 @@ class IntCustomerQuotePortal(CustomerPortal):
         return request.render("int_sale_customizations.portal_customer_quotes", {
             "page_name": "int_customer_quotes",
             "quotes": Quote._int_for_user(user, company),
-            "int_basis": "MSRP" if basis == "msrp" else "MAP",
+            "int_basis": basis,
             "int_can_set_basis": bool(self._int_quote_owner()),
+            "int_quote_tab": "quotes",
             "int_error": post.get("int_error") or "",
         })
 
     @route("/my/customer-quotes/settings", type="http", auth="user", website=True, methods=["GET", "POST"], sitemap=False)
     def int_customer_quote_settings(self, **post):
+        """Quote Settings tab: default price, logo, subheading, accent and footer. Owner only."""
         user = self._int_quote_owner()
         if not user:
-            return _int_redirect("/my/customer-quotes", _("Only the account owner can change customer quote prices."))
+            return _int_redirect("/my/customer-quotes", _("Only the account owner can change quote settings."))
         if request.httprequest.method == "POST":
+            upload = request.httprequest.files.get("logo")
+            logo = None
+            if upload and upload.filename:
+                # One byte past the limit, so a big file is refused without reading all of it.
+                logo = (upload.filename, upload.read(MAX_LOGO_BYTES + 1))
             try:
-                request.env["res.partner"]._int_set_quote_basis(user, post.get("price_basis"))
+                with request.env.cr.savepoint():
+                    request.env["res.partner"]._int_set_quote_settings(user, post, logo=logo)
             except (UserError, AccessError) as exc:
                 return _int_redirect("/my/customer-quotes/settings", exc.args[0])
-            return request.redirect("/my/customer-quotes/settings")
+            return request.redirect("/my/customer-quotes/settings?saved=1")
         commercial = user.partner_id.commercial_partner_id
         basis = commercial.int_quote_price_basis if commercial.int_quote_price_basis in ("map", "msrp") else "map"
+        image = commercial.sudo().image_256 if commercial.sudo().image_1920 else False
+        accent = commercial._int_quote_accent()
         return request.render("int_sale_customizations.portal_customer_quote_settings", {
             "page_name": "int_quote_prices",
             "commercial": commercial,
             "int_basis": basis,
+            "int_logo": image_data_uri(image) if image else False,
+            "int_accent": accent,
+            "int_accent_text": commercial._int_quote_accent_text(),
+            "int_accents": QUOTE_ACCENTS,
+            "int_accent_custom": accent not in dict(QUOTE_ACCENTS),
+            "int_quote_tab": "settings",
+            "int_saved": bool(post.get("saved")),
             "int_error": post.get("int_error") or "",
         })
 
@@ -134,9 +157,12 @@ class IntCustomerQuotePortal(CustomerPortal):
             except (UserError, AccessError) as exc:
                 return _int_redirect("/my/customer-quotes/%s" % quote.id, exc.args[0])
             return request.redirect("/my/customer-quotes/%s" % quote.id)
+        products, charges = quote._int_amounts()
         return request.render("int_sale_customizations.portal_customer_quote", {
             "page_name": "int_customer_quote",
             "quote": quote,
+            "int_products_total": products,
+            "int_charges_total": charges,
             "addresses": Quote._int_customer_addresses(quote.partner_id),
             "int_error": post.get("int_error") or "",
         })

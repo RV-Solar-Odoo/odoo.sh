@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Letter, with small margins: this report has no company header to make room for. -->
+    <record id="paperformat_int_dealer_quote" model="report.paperformat">
+        <field name="name">Customer Quote (Letter)</field>
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">18</field>
+        <field name="margin_left">14</field>
+        <field name="margin_right">14</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
     <!-- The dealer's own quote for their customer. It uses web.html_container, not
          web.external_layout, so nothing from the RV Solar company (logo, address,
-         footer) is printed. Wholesale and margin are never rendered here. -->
+         footer) is printed. Wholesale and margin are never rendered here. Layout is
+         tables, as wkhtmltopdf does not lay out flex or grid; only thin rules, no boxes.
+         The dealer's accent (Quote Settings) colours the band, headings and total. -->
     <record id="action_report_int_dealer_quote" model="ir.actions.report">
         <field name="name">Customer Quote</field>
         <field name="model">int.dealer.quote</field>
@@ -10,6 +26,7 @@
         <field name="report_name">int_sale_customizations.report_int_dealer_quote</field>
         <field name="report_file">int_sale_customizations.report_int_dealer_quote</field>
         <field name="print_report_name">'Quote %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_int_dealer_quote"/>
     </record>
 
     <template id="report_int_dealer_quote">
@@ -23,108 +40,155 @@
     <template id="report_int_dealer_quote_document">
         <t t-set="dealer" t-value="quote.partner_id"/>
         <t t-set="currency" t-value="quote.currency_id"/>
-        <div class="article o_int_quote_pdf" style="font-size: 13px; color: #1f2433;">
+        <t t-set="accent" t-value="dealer._int_quote_accent()"/>
+        <t t-set="accent_text" t-value="dealer._int_quote_accent_text()"/>
+        <t t-set="money" t-value="{'widget': 'monetary', 'display_currency': currency}"/>
+        <t t-set="amounts" t-value="quote._int_amounts()"/>
+        <t t-set="muted" t-value="'color: #6b7080;'"/>
+        <t t-set="label" t-value="'font-size: 9.5px; font-weight: bold; letter-spacing: 1.2px; color: #6b7080;'"/>
+        <t t-set="author" t-value="quote.user_id.sudo()"/>
+
+        <div class="article o_int_quote_pdf" t-att-data-oe-model="quote._name" t-att-data-oe-id="quote.id"
+             style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.45; color: #1f2433;">
             <div class="page">
-                <!-- Dealer header -->
-                <table style="width: 100%; margin-bottom: 24px;">
+                <div t-att-style="'height: 6px; background: %s; margin-bottom: 28px;' % accent"/>
+
+                <!-- Header: logo and name, then the quote number and dates. -->
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 28px;">
                     <tr>
-                        <td style="width: 50%; vertical-align: top;">
-                            <img t-if="dealer.image_1920" t-att-src="image_data_uri(dealer.image_512)" alt=""
-                                 style="max-height: 90px; max-width: 240px;"/>
-                            <h3 t-else="" style="margin: 0;" t-out="dealer.name"/>
+                        <td style="width: 58%; vertical-align: top; padding: 0;">
+                            <table style="border-collapse: collapse;">
+                                <tr>
+                                    <td t-if="dealer.image_1920" style="vertical-align: middle; padding: 0 14px 0 0;">
+                                        <img t-att-src="image_data_uri(dealer.image_512)" alt="" style="max-height: 64px; max-width: 200px;"/>
+                                    </td>
+                                    <td style="vertical-align: middle; padding: 0;">
+                                        <div style="font-size: 20px; font-weight: bold; letter-spacing: -0.2px;" t-out="dealer.name"/>
+                                        <div t-if="dealer.int_quote_subheading" style="font-size: 10.5px; letter-spacing: 0.5px; text-transform: uppercase; color: #6b7080;" t-out="dealer.int_quote_subheading"/>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
-                        <td style="width: 50%; vertical-align: top; text-align: right;">
-                            <strong t-out="dealer.name"/>
-                            <div t-if="dealer.street" t-out="dealer.street"/>
-                            <div t-if="dealer.street2" t-out="dealer.street2"/>
-                            <div t-if="dealer.city or dealer.state_id or dealer.zip">
-                                <t t-out="dealer.city or ''"/><t t-if="dealer.city and (dealer.state_id or dealer.zip)">, </t>
-                                <t t-out="dealer.state_id.code or ''"/> <t t-out="dealer.zip or ''"/>
-                            </div>
-                            <div t-if="dealer.phone" t-out="dealer.phone"/>
-                            <div t-if="dealer.email" t-out="dealer.email"/>
-                            <div t-if="dealer.website" t-out="dealer.website"/>
+                        <td style="width: 42%; vertical-align: top; text-align: right; padding: 0;">
+                            <div t-att-style="'font-size: 10.5px; font-weight: bold; letter-spacing: 1.7px; color: %s;' % accent_text">QUOTE</div>
+                            <div style="font-size: 24px; font-weight: bold; letter-spacing: -0.2px;" t-out="quote.name"/>
+                            <div t-att-style="muted">Date: <span t-field="quote.create_date" t-options='{"widget": "date"}'/></div>
+                            <div t-if="quote.valid_until" t-att-style="muted">Valid until: <span t-field="quote.valid_until"/></div>
                         </td>
                     </tr>
                 </table>
 
-                <!-- Quote and customer -->
-                <table style="width: 100%; margin-bottom: 20px;">
+                <!-- From / Prepared for -->
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <tr>
-                        <td style="width: 50%; vertical-align: top;">
-                            <div style="color: #767c96; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Prepared for</div>
-                            <strong t-out="quote.customer_name"/>
+                        <td style="width: 50%; vertical-align: top; padding: 0 24px 0 0;">
+                            <div t-att-style="label + ' margin-bottom: 4px;'">FROM</div>
+                            <div style="font-size: 13px; font-weight: bold;" t-out="dealer.name"/>
+                            <div t-if="dealer.street" t-out="dealer.street"/>
+                            <div t-if="dealer.street2" t-out="dealer.street2"/>
+                            <div t-if="dealer.city or dealer.state_id or dealer.zip">
+                                <t t-out="dealer.city or ''"/><t t-if="dealer.city and (dealer.state_id or dealer.zip)">, </t><t t-out="dealer.state_id.code or ''"/> <t t-out="dealer.zip or ''"/>
+                            </div>
+                            <div t-if="dealer.phone or dealer.email">
+                                <t t-out="dealer.phone or ''"/><t t-if="dealer.phone and dealer.email"> · </t><t t-out="dealer.email or ''"/>
+                            </div>
+                            <div t-if="dealer.website" t-out="dealer.website"/>
+                            <div t-if="author" t-att-style="muted + ' margin-top: 6px;'">
+                                Prepared by <t t-out="author.name"/><t t-if="author.email"> · <t t-out="author.email"/></t>
+                            </div>
+                        </td>
+                        <td style="width: 50%; vertical-align: top; padding: 0;">
+                            <div t-att-style="label + ' margin-bottom: 4px;'">PREPARED FOR</div>
+                            <div style="font-size: 13px; font-weight: bold;" t-out="quote.customer_name"/>
                             <t t-set="address" t-value="quote.customer_address_id"/>
                             <div t-if="address.street" t-out="address.street"/>
                             <div t-if="address.street2" t-out="address.street2"/>
                             <div t-if="address.city or address.state_id or address.zip">
-                                <t t-out="address.city or ''"/><t t-if="address.city and (address.state_id or address.zip)">, </t>
-                                <t t-out="address.state_id.code or ''"/> <t t-out="address.zip or ''"/>
+                                <t t-out="address.city or ''"/><t t-if="address.city and (address.state_id or address.zip)">, </t><t t-out="address.state_id.code or ''"/> <t t-out="address.zip or ''"/>
                             </div>
                             <div t-if="quote.customer_phone" t-out="quote.customer_phone"/>
                             <div t-if="quote.customer_email" t-out="quote.customer_email"/>
                         </td>
-                        <td style="width: 50%; vertical-align: top; text-align: right;">
-                            <h2 style="margin: 0 0 6px;">Quote <t t-out="quote.name"/></h2>
-                            <div>Date: <span t-field="quote.create_date" t-options='{"widget": "date"}'/></div>
-                            <div t-if="quote.valid_until">Valid until: <span t-field="quote.valid_until"/></div>
-                        </td>
                     </tr>
                 </table>
 
-                <!-- Lines -->
-                <table class="table table-sm o_main_table" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th style="width: 56px;"/>
-                            <th style="text-align: left;">Item</th>
-                            <th style="text-align: right;">Qty</th>
-                            <th style="text-align: right;">Price</th>
-                            <th style="text-align: right;">Total</th>
+                <!-- Items: thin rules between rows, no boxes. -->
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="display: table-header-group;">
+                        <tr t-att-style="'font-size: 9.5px; font-weight: bold; letter-spacing: 1.1px; color: %s;' % accent_text">
+                            <th t-att-style="'width: 54px; padding: 0 0 8px; border-bottom: 1.5px solid %s;' % accent"/>
+                            <th t-att-style="'text-align: left; padding: 0 0 8px; border-bottom: 1.5px solid %s;' % accent">ITEM</th>
+                            <th t-att-style="'width: 60px; text-align: right; padding: 0 0 8px; border-bottom: 1.5px solid %s;' % accent">QTY</th>
+                            <th t-att-style="'width: 100px; text-align: right; padding: 0 0 8px; border-bottom: 1.5px solid %s;' % accent">PRICE</th>
+                            <th t-att-style="'width: 100px; text-align: right; padding: 0 0 8px; border-bottom: 1.5px solid %s;' % accent">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr t-foreach="quote.line_ids" t-as="line" style="page-break-inside: avoid;">
-                            <td style="vertical-align: middle;">
+                            <td style="vertical-align: middle; padding: 10px 0; border-bottom: 1px solid #eceef3;">
                                 <img t-if="line.product_id.image_128" t-att-src="image_data_uri(line.product_id.image_128)" alt=""
-                                     style="width: 44px; height: 44px; object-fit: contain;"/>
+                                     style="width: 42px; height: 42px; object-fit: contain; border-radius: 6px;"/>
                             </td>
-                            <td style="vertical-align: middle;">
-                                <span t-out="line.name"/>
-                                <div t-if="line.product_id.default_code" style="color: #767c96; font-size: 11px;">SKU <t t-out="line.product_id.default_code"/></div>
+                            <td style="vertical-align: middle; padding: 10px 12px 10px 0; border-bottom: 1px solid #eceef3;">
+                                <div style="font-size: 12.5px;" t-out="line.name"/>
+                                <div t-if="line.product_id.default_code" style="font-size: 10px; color: #6b7080;">SKU <t t-out="line.product_id.default_code"/></div>
                             </td>
-                            <td style="text-align: right; vertical-align: middle;">
+                            <td style="vertical-align: middle; text-align: right; padding: 10px 0; border-bottom: 1px solid #eceef3;">
                                 <span t-out="int(line.quantity) if line.quantity == int(line.quantity) else line.quantity"/>
                             </td>
-                            <td style="text-align: right; vertical-align: middle;">
-                                <span t-field="line.unit_price" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                            <td style="vertical-align: middle; text-align: right; padding: 10px 0; border-bottom: 1px solid #eceef3;">
+                                <span t-field="line.unit_price" t-options="money"/>
                             </td>
-                            <td style="text-align: right; vertical-align: middle;">
-                                <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                            <td style="vertical-align: middle; text-align: right; padding: 10px 0; border-bottom: 1px solid #eceef3; font-weight: 600;">
+                                <span t-field="line.price_subtotal" t-options="money"/>
                             </td>
                         </tr>
                     </tbody>
                 </table>
 
-                <table style="width: 100%; margin-top: 8px;">
+                <!-- Notes and totals -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 22px; page-break-inside: avoid;">
                     <tr>
-                        <td style="width: 60%;"/>
-                        <td style="width: 40%; border-top: 2px solid #1f2433; padding-top: 6px; font-size: 16px;">
-                            <strong>Total</strong>
-                            <strong style="float: right;" t-field="quote.amount_untaxed" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                        <td style="vertical-align: top; padding: 0 40px 0 0;">
+                            <t t-if="quote.notes">
+                                <div t-att-style="label + ' margin-bottom: 4px;'">NOTES</div>
+                                <div style="white-space: pre-line;" t-out="quote.notes"/>
+                            </t>
+                        </td>
+                        <td style="width: 250px; vertical-align: top; padding: 0;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr t-if="amounts[1]">
+                                    <td t-att-style="muted + ' padding: 0 0 6px;'">Products</td>
+                                    <td style="text-align: right; padding: 0 0 6px;"><span t-out="amounts[0]" t-options="money"/></td>
+                                </tr>
+                                <tr t-if="amounts[1]">
+                                    <td t-att-style="muted + ' padding: 0 0 6px;'">Labor and charges</td>
+                                    <td style="text-align: right; padding: 0 0 6px;"><span t-out="amounts[1]" t-options="money"/></td>
+                                </tr>
+                                <tr>
+                                    <td t-att-style="'padding: 10px 0 0; border-top: 2px solid %s; font-size: 13px; font-weight: bold;' % accent">Total</td>
+                                    <td t-att-style="'padding: 10px 0 0; border-top: 2px solid %s; text-align: right; font-size: 19px; font-weight: bold; color: %s;' % (accent, accent_text)">
+                                        <span t-field="quote.amount_untaxed" t-options="money"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="text-align: right; padding-top: 3px; font-size: 10px; color: #6b7080;">Before any sales tax</td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
-                    <tr>
-                        <td/>
-                        <td style="color: #767c96; font-size: 11px; padding-top: 4px;">Before any sales tax.</td>
-                    </tr>
                 </table>
-
-                <div t-if="quote.notes" style="margin-top: 24px; white-space: pre-line;">
-                    <div style="color: #767c96; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Notes</div>
-                    <span t-out="quote.notes"/>
-                </div>
             </div>
+        </div>
+
+        <!-- The footer prints on every page; wkhtmltopdf fills in the page numbers. -->
+        <div class="footer" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 10px; color: #6b7080;">
+            <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #eceef3;">
+                <tr>
+                    <td style="padding-top: 8px;" t-out="dealer.int_quote_footer or ''"/>
+                    <td style="padding-top: 8px; text-align: right; white-space: nowrap;">Page <span class="page"/> of <span class="topage"/></td>
+                </tr>
+            </table>
         </div>
     </template>
 </odoo>
