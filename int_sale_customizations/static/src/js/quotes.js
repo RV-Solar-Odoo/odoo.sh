@@ -175,8 +175,7 @@ function intQuoteRecompute(form) {
 }
 
 function intQuoteDirty(form) {
-    const note = form.querySelector(".js-int-quote-dirty");
-    if (note) {
+    for (const note of form.querySelectorAll(".js-int-quote-dirty, .js-int-quote-pdf-hint")) {
         note.classList.remove("d-none");
     }
 }

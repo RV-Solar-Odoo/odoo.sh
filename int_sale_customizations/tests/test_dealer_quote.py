@@ -247,3 +247,23 @@ class TestDealerQuotes(TransactionCase):
         self.assertTrue(line.exists())
         quote._int_apply(self.buyer, {"remove_%s" % line.id: "1"})
         self.assertFalse(line.exists())
+
+    def test_the_pdf_is_the_dealers_and_never_shows_wholesale_or_our_company(self):
+        quote = self._quote()
+        quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.battery.id)})
+        line = quote.line_ids
+        self.assertAlmostEqual(line.dealer_cost, 100.0)
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "int_sale_customizations.action_report_int_dealer_quote", quote.ids,
+        )[0].decode()
+        self.assertIn("Quote Dealer", html)
+        self.assertIn(quote.name, html)
+        self.assertIn("Pat Retail", html)
+        self.assertIn("INT-QTE-BAT", html)
+        self.assertIn("150.00", html)
+        # The dealer's cost and margin, and RV Solar's company, are not on it.
+        self.assertNotIn("100.00", html)
+        self.assertNotIn("Wholesale", html)
+        self.assertNotIn("Margin", html)
+        self.assertNotIn(self.company.name, html)
+        self.assertEqual(quote._get_report_base_filename(), "Quote %s" % quote.name)

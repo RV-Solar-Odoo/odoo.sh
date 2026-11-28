@@ -14,6 +14,8 @@ Owners and buyers write quotes for the dealer's own customers at `/my/customer-q
 
 Lines look like Edit Favorite (picture, name, SKU, price each, − / + quantity, total, bin) and reuse its row styles and `favorites.js` stepper and bin. Switching MAP / MSRP reprices untyped lines on the page at once (`quotes.js`), and totals and margin follow quantity and price; Save Quote stores it. On save the new basis is applied before the posted prices, so a price the page swapped stays automatic.
 
+**Download PDF / Print** (`/my/customer-quotes/<id>/pdf`, `?download=1` to save) use the report `action_report_int_dealer_quote`. It is built on `web.html_container`, not `web.external_layout`, so only the dealer's logo (their company contact's image, set on My Portal → Documents) and details print; RV Solar's company, wholesale and margin never do. It shows the last saved version. Prices are before sales tax.
+
 ## Checkout: pay for what ships now
 
 Depends on Victron Stock (backorder lines) and Shippo Customizations (shipping quotes).

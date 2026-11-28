@@ -102,6 +102,19 @@ class IntCustomerQuotePortal(CustomerPortal):
             products.append(payload)
         return request.make_json_response({"products": products})
 
+    @route("/my/customer-quotes/<int:quote_id>/pdf", type="http", auth="user", website=True, sitemap=False)
+    def int_customer_quote_pdf(self, quote_id, download=None, **kwargs):
+        """The quote as the dealer's own PDF. Owner and Buyer only, and only their company's quotes."""
+        user = self._int_quote_user()
+        if not user:
+            return request.redirect("/my")
+        quote = request.env["int.dealer.quote"]._int_for_user(user, self._int_quote_company(), quote_id)
+        if not quote:
+            return request.not_found()
+        return self._show_report(
+            quote, "pdf", "int_sale_customizations.action_report_int_dealer_quote", download=bool(download),
+        )
+
     @route(
         "/my/customer-quotes/<int:quote_id>",
         type="http", auth="user", website=True, methods=["GET", "POST"], sitemap=False,

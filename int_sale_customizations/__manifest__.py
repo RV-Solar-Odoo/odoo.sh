@@ -1,6 +1,6 @@
 {
     "name": "Sales Customizations",
-    "version": "19.0.1.11.0",
+    "version": "19.0.1.12.0",
     "category": "Sales/Sales",
     "summary": "Dealer orders, checkout, and customer quotes priced at MAP or MSRP",
     "author": "Internal",
@@ -30,6 +30,7 @@
         "views/checkout_templates.xml",
         "views/sale_order_views.xml",
         "views/res_config_settings_views.xml",
+        "report/dealer_quote_report.xml",
     ],
     "assets": {
         "web.assets_frontend": [

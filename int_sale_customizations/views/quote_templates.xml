@@ -123,7 +123,7 @@
                 </h3>
                 <p class="o_int_quote_lead">
                     These prices are what your customer pays you. Wholesale and margin stay on this screen.
-                    A price below MAP can still be saved. A PDF and ordering these items come next.
+                    A price below MAP can still be saved. Download PDF or Print gives a quote with your logo and details, to send your customer yourself. Ordering these items comes next.
                 </p>
                 <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
                 <form t-attf-action="/my/customer-quotes/{{ quote.id }}" method="post" class="js-int-quote-edit" t-att-data-quote-id="quote.id"
@@ -253,8 +253,15 @@
                     <div class="d-flex gap-2 flex-wrap mt-4">
                         <button type="submit" class="btn btn-primary">Save Quote</button>
                         <span class="o_int_quote_dirty js-int-quote-dirty d-none" role="status">Unsaved changes</span>
+                        <a class="btn btn-outline-secondary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf?download=1">
+                            <i class="fa fa-download" aria-hidden="true"/> Download PDF
+                        </a>
+                        <a class="btn btn-outline-secondary" t-attf-href="/my/customer-quotes/{{ quote.id }}/pdf" target="_blank" rel="noopener">
+                            <i class="fa fa-print" aria-hidden="true"/> Print
+                        </a>
                         <a class="btn btn-outline-secondary" href="/my/customer-quotes">Back</a>
                     </div>
+                    <p class="o_int_quote_pdf_hint js-int-quote-pdf-hint d-none">Save Quote first; the PDF shows the last saved version.</p>
                 </form>
             </div>
         </t>

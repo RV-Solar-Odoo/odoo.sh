@@ -126,6 +126,10 @@ class IntDealerQuote(models.Model):
                 vals["currency_id"] = company.currency_id.id
         return super().create(vals_list)
 
+    def _get_report_base_filename(self):
+        self.ensure_one()
+        return "Quote %s" % self.name
+
     def _int_basis_label(self):
         self.ensure_one()
         return _("MSRP") if self.price_basis == "msrp" else _("MAP")

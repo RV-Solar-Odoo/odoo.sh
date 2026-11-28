@@ -111,3 +111,9 @@
 .o_portal_my_home .o_portal_docs .o_portal_index_card:has(a[href="/my/customer-quotes"]) {
     order: 45 !important;
 }
+
+.o_int_quote_pdf_hint {
+    margin: 0.5rem 0 0;
+    color: #8a6100;
+    font-size: 0.875rem;
+}
