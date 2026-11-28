@@ -220,3 +220,30 @@ class TestDealerQuotes(TransactionCase):
         self.assertFalse(quote.customer_address_id)
         with self.assertRaises(UserError):
             quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.hidden.id)})
+
+    def test_prices_swapped_on_the_page_by_a_basis_switch_stay_automatic(self):
+        # The editor swaps the prices live when MAP/MSRP is switched, then posts them.
+        quote = self._quote()
+        quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.cable.id)})
+        cable = quote.line_ids
+        quote._int_apply(self.buyer, {"price_basis": "msrp", "price_%s" % cable.id: "40"})
+        self.assertEqual(cable.unit_price, 40.0)
+        self.assertFalse(cable.price_manual)
+        quote._int_apply(self.buyer, {"price_basis": "map", "price_%s" % cable.id: "30"})
+        self.assertEqual(cable.unit_price, 30.0)
+        self.assertFalse(cable.price_manual)
+        # A typed price still sticks through a switch.
+        quote._int_apply(self.buyer, {"price_%s" % cable.id: "33"})
+        self.assertTrue(cable.price_manual)
+        quote._int_apply(self.buyer, {"price_basis": "msrp", "price_%s" % cable.id: "33"})
+        self.assertEqual(cable.unit_price, 33.0)
+        self.assertTrue(cable.price_manual)
+
+    def test_the_bin_posts_one_to_remove_and_zero_to_keep(self):
+        quote = self._quote()
+        quote._int_apply(self.buyer, {"add_product": "1", "product_id": str(self.cable.id)})
+        line = quote.line_ids
+        quote._int_apply(self.buyer, {"remove_%s" % line.id: "0"})
+        self.assertTrue(line.exists())
+        quote._int_apply(self.buyer, {"remove_%s" % line.id: "1"})
+        self.assertFalse(line.exists())

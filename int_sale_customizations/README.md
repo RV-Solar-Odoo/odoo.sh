@@ -10,7 +10,9 @@ My Orders also searches by order number, PO, ship-to, product, or serial, and fi
 
 ## Customer quotes
 
-Owners and buyers write quotes for the dealer's own customers at `/my/customer-quotes`. The account owner sets the company default to MAP or MSRP (Customer prices). That is what the retail customer pays the dealer. A new quote copies the default; changing the default later leaves quotes that were already started alone. A line with no MAP uses MSRP and says so. The dealer can type a price. Below MAP warns and still saves. Wholesale (the dealer's pricelist) and the product margin are on that screen only, and the product search does not include them. Labor and other charges are lines without a product. The My Orders Quotes tab is still quotations from RV Solar. PDF, email, and adding the products to the cart come next.
+Owners and buyers write quotes for the dealer's own customers at `/my/customer-quotes`. The account owner sets the company default to MAP or MSRP (Customer prices). That is what the retail customer pays the dealer. A new quote copies the default; changing the default later leaves quotes that were already started alone. A line with no MAP uses MSRP and says so. The dealer can type a price. Below MAP warns and still saves. Wholesale (the dealer's pricelist) and the product margin are on that screen only, and the product search does not include them. Labor and other charges are lines without a product. The My Orders Quotes tab is still quotations from RV Solar. A PDF and adding the products to the cart come next. Quotes are never emailed from the portal; the dealer sends the PDF themselves (SPEC decision 44).
+
+Lines look like Edit Favorite (picture, name, SKU, price each, − / + quantity, total, bin) and reuse its row styles and `favorites.js` stepper and bin. Switching MAP / MSRP reprices untyped lines on the page at once (`quotes.js`), and totals and margin follow quantity and price; Save Quote stores it. On save the new basis is applied before the posted prices, so a price the page swapped stays automatic.
 
 ## Checkout: pay for what ships now
 

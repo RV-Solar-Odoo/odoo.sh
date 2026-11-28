@@ -212,17 +212,21 @@ class IntDealerQuote(models.Model):
             return (amount or 0.0) > 0
         return currency.compare_amounts(amount or 0.0, 0.0) > 0
 
-    def _int_customer_price(self, product):
-        """(price the customer pays, True when MAP was missing and MSRP was used)."""
+    def _int_customer_price(self, product, basis=None):
+        """(price the customer pays, True when MAP was missing and MSRP was used).
+
+        ``basis`` is MAP or MSRP; the quote's own basis when not given.
+        """
         self.ensure_one()
+        basis = basis or self.price_basis
         template = product.sudo().product_tmpl_id
         msrp = template.list_price or 0.0
         if "map_price" in template._fields:
             map_amount = template.map_price or 0.0
         else:
             map_amount = 0.0
-        missing = self.price_basis == "map" and not self._int_has_amount(map_amount)
-        if self.price_basis == "msrp" or missing:
+        missing = basis == "map" and not self._int_has_amount(map_amount)
+        if basis == "msrp" or missing:
             return msrp, missing
         return map_amount, False
 
@@ -328,9 +332,9 @@ class IntDealerQuote(models.Model):
     def _int_apply(self, user, post, website=None):
         """Save the editor. Checks the product before any write.
 
-        Posted line prices are applied first. A line whose price still matches
-        the old basis stays automatic, so a basis change on the same save can
-        reprice it. A typed price stays.
+        The basis is set first. A posted price that matches the new basis (the page
+        swaps prices live when MAP/MSRP is switched) or still matches the old one
+        stays automatic, and is repriced to the new basis. A typed price stays.
         """
         self.ensure_one()
         self._int_check_editor(user)
@@ -372,9 +376,11 @@ class IntDealerQuote(models.Model):
         valid_until = _int_clean_date(post.get("valid_until")) if "valid_until" in post else False
         if valid_until:
             quote.valid_until = valid_until
-        quote._int_apply_lines(post)
-        if basis != quote.price_basis:
+        old_basis = quote.price_basis
+        if basis != old_basis:
             quote.price_basis = basis
+        quote._int_apply_lines(post, old_basis)
+        if basis != old_basis:
             quote.line_ids.filtered(
                 lambda line: line.line_type == "product" and not line.price_manual
             )._int_set_customer_price()
@@ -384,9 +390,10 @@ class IntDealerQuote(models.Model):
             quote._int_add_custom(*custom)
         return quote
 
-    def _int_apply_lines(self, post):
+    def _int_apply_lines(self, post, old_basis=None):
         for line in list(self.line_ids):
-            if post.get("remove_%s" % line.id):
+            # The page posts remove_<id> as 1 or 0; an older form posted a checkbox ("on").
+            if post.get("remove_%s" % line.id) not in (None, "", "0"):
                 line.unlink()
                 continue
             qty_key = "qty_%s" % line.id
@@ -398,7 +405,7 @@ class IntDealerQuote(models.Model):
                 line.quantity = qty
             price_key = "price_%s" % line.id
             if price_key in post:
-                line._int_update_price(post.get(price_key))
+                line._int_update_price(post.get(price_key), old_basis)
 
 
 class IntDealerQuoteLine(models.Model):
@@ -487,17 +494,24 @@ class IntDealerQuoteLine(models.Model):
             price, _missing = line.quote_id._int_customer_price(line.product_id)
             line.unit_price = price
 
-    def _int_update_price(self, raw):
+    def _int_update_price(self, raw, old_basis=None):
         self.ensure_one()
         price = _int_clean_number(raw)
-        self.unit_price = price
         if self.line_type != "product" or not self.product_id:
+            self.unit_price = price
             self.price_manual = True
             return
-        expected, _missing = self.quote_id._int_customer_price(self.product_id)
-        currency = self.quote_id.currency_id
-        same = currency.compare_amounts(price, expected) == 0 if currency else price == expected
-        self.price_manual = not same
+        quote = self.quote_id
+        currency = quote.currency_id
+
+        def matches(basis):
+            expected, _missing = quote._int_customer_price(self.product_id, basis)
+            return currency.compare_amounts(price, expected) == 0 if currency else price == expected
+
+        was_automatic = not self.price_manual
+        self.unit_price = price
+        stale = bool(old_basis) and old_basis != quote.price_basis and was_automatic and matches(old_basis)
+        self.price_manual = not (matches(quote.price_basis) or stale)
 
     def _int_margin_percent(self):
         self.ensure_one()

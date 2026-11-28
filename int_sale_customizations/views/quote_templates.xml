@@ -53,7 +53,7 @@
                         <input class="form-control" id="int_quote_phone" type="tel" name="customer_phone" maxlength="40"/>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">New quote</button>
+                        <button type="submit" class="btn btn-primary w-100">New Quote</button>
                     </div>
                 </form>
                 <p t-if="not quotes">No customer quotes yet.</p>
@@ -123,10 +123,13 @@
                 </h3>
                 <p class="o_int_quote_lead">
                     These prices are what your customer pays you. Wholesale and margin stay on this screen.
-                    A price below MAP can still be saved. PDF, email, and ordering these items come next.
+                    A price below MAP can still be saved. A PDF and ordering these items come next.
                 </p>
                 <div t-if="int_error" class="alert alert-warning" role="alert" t-out="int_error"/>
-                <form t-attf-action="/my/customer-quotes/{{ quote.id }}" method="post" class="js-int-quote-edit" t-att-data-quote-id="quote.id">
+                <form t-attf-action="/my/customer-quotes/{{ quote.id }}" method="post" class="js-int-quote-edit" t-att-data-quote-id="quote.id"
+                      t-att-data-currency-symbol="quote.currency_id.symbol"
+                      t-att-data-currency-position="quote.currency_id.position"
+                      t-att-data-currency-digits="quote.currency_id.decimal_places">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="add_product" class="js-int-quote-add" value=""/>
                     <input type="hidden" name="product_id" class="js-int-quote-product" value=""/>
@@ -178,54 +181,57 @@
                     </div>
                     <ul class="o_int_fav_results js-int-quote-results d-none"/>
                     <p t-if="not quote.line_ids" class="text-muted">No lines yet.</p>
-                    <div t-if="quote.line_ids" class="table-responsive">
-                        <table class="table align-middle o_int_quote_lines">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qty</th>
-                                    <th>Customer price</th>
-                                    <th class="o_int_quote_dealer text-end">Wholesale</th>
-                                    <th class="o_int_quote_dealer text-end">Margin</th>
-                                    <th class="text-end">Line total</th>
-                                    <th>Remove</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="quote.line_ids" t-as="line">
-                                    <td>
-                                        <div t-out="line.name"/>
-                                        <small t-if="line.product_id.default_code" class="text-muted d-block" t-out="line.product_id.default_code"/>
-                                        <div t-if="line.below_map" class="o_int_quote_warn">Below MAP. You can still save this price.</div>
-                                        <div t-if="line.map_missing" class="o_int_quote_missing">No MAP on this product. Using MSRP.</div>
-                                    </td>
-                                    <td>
-                                        <input class="form-control form-control-sm" type="number" min="0" step="1" t-attf-name="qty_{{ line.id }}" t-att-value="line.quantity" t-att-aria-label="'Quantity for %s' % line.name"/>
-                                    </td>
-                                    <td>
-                                        <input class="form-control form-control-sm" type="number" min="0" step="0.01" t-attf-name="price_{{ line.id }}" t-att-value="line.unit_price" t-att-aria-label="'Customer price for %s' % line.name"/>
-                                    </td>
-                                    <td class="o_int_quote_dealer text-end">
-                                        <span t-if="line.line_type == 'product'" t-field="line.dealer_cost" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
-                                        <span t-else="">—</span>
-                                    </td>
-                                    <td class="o_int_quote_dealer text-end">
-                                        <span t-if="line.line_type == 'product'" t-out="line._int_margin_label()"/>
-                                        <span t-else="">—</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
-                                    </td>
-                                    <td>
-                                        <input type="checkbox" t-attf-name="remove_{{ line.id }}" t-att-aria-label="'Remove %s' % line.name"/>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Lines look like Edit Favorite. Each product line carries its MAP and MSRP
+                         customer prices and the dealer's unit cost, so quotes.js can reprice the
+                         page live when MAP/MSRP is switched. Wholesale is already on this
+                         dealer-only screen; the product search never returns it. -->
+                    <div t-if="quote.line_ids" class="o_int_quote_lines js-int-quote-lines">
+                        <t t-foreach="quote.line_ids" t-as="line">
+                            <t t-set="int_is_product" t-value="line.line_type == 'product' and line.product_id"/>
+                            <div class="o_int_fav_line o_int_quote_line js-int-quote-line" data-int-line="1"
+                                 t-att-data-product="'1' if int_is_product else '0'"
+                                 t-att-data-map="line.map_price or 0"
+                                 t-att-data-msrp="line.msrp_price or 0"
+                                 t-att-data-cost="line.dealer_cost or 0"
+                                 t-att-data-manual="'1' if line.price_manual else '0'">
+                                <t t-if="int_is_product" t-call="int_sale_customizations.portal_favorite_thumb">
+                                    <t t-set="product" t-value="line.product_id"/>
+                                </t>
+                                <span t-else="" class="o_int_fav_thumb o_int_quote_icon" aria-hidden="true"><i class="fa fa-wrench"/></span>
+                                <span class="o_int_fav_product">
+                                    <span t-out="line.name"/>
+                                    <span t-if="line.product_id.default_code" class="o_int_fav_sku">SKU <t t-out="line.product_id.default_code"/></span>
+                                    <span t-if="int_is_product" t-attf-class="o_int_quote_warn js-int-quote-below #{'' if line.below_map else 'd-none'}">Below MAP. You can still save this price.</span>
+                                    <span t-if="int_is_product" t-attf-class="o_int_quote_missing js-int-quote-nomap #{'' if line.map_missing else 'd-none'}">No MAP on this product. Using MSRP.</span>
+                                    <small t-if="int_is_product" class="o_int_quote_dealer">
+                                        Wholesale <span class="js-int-quote-cost" t-field="line.dealer_cost" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
+                                        · Margin <span class="js-int-quote-margin" t-out="line._int_margin_label()"/>
+                                    </small>
+                                </span>
+                                <label class="o_int_quote_price">
+                                    <span class="o_int_quote_price_label">Price each</span>
+                                    <input class="form-control form-control-sm js-int-quote-price" type="number" min="0" step="0.01"
+                                           t-attf-name="price_{{ line.id }}" t-att-value="line.unit_price"
+                                           t-att-aria-label="'Customer price for %s' % line.name"/>
+                                </label>
+                                <span class="o_int_step">
+                                    <button type="button" data-int-step="-1" aria-label="Fewer">−</button>
+                                    <input type="number" min="0" max="9999" step="1" class="js-int-quote-qty"
+                                           t-attf-name="qty_{{ line.id }}" t-att-value="line.quantity"
+                                           t-att-aria-label="'Quantity for %s' % line.name"/>
+                                    <button type="button" data-int-step="1" aria-label="More">+</button>
+                                </span>
+                                <strong class="o_int_quote_subtotal js-int-quote-subtotal" t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/>
+                                <input type="hidden" t-attf-name="remove_{{ line.id }}" value="0" class="js-int-fav-remove-input"/>
+                                <button type="button" class="o_int_fav_remove js-int-fav-remove" t-att-aria-label="'Remove %s' % line.name" title="Remove">
+                                    <i class="fa fa-trash-o" aria-hidden="true"/>
+                                </button>
+                            </div>
+                        </t>
                     </div>
                     <div class="o_int_quote_totals">
-                        <div>Customer total<strong t-field="quote.amount_untaxed" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
-                        <div class="o_int_quote_dealer">Product margin<strong t-field="quote.margin_amount" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
+                        <div>Customer total<strong class="js-int-quote-total" t-field="quote.amount_untaxed" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
+                        <div class="o_int_quote_dealer">Product margin<strong class="js-int-quote-margin-total" t-field="quote.margin_amount" t-options='{"widget": "monetary", "display_currency": quote.currency_id}'/></div>
                     </div>
                     <div class="row g-2 align-items-end mt-3">
                         <div class="col-md-6">
@@ -245,7 +251,8 @@
                         </div>
                     </div>
                     <div class="d-flex gap-2 flex-wrap mt-4">
-                        <button type="submit" class="btn btn-primary">Save quote</button>
+                        <button type="submit" class="btn btn-primary">Save Quote</button>
+                        <span class="o_int_quote_dirty js-int-quote-dirty d-none" role="status">Unsaved changes</span>
                         <a class="btn btn-outline-secondary" href="/my/customer-quotes">Back</a>
                     </div>
                 </form>

@@ -92,3 +92,147 @@ document.addEventListener("keydown", (ev) => {
         ev.preventDefault();
     }
 });
+
+// Live pricing on the quote editor. Switching MAP / MSRP swaps the customer price
+// on every product line whose price wasn't typed by hand, and the line totals,
+// customer total and margin follow quantity and price as they change. Nothing is
+// saved until Save Quote; the server applies the same rules.
+
+function intQuoteMoney(form, amount) {
+    const digits = Number(form.dataset.currencyDigits || 2);
+    const number = (Number(amount) || 0).toLocaleString("en-US", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
+    const symbol = form.dataset.currencySymbol || "";
+    // Same as Odoo's monetary widget: symbol and amount joined by a no-break space.
+    return form.dataset.currencyPosition === "after" ? `${number} ${symbol}` : `${symbol} ${number}`;
+}
+
+function intQuoteBasis(form) {
+    const checked = form.querySelector("input[name='price_basis']:checked");
+    return checked ? checked.value : "map";
+}
+
+function intQuoteExpected(line, basis) {
+    const map = Number(line.dataset.map) || 0;
+    const msrp = Number(line.dataset.msrp) || 0;
+    return basis === "map" && map > 0 ? map : msrp;
+}
+
+function intQuoteSame(a, b) {
+    return Math.abs((Number(a) || 0) - (Number(b) || 0)) < 0.005;
+}
+
+function intQuoteRecompute(form) {
+    const basis = intQuoteBasis(form);
+    let total = 0;
+    let margin = 0;
+    for (const line of form.querySelectorAll(".js-int-quote-line")) {
+        const qtyInput = line.querySelector(".js-int-quote-qty");
+        const priceInput = line.querySelector(".js-int-quote-price");
+        const removeInput = line.querySelector(".js-int-fav-remove-input");
+        const qty = Math.max(0, Number(qtyInput && qtyInput.value) || 0);
+        const price = Math.max(0, Number(priceInput && priceInput.value) || 0);
+        const subtotal = qty * price;
+        const subtotalEl = line.querySelector(".js-int-quote-subtotal");
+        if (subtotalEl) {
+            subtotalEl.textContent = intQuoteMoney(form, subtotal);
+        }
+        const removed = removeInput && removeInput.value === "1";
+        if (!removed) {
+            total += subtotal;
+        }
+        if (line.dataset.product !== "1") {
+            continue;
+        }
+        const cost = Number(line.dataset.cost) || 0;
+        if (!removed) {
+            margin += (price - cost) * qty;
+        }
+        const marginEl = line.querySelector(".js-int-quote-margin");
+        if (marginEl) {
+            marginEl.textContent = price ? `${Math.round(((price - cost) / price) * 100)}%` : "0%";
+        }
+        const map = Number(line.dataset.map) || 0;
+        const below = line.querySelector(".js-int-quote-below");
+        if (below) {
+            below.classList.toggle("d-none", !(map > 0 && price < map - 0.005));
+        }
+        const noMap = line.querySelector(".js-int-quote-nomap");
+        if (noMap) {
+            noMap.classList.toggle("d-none", !(basis === "map" && map <= 0));
+        }
+    }
+    const totalEl = form.querySelector(".js-int-quote-total");
+    if (totalEl) {
+        totalEl.textContent = intQuoteMoney(form, total);
+    }
+    const marginTotalEl = form.querySelector(".js-int-quote-margin-total");
+    if (marginTotalEl) {
+        marginTotalEl.textContent = intQuoteMoney(form, margin);
+    }
+}
+
+function intQuoteDirty(form) {
+    const note = form.querySelector(".js-int-quote-dirty");
+    if (note) {
+        note.classList.remove("d-none");
+    }
+}
+
+document.addEventListener("change", (ev) => {
+    if (ev.target.name !== "price_basis") {
+        return;
+    }
+    const form = ev.target.closest(".js-int-quote-edit");
+    if (!form) {
+        return;
+    }
+    const basis = intQuoteBasis(form);
+    for (const line of form.querySelectorAll(".js-int-quote-line[data-product='1']")) {
+        if (line.dataset.manual === "1") {
+            continue;
+        }
+        const priceInput = line.querySelector(".js-int-quote-price");
+        if (priceInput) {
+            priceInput.value = intQuoteExpected(line, basis).toFixed(2);
+        }
+    }
+    intQuoteRecompute(form);
+    intQuoteDirty(form);
+});
+
+document.addEventListener("input", (ev) => {
+    const form = ev.target.closest(".js-int-quote-edit");
+    if (!form || ev.target.closest(".js-int-quote-search")) {
+        return;
+    }
+    if (ev.target.classList.contains("js-int-quote-price")) {
+        // A price that equals the MAP/MSRP price stays automatic; anything else was typed.
+        const line = ev.target.closest(".js-int-quote-line");
+        if (line && line.dataset.product === "1") {
+            line.dataset.manual = intQuoteSame(ev.target.value, intQuoteExpected(line, intQuoteBasis(form))) ? "0" : "1";
+        }
+    }
+    if (ev.target.closest(".js-int-quote-line")) {
+        intQuoteRecompute(form);
+    }
+    intQuoteDirty(form);
+});
+
+// The − / + stepper and the bin (favorites.js) change values without an input
+// event, so recompute after their click handlers have run.
+document.addEventListener("click", (ev) => {
+    if (!ev.target.closest("[data-int-step], .js-int-fav-remove")) {
+        return;
+    }
+    const form = ev.target.closest(".js-int-quote-edit");
+    if (!form) {
+        return;
+    }
+    window.setTimeout(() => {
+        intQuoteRecompute(form);
+        intQuoteDirty(form);
+    }, 0);
+});
